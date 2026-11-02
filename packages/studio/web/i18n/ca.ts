@@ -757,6 +757,7 @@ export default {
   'That file is outside this folder or not a Markdown file.': 'Aquest fitxer és fora d\'aquesta carpeta o no és un fitxer Markdown.',
   'The tutorial is missing from this installation.': 'Falta el tutorial en aquesta instal·lació.',
   'Only folders inside your home folder can be opened here.': 'Aquí només es poden obrir carpetes dins de la teva carpeta personal.',
+  'That is your whole home folder, or the top of the disk. Open the folder of one subject inside it.': 'Aquesta és tota la teva carpeta personal, o l’arrel del disc. Obre la carpeta d’una sola matèria que hi hagi a dins.',
   'This folder is not open any more. Open it again from the library.': 'Aquesta carpeta ja no està oberta. Torna-la a obrir des de la biblioteca.',
   'Help is missing from this installation.': 'Falta l\'ajuda en aquesta instal·lació.',
   'The integrations are missing; run `npm run build -w @mdlearn/studio`.': 'Falten les integracions; executa `npm run build -w @mdlearn/studio`.',

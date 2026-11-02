@@ -12,6 +12,8 @@ import type { Tree, TreeDoc, WorkspaceSummary, BrowseResult } from '../shared/ty
 
 export interface Handle { id: string; name: string; root: string; ws: Workspace }
 export const workspaceId = (root: string) => createHash('sha256').update(root).digest('hex').slice(0, 12)
+/** The home folder or the top of a disk: every project and download in one folder, too much to read and watch. */
+const tooWide = (root: string) => root === realPath(homedir()) || dirname(root) === root
 const posix = (p: string) => p.split(sep).join('/')
 
 export class Workspaces {
@@ -24,6 +26,7 @@ export class Workspaces {
     const abs = resolve(path.replace(/^~(?=$|\/)/, homedir()))
     if (!existsSync(abs) || !statSync(abs).isDirectory()) throw new UserError('not-found', `There is no folder at ${abs}.`)
     const root = realpathSync(abs)
+    if (tooWide(root)) throw new UserError('path', 'That is your whole home folder, or the top of the disk. Open the folder of one subject inside it.')
     const id = workspaceId(root)
     let h = this.open_.get(id)
     if (!h) {
@@ -38,12 +41,12 @@ export class Workspaces {
     const h = this.open_.get(id)
     if (h) return h
     const recent = this.settings.get().recents.find((r) => workspaceId(r.root) === id) // reopen after a restart
-    return recent && existsSync(recent.root) ? this.open(recent.root) : undefined
+    return recent && existsSync(recent.root) && !tooWide(recent.root) ? this.open(recent.root) : undefined
   }
   handles(): Handle[] { return [...this.open_.values()] }
   list(): WorkspaceSummary[] {
     const lib = realPath(this.settings.get().libraryDir)
-    return this.settings.get().recents.filter((r) => existsSync(r.root)).map((r) => {
+    return this.settings.get().recents.filter((r) => existsSync(r.root) && !tooWide(r.root)).map((r) => {
       const ws = workspace(r.root)
       return { id: workspaceId(r.root), name: basename(r.root), root: r.root, docs: sourceDocs(ws).length, lessons: lessonPaths(ws).length, lastOpened: r.lastOpened, inLibrary: r.root.startsWith(lib + sep) }
     })

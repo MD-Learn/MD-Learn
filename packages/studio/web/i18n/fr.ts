@@ -757,6 +757,7 @@ export default {
   'That file is outside this folder or not a Markdown file.': 'Ce fichier est en dehors de ce dossier ou n\'est pas un fichier Markdown.',
   'The tutorial is missing from this installation.': 'Le tutoriel manque dans cette installation.',
   'Only folders inside your home folder can be opened here.': 'Seuls les dossiers situés dans votre dossier personnel peuvent être ouverts ici.',
+  'That is your whole home folder, or the top of the disk. Open the folder of one subject inside it.': 'C’est tout votre dossier personnel, ou la racine du disque. Ouvrez le dossier d’une seule matière qui s’y trouve.',
   'This folder is not open any more. Open it again from the library.': 'Ce dossier n\'est plus ouvert. Rouvrez-le depuis la bibliothèque.',
   'Help is missing from this installation.': 'L\'aide manque dans cette installation.',
   'The integrations are missing; run `npm run build -w @mdlearn/studio`.': 'Les intégrations manquent ; exécutez `npm run build -w @mdlearn/studio`.',

@@ -43,7 +43,7 @@ The curriculum root is the nearest folder with a learn/ folder, or --root <dir>,
 
 const COMMAND_HELP: Record<string, string> = {
   studio: `mdlearn studio [folder] [--port 4747] [--lan] [--lan-full] [--no-open]
-  folder      A folder of Markdown notes to open (default: the current curriculum, if any)
+  folder      A folder of Markdown notes to open, such as . for this one (default: none, Studio starts on its home page)
   --port      Port to listen on (default 4747; the next free one is used if it is taken)
   --lan       Also share it on your network (study on your phone); prints a private link and QR code
   --lan-full  Let other devices also run AI jobs and open folders (off by default)
@@ -120,7 +120,7 @@ function lessonFiles(p: string): string[] {
 const lessons = (): Lesson[] => loadLessons(ws).map((l) => l.lesson).filter((l): l is Lesson => !!l)
 
 async function studio(): Promise<void> {
-  const folder = args[0] ? resolve(args[0]) : lessonPaths(ws).length ? ws.root : undefined
+  const folder = args[0] ? resolve(args[0]) : undefined // without one, the home page: Studio is the same app wherever it starts
   if (args[0] && !existsSync(folder!)) fail(`no such folder: ${args[0]}`)
   let mod: typeof import('@mdlearn/studio/server')
   try { mod = await import('@mdlearn/studio/server') } catch { return fail('MDlearn Studio is not installed or not built (npm run build).') }
