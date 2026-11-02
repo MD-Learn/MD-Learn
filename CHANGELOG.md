@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.7.1 — 2026-11-02
+
+**Studio opens the same way from anywhere.** `mdlearn studio` without a folder now starts on its home page, with your
+library and recent folders, wherever you run it. Before, a terminal that starts in your home folder opened the whole home
+folder as one course as soon as any course lived somewhere inside it, and the app stopped answering while it read and
+watched every file. To open a folder straight away, name it: `mdlearn studio .` for the one you are in.
+
+**Not the whole home folder.** Your home folder and the top of a disk can no longer be opened as one folder of notes, from
+the app or the terminal, and one kept among the recents by an older version is left out. Open the folder of one subject
+inside it instead.
+
+**Unit tests clean up after themselves.** Every temp folder a unit-test run makes now goes into one folder that is removed when the
+run ends. Thousands were left behind before, and `/tmp` is often kept in memory.
+
 ## 1.7.0 — 2026-11-02
 
 **A course is now better notes, not a deck of cards.** Say what you want to learn and add any files you have. The AI
