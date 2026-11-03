@@ -38,8 +38,9 @@ need `sudo`.
 
 ## Your first course
 
-1. **Say what you want to learn.** Open MDlearn, choose *Make a course*, and add any PDFs, PowerPoint or Word files and
-   pictures you have. MDlearn tells you what it could read from each one. Files are optional.
+1. **Say what you want to learn.** Open MDlearn, choose *Make a course*, and add any files you have: PDFs, PowerPoint or
+   Word files, pictures, code, notebooks, data, or whole folders. MDlearn tells you what it could read from each one, and
+   which files it left out. Files are optional.
 2. **Choose who writes the course.**
    - *Claude, from here:* runs Claude Code on your computer, and you watch it work.
    - *Your coding assistant:* Claude Code, Codex, OpenCode or Pi, with one command to paste in a terminal.

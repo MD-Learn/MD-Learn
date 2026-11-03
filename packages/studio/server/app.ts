@@ -211,12 +211,13 @@ export function createApp(deps: Deps): Hono {
   // ---- a course from a class's files: a new folder, or more files for one that exists
   const classFiles = async (c: Context, folder: () => Handle): Promise<ClassUpload> => {
     const body = await c.req.parseBody({ all: true })
-    const raw = body['files'] ?? body['files[]']
+    const raw = body['files'] ?? body['files[]'], rawPaths = body['paths']
     const files = (Array.isArray(raw) ? raw : raw ? [raw] : []).filter((f): f is File => typeof f === 'object' && 'arrayBuffer' in f)
+    const paths = (Array.isArray(rawPaths) ? rawPaths : rawPaths ? [rawPaths] : []).map((p) => (typeof p === 'string' ? p.slice(0, 1024) : undefined)) // where each sat in a dropped folder
     if (files.length > MAX_CLASS_FILES) throw new UserError('too-many', 'At most 100 files at a time.')
     if (files.some((f) => f.size > MAX_IMPORT_BYTES)) throw new UserError('too-large', 'That file is larger than 100 MB.')
     const h = folder(), saved: ClassFile[] = []
-    for (const f of files) saved.push(await addClassFile(h, f.name, new Uint8Array(await f.arrayBuffer())))
+    for (const [i, f] of files.entries()) saved.push(await addClassFile(h, f.name, new Uint8Array(await f.arrayBuffer()), paths[i]))
     return { id: h.id, name: h.name, root: h.root, files: saved }
   }
   const classLimit = bodyLimit({ maxSize: MAX_CLASS_UPLOAD, onError: (c) => c.json({ error: { code: 'too-large', message: 'At most 400 MB at a time.' } }, 413) })

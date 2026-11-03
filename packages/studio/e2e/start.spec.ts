@@ -97,6 +97,22 @@ test('an old PowerPoint is kept and the person is told what to do', async ({ pag
   await expect(page.getByText(/Save it as \.pptx or \.docx/)).toBeVisible()
 })
 
+test('code and data are taken, a video is left out and the person is told', async ({ page }) => {
+  await page.goto('/start')
+  await page.getByLabel('What do you want to learn?').fill(fresh())
+  await page.getByLabel('Choose files').setInputFiles([
+    { name: 'descenso.py', mimeType: 'text/x-python', buffer: Buffer.from('def paso(x):\n    return x - 0.1 * 2 * x\n') },
+    { name: 'datos.csv', mimeType: 'text/csv', buffer: Buffer.from('x,y\n1,2\n') },
+    { name: 'clase.mp4', mimeType: 'video/mp4', buffer: Buffer.from('video') },
+  ])
+  await expect(page.getByRole('status').filter({ hasText: 'Left out, because an AI can’t read them: clase.mp4' })).toBeVisible()
+  await expect(page.getByText('descenso.py')).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  const read = page.getByRole('list', { name: 'What was read' })
+  await expect(read.getByText('kept as it is: the AI reads it itself')).toHaveCount(2)
+  await expect(read.getByText('clase.mp4')).toHaveCount(0)
+})
+
 test('a week in: change the course, reorder it, and keep what you studied', async ({ page, request }) => {
   await page.goto('/start')
   const name = fresh()

@@ -2,6 +2,7 @@
 import { create } from 'zustand'
 import { growthLabel, levelNotice } from '../companion/growth'
 import type { Grew } from '../../shared/types'
+import type { Picked } from '../lib/upload'
 
 export type Theme = 'system' | 'light' | 'dark'
 export type CompanionKind = 'off' | 'orb' | 'pixel'
@@ -23,8 +24,8 @@ interface UiState {
   growth: Grew | null
   showGrowth(g: Grew, name?: string): void
   /** Class files dropped on the start page, on their way to /start. */
-  classFiles: File[]
-  setClassFiles(files: File[]): void
+  classFiles: Picked[]
+  setClassFiles(files: Picked[]): void
   notice: string | null
   notify(text: string | null): void
   palette: boolean

@@ -247,7 +247,7 @@ export interface ScinetDetail extends ScinetPaper { authors: string[]; venue: st
 export interface Integrations { prompt: string; pluginDir?: string; skillZip: boolean; guide: boolean }
 /** One class file brought into a course: where it is, what text came out of it, and anything the person should know. */
 export interface ClassFile {
-  name: string; path: string; kind: 'word' | 'slides' | 'pdf' | 'picture' | 'text' | 'other'
+  name: string; path: string; kind: 'word' | 'slides' | 'pdf' | 'picture' | 'text' | 'code' | 'data' | 'other'
   /** The Markdown made from it. */ text?: string
   slides?: number; pictures?: number; skipped?: number; equations?: number
   problem?: 'old-format' | 'unknown-type' | 'no-text' | 'unreadable'

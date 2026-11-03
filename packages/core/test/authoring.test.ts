@@ -101,6 +101,13 @@ describe('what a course is, for the AI', () => {
     expect(p).not.toContain('.learn.md')
     expect(p).not.toContain('cards each')
   })
+  it('tells the AI to read code, data and pictures among the class files itself, in every folder', () => {
+    const p = coursePrompt({ topic: 'Python', classFiles: 'sources' })
+    expect(p).toContain('in all its folders')
+    expect(p).toContain('Code, notebooks, data and pictures are there as they are')
+    expect(p).toContain('A photo of an exam, a worksheet or a whiteboard is material too')
+    expect(p).toMatch(/runnable/)
+  })
   it('says the same from class files', () => {
     const p = coursePrompt({ topic: 'Marketing', classFiles: 'sources' })
     expect(p).toContain('`01-slug.md`')

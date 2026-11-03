@@ -1214,7 +1214,6 @@ export default {
   'e.g. Thermodynamics 2': 'p. ex. Thermodynamique 2',
   'Your class files': 'Vos fichiers de cours',
   'Drop your class files here': 'Déposez vos fichiers de cours ici',
-  'PDF, PowerPoint, Word, pictures or text.': 'PDF, PowerPoint, Word, images ou texte.',
   'Choose files': 'Choisir des fichiers',
   'Remove {name}': 'Retirer {name}',
   'Add these files': 'Ajouter ces fichiers',
@@ -1440,4 +1439,9 @@ export default {
   'Your companion reached level {n}!': 'Votre compagnon passe au niveau {n} !',
   'A small sign of what MDlearn is doing, at the foot of the sidebar, in your accent colour. It hides during questions.': 'Un petit signe de ce que fait MDlearn, en bas de la barre latérale, dans votre couleur d’accent. Il se cache pendant les questions.',
   'It gains points when you finish reading a note, answer its questions, explain in your own words or finish a review. Points are never lost, and time in the app does not count.': 'Il gagne des points quand vous finissez de lire une note, répondez à ses questions, expliquez avec vos mots ou finissez une révision. Les points ne se perdent jamais, et le temps dans l’app ne compte pas.',
+  'PDF, PowerPoint, Word, pictures, code, data or text, and whole folders.': 'PDF, PowerPoint, Word, images, code, données ou texte, et des dossiers entiers.',
+  'Left out, because an AI can’t read them: {names}': 'Laissés de côté, car une IA ne peut pas les lire : {names}',
+  'Save spreadsheets as .csv to include them.': 'Enregistrez les feuilles de calcul en .csv pour les inclure.',
+  'kept as it is: the AI reads it itself': 'gardé tel quel : l’IA le lit elle-même',
+  'kept: the AI looks at it itself': 'gardée : l’IA la regarde elle-même',
 } satisfies Dict

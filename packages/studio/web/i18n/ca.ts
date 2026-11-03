@@ -1214,7 +1214,6 @@ export default {
   'e.g. Thermodynamics 2': 'p. ex. Termodinàmica 2',
   'Your class files': 'Els teus fitxers de classe',
   'Drop your class files here': 'Deixa aquí els teus fitxers de classe',
-  'PDF, PowerPoint, Word, pictures or text.': 'PDF, PowerPoint, Word, imatges o text.',
   'Choose files': 'Tria fitxers',
   'Remove {name}': 'Treu {name}',
   'Add these files': 'Afegeix aquests fitxers',
@@ -1440,4 +1439,9 @@ export default {
   'Your companion reached level {n}!': 'El teu company puja al nivell {n}!',
   'A small sign of what MDlearn is doing, at the foot of the sidebar, in your accent colour. It hides during questions.': 'Un petit senyal del que està fent MDlearn, al peu de la barra lateral, amb el teu color d’accent. S’amaga durant les preguntes.',
   'It gains points when you finish reading a note, answer its questions, explain in your own words or finish a review. Points are never lost, and time in the app does not count.': 'Guanya punts quan acabes de llegir uns apunts, respons les seves preguntes, expliques amb les teves paraules o acabes un repàs. Els punts no es perden mai, i el temps a l’app no compta.',
+  'PDF, PowerPoint, Word, pictures, code, data or text, and whole folders.': 'PDF, PowerPoint, Word, imatges, codi, dades o text, i carpetes senceres.',
+  'Left out, because an AI can’t read them: {names}': 'Es queden fora, perquè una IA no els pot llegir: {names}',
+  'Save spreadsheets as .csv to include them.': 'Desa els fulls de càlcul com a .csv per incloure’ls.',
+  'kept as it is: the AI reads it itself': 'es guarda tal qual: la IA el llegeix ella mateixa',
+  'kept: the AI looks at it itself': 'es guarda: la IA la mira ella mateixa',
 } satisfies Dict

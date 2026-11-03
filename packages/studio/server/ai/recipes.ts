@@ -156,13 +156,19 @@ export function translateCourse(h: Handle, doc: string, language: string): Recip
 }
 
 export interface ClassCourse { name: string; level?: string; language?: string; request?: string; web?: boolean }
+/** Turns for a course: more for more files, but a folder of code must not mean thousands. */
+const MAX_COURSE_TURNS = 400
+/** The class's own files in sources/, in any folder, leaving out what MDlearn made from them (text/, media/). */
+function originals(dir: string, top = true): number {
+  if (!existsSync(dir)) return 0
+  return readdirSync(dir, { withFileTypes: true }).reduce((n, f) => n + (f.isFile() ? 1 : f.isDirectory() && !f.name.startsWith('.') && !(top && (f.name === 'text' || f.name === 'media')) ? originals(join(dir, f.name), false) : 0), 0)
+}
 /** A course at the top of its own folder, from the class files in sources/ when it has any. */
 export function classCourse(h: Handle, o: ClassCourse): Recipe {
-  const sources = join(h.root, SOURCES)
-  const files = existsSync(sources) ? readdirSync(sources, { withFileTypes: true }).filter((f) => f.isFile()).length : 0
+  const files = originals(join(h.root, SOURCES))
   return {
     spec: {
-      recipe: 'course.class', title: `Course: ${o.name.slice(0, 70)}`, maxTurns: 60 + 40 * Math.max(1, files), webSearch: o.web,
+      recipe: 'course.class', title: `Course: ${o.name.slice(0, 70)}`, maxTurns: Math.min(MAX_COURSE_TURNS, 60 + 40 * Math.max(1, files)), webSearch: o.web,
       writeScope: [h.root], keepOut: keptOut(h.root),
       prompt: coursePrompt({ topic: o.name, level: o.level, language: o.language, request: o.request, web: o.web, save: 'write', ...(files ? { classFiles: SOURCES } : { here: true, folder: '.' }) }),
     },

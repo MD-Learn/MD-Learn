@@ -1,5 +1,6 @@
 // Server state through TanStack Query: one query key per resource, invalidated by live events.
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import type { Picked } from '../lib/upload'
 import { api, qs } from './client'
 import { currentLang } from '../i18n'
 import type { SessionInfo, WorkspaceSummary, Tree, DocResponse, LessonResponse, BrowseResult, StudyPlan, StudyItem, RecordResponse, SearchHit, Note, NoteAnchor, NoteColor, EnginesInfo, JobSummary, JobEvent, TodayResponse, GoalsInfo, FormulasResponse, GlossaryResponse, LinksResponse, MapResponse, DocSummary, AskStatus, AskEntry, SheetResponse, FileInfo, HistoryEntry, PreviewResponse, ImportResult, ChatCheck, Integrations, Batch, BatchCandidate, ConfidenceInfo, ExamPlan, ExamResult, TexResult, TexStatus, LocalAiInfo, ModelDownload, ScinetDetail, ScinetPaper, ScinetStatus, RelatedResponse, InboxItem, InboxList, CompanionView } from '../../shared/types'
@@ -245,10 +246,11 @@ export const helpApi = {
   tourDone: (tourDone: boolean) => api.post<{ tourDone: boolean }>('/api/onboarding', { tourDone }),
   tutorial: (reset = false) => api.post<{ id: string; name: string; root: string }>('/api/workspaces/tutorial', { reset }),
 }
-const classForm = (files: File[]) => { const form = new FormData(); for (const f of files) form.append('files', f, f.name); return form }
+/** Each file with where it sat in a dropped folder, so the folders are kept. */
+const classForm = (files: Picked[]) => { const form = new FormData(); for (const p of files) { form.append('files', p.file, p.file.name); form.append('paths', p.path) } return form }
 export const classApi = {
-  create: (name: string, files: File[]) => api.upload<import('../../shared/types').ClassUpload>(`/api/courses?name=${encodeURIComponent(name)}`, classForm(files)),
-  add: (ws: string, files: File[]) => api.upload<import('../../shared/types').ClassUpload>(`/api/w/${ws}/sources`, classForm(files)),
+  create: (name: string, files: Picked[]) => api.upload<import('../../shared/types').ClassUpload>(`/api/courses?name=${encodeURIComponent(name)}`, classForm(files)),
+  add: (ws: string, files: Picked[]) => api.upload<import('../../shared/types').ClassUpload>(`/api/w/${ws}/sources`, classForm(files)),
 }
 export const useCourse = (ws: string, doc: string) => useQuery({ queryKey: keys.course(ws, doc), queryFn: () => api.get<import('../../shared/types').CourseInfo>(`/api/w/${ws}/course?${qs({ doc })}`) })
 export const courseApi = {

@@ -457,13 +457,18 @@ returned; the query leaves the computer, and the box says so. `WebFetch` stays o
 
 **From a topic and class files.** The first page's *Make a course* opens `/start`: say what you want to learn, add any files,
 choose who writes it. With no files, `course.class` writes from the topic at the top of the same folder. `POST /api/courses?name=` (local only) makes a library folder, with or without files, and `POST /api/w/:ws/sources` adds
-to one (100 MB a file, 400 MB at a time, 100 files). Originals go to `sources/`. `server/import/office.ts` turns `.pptx` (slide
+to one (100 MB a file, 400 MB at a time, 100 files). Originals go to `sources/`, in the folders of a dropped folder (each folder
+name cleaned like a file name, at most four deep; a `paths` field beside each file says where it sat). The browser takes what an AI
+can read (documents, pictures, text, code, notebooks, data; `CLASS_ACCEPT` in `web/lib/upload.ts`) and names what it leaves out
+(video, audio, archives, programs, with a hint to save spreadsheets as `.csv`). Code and data are kept as they are for the AI to
+read itself. `server/import/office.ts` turns `.pptx` (slide
 order, titles, bullets, tables, speaker notes, pictures; `fflate` + `linkedom`) and `.docx` (mammoth, then Turndown) into
 `sources/text/<name>.md` with pictures in `sources/media/<name>/`; a PDF goes through the quick reader.
 Each file reports what was read. An equation can't come through as text, so it is counted and the person is told: a PowerPoint
 keeps its picture of the equation, a Word file doesn't. Old `.ppt`/`.doc` files are kept, with a note to save them in the new format;
 one file that can't be read never stops the others. The `course.class` job writes `course.md` and the lessons at the top of the
-folder (`coursePrompt` with `classFiles`), and its `keepOut` stops it changing `sources/`, `AGENTS.md` or `CLAUDE.md`.
+folder (`coursePrompt` with `classFiles`, which tells it to read code, data and photos of exams or whiteboards itself), with 40
+turns a file up to 400, and its `keepOut` stops it changing `sources/`, `AGENTS.md` or `CLAUDE.md`.
 
 **Changing a started course.** Progress belongs to `lessonId/cardId`, and a card's id is its title's slug unless the heading says
 `{#id}`, so a renamed card would silently start over. `core/src/revise.ts` guards that: `pinIds` writes ids into a lesson, `courseChanges`

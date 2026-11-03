@@ -1,10 +1,15 @@
 // Collect files from a drop (folders included) or a file input, keeping their relative paths.
 export interface Picked { file: File; path: string }
 const ACCEPT = /\.(md|markdown|txt|png|jpe?g|gif|webp)$/i
-/** What a class hands out. Old Office formats are taken too: they are kept, and the person told what to do about them. */
-export const CLASS_ACCEPT = /\.(pdf|pptx?|docx?|odt|odp|md|markdown|txt|png|jpe?g|gif|webp)$/i
-export const CLASS_INPUT = '.pdf,.pptx,.ppt,.docx,.doc,.odt,.odp,.md,.markdown,.txt,.png,.jpg,.jpeg,.gif,.webp'
+/**
+ * What a class hands out and an AI can read: documents, pictures, text, code, notebooks and data. Old Office formats
+ * are taken too: they are kept, and the person told what to do about them. Video, audio, archives and programs are not.
+ */
+export const CLASS_ACCEPT = /\.(pdf|pptx?|docx?|odt|odp|md|markdown|txt|tex|bib|rst|org|png|jpe?g|gif|webp|svg|csv|tsv|json|xml|ya?ml|toml|py|ipynb|r|rmd|jl|m|js|mjs|cjs|ts|jsx|tsx|java|kt|scala|c|h|cpp|hpp|cc|cs|go|rs|rb|php|swift|sql|sh|bash|ps1|bat|lua|pl|hs|ml|dart|f90|css|scss|html?|vue|svelte)$/i
+/** Everything, to be sorted into what is taken and what is left out (and said so). */
+export const ANY = /./
 const MAX = 2000
+const SKIPPED_DIRS = ['node_modules', '.git', '__pycache__', 'venv']
 
 type Entry = { isFile: boolean; isDirectory: boolean; name: string; fullPath: string; file?(ok: (f: File) => void, err: (e: unknown) => void): void; createReader?(): { readEntries(ok: (e: Entry[]) => void, err: (e: unknown) => void): void } }
 async function walk(entry: Entry, out: Picked[], accept: RegExp): Promise<void> {
@@ -12,7 +17,7 @@ async function walk(entry: Entry, out: Picked[], accept: RegExp): Promise<void> 
   if (entry.isFile && accept.test(entry.name)) {
     const file = await new Promise<File>((ok, err) => entry.file!(ok, err))
     out.push({ file, path: entry.fullPath.replace(/^\//, '') })
-  } else if (entry.isDirectory && !['node_modules', '.git'].includes(entry.name)) {
+  } else if (entry.isDirectory && !SKIPPED_DIRS.includes(entry.name)) {
     const reader = entry.createReader!()
     for (;;) { // readEntries returns at most 100 entries per call (Chromium): read until empty
       const batch = await new Promise<Entry[]>((ok, err) => reader.readEntries(ok, err))

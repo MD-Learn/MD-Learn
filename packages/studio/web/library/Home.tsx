@@ -4,7 +4,7 @@ import { Link, useLocation } from 'wouter'
 import { ArrowRight, Clock, FileInput, FileText, FolderOpen, GraduationCap, Presentation, Upload } from 'lucide-react'
 import { helpApi, importApi, useOpenFolder, useSession, useUpload, useWorkspaces } from '../api/queries'
 import { useUi } from '../state/ui'
-import { CLASS_ACCEPT, fromDrop, fromInput, nameFor, toForm, type Picked } from '../lib/upload'
+import { ANY, fromDrop, fromInput, nameFor, toForm, type Picked } from '../lib/upload'
 import { Button, Spinner, ErrorNote } from '../ui/primitives'
 import { OpenFolderDialog } from './OpenFolderDialog'
 import { t, tp, locale } from '../i18n'
@@ -28,10 +28,10 @@ export function Home() {
   const canFs = session.data?.caps.includes('fs')
   const setImportOpen = useUi((u) => u.setImportOpen)
   const setClassFiles = useUi((u) => u.setClassFiles)
-  /** Markdown is notes to open; a PDF or a PowerPoint in the drop means a class's files. */
+  /** Markdown, with its pictures, is notes to open; anything else in the drop (a PDF, slides, code, data) means a class's files. */
   const dropped = async (data: DataTransfer) => {
-    const picked = await fromDrop(data, CLASS_ACCEPT)
-    if (picked.some((p) => /\.(pdf|pptx?|docx?|odt|odp)$/i.test(p.path))) { setClassFiles(picked.map((p) => p.file)); navigate('/start') }
+    const picked = await fromDrop(data, ANY)
+    if (picked.some((p) => !/\.(md|markdown|txt|png|jpe?g|gif|webp|svg)$/i.test(p.path))) { setClassFiles(picked); navigate('/start') }
     else send(picked)
   }
   const startImport = async () => { const f = await importApi.folder(); setImportOpen(true); navigate(`/w/${f.id}`) }
