@@ -51,7 +51,7 @@ export function FilesStep({ ws, onDone }: { ws?: string; onDone: (u: ClassUpload
       {!!left.length && (
         <p role="status" className="text-[13px] text-warn">
           {t('Left out, because an AI can’t read them: {names}', { names: left.slice(0, 6).join(', ') + (left.length > 6 ? ` +${left.length - 6}` : '') })}
-          {left.some((n) => /\.(xlsx?|ods|numbers)$/i.test(n)) && <> {t('Save spreadsheets as .csv to include them.')}</>}
+          {left.some((n) => /\.(xlsx?|ods|numbers)$/i.test(n)) && <span className="block">{t('Save spreadsheets as .csv to include them.')}</span>}
         </p>
       )}
       {!!files.length && (
