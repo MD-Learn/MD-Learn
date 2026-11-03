@@ -523,7 +523,7 @@ export default {
   'No term matches': 'Cap terme coincideix',
   'No definitions found': 'No s\'han trobat definicions',
   'Try another word.': 'Prova una altra paraula.',
-  'Terms written as “**term** is …”, “**term**: …” or in a Term | Meaning table appear here.': 'Aquí apareixen els termes escrits com a «**terme** és …», «**terme**: …» o en una taula Terme | Significat.',
+  'Terms your notes mark as definitions, write as “**term** is …”, or list in a Term | Meaning table appear here.': 'Aquí apareixen els termes que els teus apunts ressalten com a definició, escriuen com a «**terme** és …» o recullen en una taula Terme | Significat.',
   'Letters': 'Lletres',
   '{n} term defined in your documents|{n} terms defined in your documents': { one: '{n} terme definit als teus documents', other: '{n} termes definits als teus documents' },
   'Map · MDlearn Studio': 'Mapa · MDlearn Studio',

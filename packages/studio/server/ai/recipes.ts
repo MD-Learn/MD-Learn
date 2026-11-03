@@ -62,7 +62,7 @@ const NOTE_FOCUS: Record<string, string> = {
   questions: 'Strengthen the exercises: one or two in each section and a final Practice; wrong quiz options need feedback naming the misconception; vary the kinds.',
   clarity: 'Make the explanations clearer, with a concrete case and a worked example wherever one is missing, without losing anything the note says.',
   lint: FOCUS.lint,
-  marks: 'Mark what a skimming reader must not miss, with `<mark data-tone="…">`: key, definition, example, trap or rule. Phrases of at most 12 words, on no more than a sixth of a section, and change no other text. Leave a section unmarked if nothing stands out.',
+  marks: 'Mark what a skimming reader must not miss, with `<mark data-tone="…">`: key, definition, example, trap or rule. Phrases of at most 12 words, on no more than a sixth of a section, and change no other text. Leave a section unmarked if nothing stands out. A definition mark goes on the term alone, inside the sentence that says what it means: that sentence is its glossary entry.',
   all: 'Fix lint problems, make sure each section teaches with a concrete case, a worked example and an exercise (feedback on every wrong option), and add a visual where it shows what words can\'t.',
 }
 export interface LeechContext { cardKey: string; title: string; wrong: string[] }

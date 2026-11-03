@@ -94,6 +94,8 @@ you remember or guess. When you can't, draw instead: a diagram, a table, an anim
 
 Mark phrases, not sentences: at most 12 words, and no more than a sixth of a section. Colour is a signal, so a page that
 is all colour says nothing. Leave a section unmarked if nothing stands out. MDlearn explains the colours on the page.
+Put a `definition` mark on the term alone, inside the full sentence that says what it means: that sentence becomes
+the term's entry in the glossary, and what the reader sees on hovering the term anywhere else.
 
 ## An example
 

@@ -40,7 +40,7 @@ export default function GlossaryPage({ ws }: { ws: string }) {
       {res.error && <ErrorNote error={res.error} retry={() => res.refetch()} />}
       {res.data && total === 0 && !res.data.status.building && (
         <Empty icon={BookA} title={query ? t('No term matches') : t('No definitions found')}>
-          {query ? t('Try another word.') : t('Terms written as “**term** is …”, “**term**: …” or in a Term | Meaning table appear here.')}
+          {query ? t('Try another word.') : t('Terms your notes mark as definitions, write as “**term** is …”, or list in a Term | Meaning table appear here.')}
         </Empty>
       )}
       {groups.length > 1 && (

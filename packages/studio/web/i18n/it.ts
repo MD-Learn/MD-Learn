@@ -523,7 +523,7 @@ export default {
   'No term matches': 'Nessun termine corrisponde',
   'No definitions found': 'Nessuna definizione trovata',
   'Try another word.': 'Prova un\'altra parola.',
-  'Terms written as “**term** is …”, “**term**: …” or in a Term | Meaning table appear here.': 'I termini scritti come «**termine** è …», «**termine**: …» o in una tabella Termine | Significato compaiono qui.',
+  'Terms your notes mark as definitions, write as “**term** is …”, or list in a Term | Meaning table appear here.': 'Qui compaiono i termini che i tuoi appunti evidenziano come definizioni, scrivono come «**termine** è …» o elencano in una tabella Termine | Significato.',
   'Letters': 'Lettere',
   '{n} term defined in your documents|{n} terms defined in your documents': { one: '{n} termine definito nei tuoi documenti', other: '{n} termini definiti nei tuoi documenti' },
   'Map · MDlearn Studio': 'Mappa · MDlearn Studio',

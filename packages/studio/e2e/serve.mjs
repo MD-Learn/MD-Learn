@@ -52,6 +52,29 @@ Later, backscatter depends on roughness. See [the visuals](visuals.md) and [Pyth
 
 Backscatter again, now in a second section.
 `)
+// a note as a course writes it: Spanish, a marked definition, a list of definitions and an "explain" question
+const filler = 'Cada decisión real depende de muchas cantidades a la vez, y por eso necesitamos funciones que las tengan en cuenta todas juntas. '
+writeFileSync(join(root, 'demo/apuntes.md'), `# Optimización
+
+## Funciones
+
+Una <mark data-tone="definition">función de varias variables</mark> es una regla que toma varias entradas y devuelve un solo número.
+
+${filler.repeat(8)}
+
+- **Mínimo local**: los valores cercanos son mayores o iguales.
+- **Máximo local**: los valores cercanos son menores o iguales.
+
+## Explicar
+
+:::explain
+Explica con tus palabras qué es una función de varias variables.
+> - Toma varias entradas a la vez.
+> - Devuelve un solo número.
+:::
+
+${filler.repeat(4)}
+`)
 writeFileSync(join(root, 'demo/long-sheet.md'), `# Long sheet
 
 ## 1. First part

@@ -54,6 +54,13 @@ describe('glossary', () => {
     expect((await get<GlossaryResponse>('/glossary?loose=1&wait=1')).terms.map((t) => t.term)).toContain('Dwell time')
     expect((await get<GlossaryResponse>('/glossary?compact=1&loose=1&wait=1')).terms.map((t) => t.term)).not.toContain('Dwell time')
   })
+  it('shows the definitions a note marks, and its lists of definitions, without asking for looser matches', async () => {
+    const { root, get } = setup()
+    writeFileSync(join(root, 'C.md'), '# Optimización\n\nEl <mark data-tone="definition">dominio</mark> es el conjunto de entradas permitidas.\n\n- **Mínimo local**: los valores cercanos son mayores o iguales.\n- **Máximo local**: los valores cercanos son menores o iguales.\n')
+    const terms = (await get<GlossaryResponse>('/glossary?wait=1')).terms.map((t) => t.term)
+    expect(terms).toEqual(expect.arrayContaining(['dominio', 'Mínimo local', 'Máximo local']))
+    expect((await get<GlossaryResponse>('/glossary?compact=1&wait=1')).terms.map((t) => t.term)).toEqual(expect.arrayContaining(['dominio', 'Mínimo local']))
+  })
 })
 describe('links, backlinks and the map', () => {
   it('knows what a document links to and what links to it', async () => {
