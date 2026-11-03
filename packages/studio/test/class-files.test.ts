@@ -128,9 +128,10 @@ describe('a course from class files', () => {
   })
   it('keeps names Windows reserves or cannot store from breaking the folder', async () => {
     const { send } = setup()
-    const r = await (await send('/api/courses?name=Reserved', [['CON.md', strToU8('# x')], ['notes.md. ', strToU8('# y')]])).json() as ClassUpload
+    const r = await (await send('/api/courses?name=Reserved', [['CON.md', strToU8('# x')], ['notes.md. ', strToU8('# y')], ['a:b?.py', strToU8('\n'), 'week<1>/a:b?.py']])).json() as ClassUpload
     expect(r.files[0].path).toBe('sources/_CON.md')
     expect(r.files[1].path).toBe('sources/notes.md')
+    expect(r.files[2].path).toBe('sources/week_1_/a_b_.py') // a colon would be a hidden stream on Windows
   })
   it('never lets a file name lead out of the folder, and adds to a course without replacing anything', async () => {
     const { send, library } = setup()

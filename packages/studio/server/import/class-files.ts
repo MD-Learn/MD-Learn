@@ -20,7 +20,7 @@ const kindOf = (name: string): ClassFile['kind'] => {
 }
 /** Keep the file's own name, which is what the person knows it by, without anything that could make it a path. */
 const cleanName = (name: string) => {
-  const clean = name.replace(/[\\/]/g, '_').replace(/[\0-\x1f]/g, '').replace(/^\.+/, '').replace(/[. ]+$/, '').slice(-120) || 'file'
+  const clean = name.replace(/[\\/<>:"|?*]/g, '_').replace(/[\0-\x1f]/g, '').replace(/^\.+/, '').replace(/[. ]+$/, '').slice(-120) || 'file'
   return /^(con|prn|aux|nul|com\d|lpt\d)(\.|$)/i.test(clean) ? `_${clean}` : clean // Windows reserves these names
 }
 /** Where a file sat in a dropped folder, kept so code can still import by path: each folder cleaned like a name, at most four. */

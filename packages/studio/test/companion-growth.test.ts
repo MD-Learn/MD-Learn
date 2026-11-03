@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { mkdtempSync, cpSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
+import { randomUUID } from 'node:crypto'
 import { parseDocument, type DocBlock } from '@mdlearn/core'
+import { appendProgress } from '@mdlearn/core/node'
 import { createApp } from '../server/app'
 import { EventBus } from '../server/bus'
 import { settingsStore } from '../server/settings'
@@ -93,9 +95,14 @@ describe('the companion API', () => {
     await post(`/api/w/${h.id}/doc/check`, { path: 'funciones.md', widgetId, answer: { type: 'quiz', picked: [0] } })
     expect(grew(events).map((e) => [e.grew.kind, e.grew.gained, e.grew.title])).toEqual([['exercise', 2, 'Funciones']])
   })
-  it('counts a finished Study session once, with a point for each card up to a limit', async () => {
+  it('counts a finished Study session from the reviews recorded here, each review in one session only', async () => {
     const { post, h } = setup()
-    expect(await post(`/api/w/${h.id}/companion/session`, { session: '1700000000000', cards: 4 })).toMatchObject({ gained: 9 })
-    expect(await post(`/api/w/${h.id}/companion/session`, { session: '1700000000000', cards: 4 })).toMatchObject({ gained: 0 })
+    const start = Date.now() - 60_000, session = (at: number) => post(`/api/w/${h.id}/companion/session`, { session: String(at), cards: 25 })
+    expect(await session(start)).toMatchObject({ gained: 0 }) // nothing reviewed: what the browser says doesn't count
+    appendProgress(h.ws, { reviews: ['a/1', 'a/2', 'a/2', 'a/3', 'a/4'].map((key, i) => ({ id: randomUUID(), t: start + 1000 * (i + 1), key, rating: 3 as const })) })
+    expect(await session(start)).toMatchObject({ gained: 9 }) // 5, and one for each of the 4 cards
+    expect(await session(start)).toMatchObject({ gained: 0 }) // sent again
+    expect(await session(start - 1)).toMatchObject({ gained: 0 }) // another session, the same reviews
+    expect(await post(`/api/w/${h.id}/companion/session`, { session: '../x' })).toMatchObject({ error: { code: expect.any(String) } })
   })
 })

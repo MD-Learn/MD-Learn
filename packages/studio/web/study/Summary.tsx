@@ -20,7 +20,7 @@ export function Summary({ ws, state, onAgain }: { ws: string; state: SessionStat
   useEffect(() => { celebrate() }, [celebrate])
   const r = state.results
   // the companion grows with a finished review (once per session; the server decides the points)
-  useEffect(() => { if (r.length) void companionApi.session(ws, String(state.startedAt), r.length).catch(() => undefined) }, [ws, state.startedAt, r.length])
+  useEffect(() => { if (r.length) void companionApi.session(ws, String(state.startedAt)).catch(() => undefined) }, [ws, state.startedAt, r.length])
   const solid = r.filter((x) => x.rating === 3), shaky = r.filter((x) => x.rating === 2), missed = r.filter((x) => x.rating === 1)
   const mins = Math.max(1, Math.round((Date.now() - state.startedAt) / 6e4))
   const docOf = (lessonPath: string) => tree.data?.docs.find((d) => d.lessons.some((l) => l.path === lessonPath))

@@ -241,7 +241,8 @@ type Grown = CompanionView & { gained: number }
 export const companionApi = {
   update: (b: { growth?: boolean; name?: string }) => api.post<CompanionView>('/api/companion', b),
   read: (ws: string, doc: string) => api.post<Grown>(`/api/w/${ws}/companion/read`, { doc }),
-  session: (ws: string, session: string, cards: number) => api.post<Grown>(`/api/w/${ws}/companion/session`, { session, cards }),
+  /** A session finished; the server counts its cards from what was recorded. */
+  session: (ws: string, session: string) => api.post<Grown>(`/api/w/${ws}/companion/session`, { session }),
 }
 export const useOnboarding = () => useQuery({ queryKey: ['onboarding'], queryFn: () => api.get<{ tourDone: boolean }>('/api/onboarding'), staleTime: Infinity })
 export const helpApi = {

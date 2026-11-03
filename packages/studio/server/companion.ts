@@ -45,6 +45,20 @@ export function award(deps: Growth, ws: string, d: Deed): Grew | null {
   return grew
 }
 
+/**
+ * A finished Study session, counted from the reviews recorded here since it began, never from what the browser says.
+ * Each review counts in one session only: the companion remembers, per folder, up to when it has counted.
+ */
+export function awardSession(deps: Growth, ws: string, startedAt: number, reviews: readonly { t: number; key: string }[]): Grew | null {
+  const since = Math.max(startedAt, deps.settings.get().companion.reviewed[ws] ?? 0)
+  const done = reviews.filter((r) => r.t >= since)
+  if (!done.length) return null
+  const grew = award(deps, ws, { kind: 'session', key: `session:${ws}:${startedAt}`, title: '', cards: new Set(done.map((r) => r.key)).size })
+  const until = Math.max(...done.map((r) => r.t)) + 1
+  if (grew) deps.settings.update((s) => ({ ...s, companion: { ...s.companion, reviewed: { ...s.companion.reviewed, [ws]: until } } }))
+  return grew
+}
+
 export function companionView(settings: SettingsStore): CompanionView {
   const c = settings.get().companion, l = levelOf(c.points)
   return { growth: c.growth, points: c.points, ...l, stage: stageOf(l.level), log: c.log, ...(c.name ? { name: c.name } : {}) }

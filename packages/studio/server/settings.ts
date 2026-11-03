@@ -19,7 +19,9 @@ const SettingsSchema = z.object({
     counted: z.array(z.string()).default([]),
     log: z.array(z.object({ at: z.number(), kind: z.enum(['read', 'exercise', 'explain', 'session']), title: z.string(), points: z.number() })).default([]),
     name: z.string().max(40).optional(),
-  }).default({ growth: true, points: 0, counted: [], log: [] }),
+    /** Per folder, the time up to which Study reviews have been counted, so none counts twice. */
+    reviewed: z.record(z.string(), z.number()).default({}),
+  }).default({ growth: true, points: 0, counted: [], log: [], reviewed: {} }),
 })
 export type Settings = z.infer<typeof SettingsSchema>
 export const defaultSettingsFile = () => join(process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config'), 'mdlearn', 'studio.json')

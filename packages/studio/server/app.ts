@@ -14,7 +14,7 @@ import { extname, relative, join, dirname, posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
 import { compile, parseDocument, findSection, sectionText, isWidget, parseWebAnswer, checkStructured, locate, MAX_EXAM_QUESTIONS } from '@mdlearn/core'
-import { loadLessons, compileSource, searchCurriculum, loadDoc, loadGoals, saveGoals, inRoot } from '@mdlearn/core/node'
+import { loadLessons, compileSource, searchCurriculum, loadDoc, loadGoals, saveGoals, inRoot, loadProgress } from '@mdlearn/core/node'
 import { security, capsOf, clientOf, need, type SecurityOptions } from './security.js'
 import { Workspaces, UserError, browse, type Handle } from './workspaces.js'
 import { redactLesson, redactDoc, findDocWidget } from './redact.js'
@@ -28,7 +28,7 @@ import { ask, cancelAsk, EXPLAIN_QUESTION } from './ai/ask.js'
 import { ollamaStatus, ollamaBusy, ollamaDelete, ollamaModels } from './ai/ollama.js'
 import { MODEL_NAME, ModelDownloads, hardware, installedName, isEmbedding, localAi } from './ai/models.js'
 import { teachBack, type OneShot } from './ai/teachback.js'
-import { award, companionView, MIN_READ_WORDS } from './companion.js'
+import { award, awardSession, companionView, MIN_READ_WORDS } from './companion.js'
 import { PyodideStore } from './python.js'
 import { Knowledge } from './knowledge/index.js'
 import { AskService } from './ask/service.js'
@@ -740,8 +740,8 @@ export function createApp(deps: Deps): Hono {
   })
   app.post('/api/w/:ws/companion/session', need('study', o), async (c) => {
     const h = ws(c)
-    const { session, cards } = z.object({ session: z.string().min(1).max(64), cards: z.number().int().min(0).max(1000) }).parse(await c.req.json())
-    return c.json(grown(award(growth, h.id, { kind: 'session', key: `session:${h.id}:${session}`, title: '', cards })))
+    const { session } = z.object({ session: z.string().regex(/^\d{1,16}$/) }).parse(await c.req.json()) // when it began
+    return c.json(grown(awardSession(growth, h.id, Number(session), loadProgress(h.ws).reviews)))
   })
   app.post('/api/w/:ws/teachback', need('askLocal', o), async (c) => {
     const h = ws(c)
