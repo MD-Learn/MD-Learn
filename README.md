@@ -41,7 +41,8 @@ need `sudo`.
 1. **Say what you want to learn.** Open MDlearn, choose *Make a course*, and add any files you have: PDFs, PowerPoint or
    Word files, pictures, code, notebooks, data, or whole folders. MDlearn tells you what it could read from each one, and
    which files it left out. Files are optional.
-2. **Choose who writes the course.**
+2. **Say how you want it and who writes it.** Short or complete, from scratch or with a base, for an exam, to understand
+   or to look things up, and whether to include exercises, visuals, code or exam practice. Then pick who writes it:
    - *Claude, from here:* runs Claude Code on your computer, and you watch it work.
    - *Your coding assistant:* Claude Code, Codex, OpenCode or Pi, with one command to paste in a terminal.
    - *A chat:* ChatGPT, Claude or Gemini. MDlearn gives you the prompt, and you paste the answer back.

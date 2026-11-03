@@ -4,7 +4,7 @@ import type { Picked } from '../lib/upload'
 import { api, qs } from './client'
 import { currentLang } from '../i18n'
 import type { SessionInfo, WorkspaceSummary, Tree, DocResponse, LessonResponse, BrowseResult, StudyPlan, StudyItem, RecordResponse, SearchHit, Note, NoteAnchor, NoteColor, EnginesInfo, JobSummary, JobEvent, TodayResponse, GoalsInfo, FormulasResponse, GlossaryResponse, LinksResponse, MapResponse, DocSummary, AskStatus, AskEntry, SheetResponse, FileInfo, HistoryEntry, PreviewResponse, ImportResult, ChatCheck, Integrations, Batch, BatchCandidate, ConfidenceInfo, ExamPlan, ExamResult, TexResult, TexStatus, LocalAiInfo, ModelDownload, ScinetDetail, ScinetPaper, ScinetStatus, RelatedResponse, InboxItem, InboxList, CompanionView } from '../../shared/types'
-import type { Checked, MdNode, WebAnswer, Outcome } from '@mdlearn/core'
+import type { Checked, MdNode, WebAnswer, Outcome, CourseLength, CourseGoal, CourseExtra } from '@mdlearn/core'
 
 export const keys = {
   session: ['session'] as const,
@@ -148,13 +148,15 @@ export const batchApi = {
 export type JobDetail = JobSummary & { events: JobEvent[]; prompt: string }
 export const useJobs = (ws: string) => useQuery({ queryKey: keys.jobs(ws), queryFn: () => api.get<JobSummary[]>(`/api/w/${ws}/ai/jobs`) })
 export const useJob = (ws: string, id: string | undefined) => useQuery({ queryKey: keys.job(ws, id ?? ''), enabled: !!id, queryFn: () => api.get<JobDetail>(`/api/w/${ws}/ai/jobs/${id}`) })
+/** How the learner wants a course: the answers to the form before it is written. */
+export interface CourseShape { length?: CourseLength; goal?: CourseGoal; include?: CourseExtra[] }
 export type JobRequest =
   | { recipe: 'course.create'; doc: string }
   | { recipe: 'lesson.improve'; lesson: string; focus: 'questions' | 'clarity' | 'lint' | 'marks' | 'all' | 'leech'; note?: string; card?: { key: string; title: string; wrong: string[] } }
   | { recipe: 'custom'; request: string; scope?: string }
   | { recipe: 'course.change'; doc: string; request: string }
   | { recipe: 'course.translate'; doc: string; language: string }
-  | { recipe: 'course.class'; name: string; level?: 'beginner' | 'intermediate' | 'advanced'; language?: string; request?: string; web?: boolean }
+  | { recipe: 'course.class'; name: string; level?: 'beginner' | 'intermediate' | 'advanced'; language?: string; request?: string; web?: boolean } & CourseShape
   | { recipe: 'course.topic'; topic: string; level?: 'beginner' | 'intermediate' | 'advanced'; language?: string; minutes?: number; notes?: string; web?: boolean }
 export const jobsApi = {
   start: (ws: string, req: JobRequest) => api.post<JobSummary>(`/api/w/${ws}/ai/jobs`, req),

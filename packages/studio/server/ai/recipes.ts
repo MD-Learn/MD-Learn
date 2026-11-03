@@ -2,7 +2,7 @@
 // and any files the server prepares first (lesson scaffolds), all inside the job's undo snapshot.
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, relative, sep } from 'node:path'
-import { coursePrompt, pinIds } from '@mdlearn/core'
+import { coursePrompt, pinIds, type CourseExtra, type CourseGoal, type CourseLength } from '@mdlearn/core'
 import { findDoc, isStudyFile, lessonDirFor, scaffoldLessons, loadDoc, inRoot } from '@mdlearn/core/node'
 import { slugify } from '../import/common.js'
 import { SOURCES } from '../import/class-files.js'
@@ -155,7 +155,7 @@ export function translateCourse(h: Handle, doc: string, language: string): Recip
   return { ...change, spec: { ...change.spec, recipe: 'course.translate', title: `Translate into ${language}` } }
 }
 
-export interface ClassCourse { name: string; level?: string; language?: string; request?: string; web?: boolean }
+export interface ClassCourse { name: string; level?: string; language?: string; request?: string; web?: boolean; length?: CourseLength; goal?: CourseGoal; include?: CourseExtra[] }
 /** Turns for a course: more for more files, but a folder of code must not mean thousands. */
 const MAX_COURSE_TURNS = 400
 /** The class's own files in sources/, in any folder, leaving out what MDlearn made from them (text/, media/). */
@@ -170,7 +170,7 @@ export function classCourse(h: Handle, o: ClassCourse): Recipe {
     spec: {
       recipe: 'course.class', title: `Course: ${o.name.slice(0, 70)}`, maxTurns: Math.min(MAX_COURSE_TURNS, 60 + 40 * Math.max(1, files)), webSearch: o.web,
       writeScope: [h.root], keepOut: keptOut(h.root),
-      prompt: coursePrompt({ topic: o.name, level: o.level, language: o.language, request: o.request, web: o.web, save: 'write', ...(files ? { classFiles: SOURCES } : { here: true, folder: '.' }) }),
+      prompt: coursePrompt({ topic: o.name, level: o.level, language: o.language, request: o.request, web: o.web, length: o.length, goal: o.goal, include: o.include, save: 'write', ...(files ? { classFiles: SOURCES } : { here: true, folder: '.' }) }),
     },
   }
 }

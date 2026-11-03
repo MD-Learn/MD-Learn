@@ -42,12 +42,12 @@ test('a first-time user gets a course from a coding assistant, and studies it', 
   await page.getByRole('radio', { name: /My coding assistant/ }).click()
   await page.getByRole('button', { name: 'Get the folder ready' }).click()
   await page.getByRole('tab', { name: 'Codex' }).click()
-  const command = page.getByText(/codex "Make the MDlearn course on .+, following AGENTS\.md\."/)
+  const command = page.getByText(/codex "Make the MDlearn course on .+, following AGENTS\.md\. I know the basics\. It is to pass an exam\. End with exam practice\."/)
   await expect(command).toBeVisible()
   await page.getByRole('tab', { name: 'Pi' }).click()
   await expect(page.getByText(/pi "Make the MDlearn course/)).toBeVisible()
   await page.getByLabel('Language of the course').fill('Greek"; $(x)')
-  await expect(page.getByText(/following AGENTS\.md\. Write it in Greek x\."/)).toBeVisible()
+  await expect(page.getByText(/following AGENTS\.md\. Write it in Greek x\. /)).toBeVisible()
   await page.getByLabel('Language of the course').clear()
   const root = /cd "([^"]+)"/.exec(await page.locator('code').first().innerText())![1]
 
@@ -61,12 +61,37 @@ test('a first-time user gets a course from a coding assistant, and studies it', 
   await expect(page.getByText("What limits an engine's efficiency?")).toBeVisible({ timeout: 10_000 })
 })
 
-test('Claude can write the course from here', async ({ page }) => {
+test('Claude can write the course from here, the way you asked for it', async ({ page }) => {
   await bringFiles(page, fresh())
+  const form = page.getByRole('region', { name: 'How do you want your course?' })
+  await form.getByRole('radiogroup', { name: 'Length' }).getByRole('radio', { name: 'Short' }).click()
+  await form.getByRole('radiogroup', { name: 'Level' }).getByRole('radio', { name: 'From scratch' }).click()
+  await form.getByRole('radiogroup', { name: 'What for' }).getByRole('radio', { name: 'Understand it' }).click()
+  await form.getByRole('checkbox', { name: 'Code' }).check()
+  await form.getByLabel('Anything else? (optional)').fill('The exam covers chapter 3')
   await page.getByRole('radio', { name: /Claude, from here/ }).click()
-  await page.getByLabel('Anything it should know? (optional)').fill('The exam covers chapter 3')
+  const sent = page.waitForRequest((r) => r.url().endsWith('/jobs') && r.method() === 'POST')
   await page.getByRole('button', { name: 'Write the course' }).click()
+  expect((await sent).postDataJSON()).toMatchObject({ recipe: 'course.class', length: 'short', level: 'beginner', goal: 'understand', include: ['exercises', 'visuals', 'code', 'exam-practice'], request: 'The exam covers chapter 3' })
   await expect(page).toHaveURL(/studio\?job=/)
+})
+
+test('the answers go into the command and the chat ask, without exercises the course is for reading, and they are remembered', async ({ page }) => {
+  await bringFiles(page, fresh())
+  const form = page.getByRole('region', { name: 'How do you want your course?' })
+  await form.getByRole('checkbox', { name: 'Exercises' }).uncheck()
+  await expect(form.getByText('Without exercises the course is notes to read: it won’t appear in Study.')).toBeVisible()
+  await expect(form.getByRole('checkbox', { name: 'Exam practice' })).toBeDisabled()
+  await form.getByLabel('Anything else? (optional)').fill('Temas 1 a 4; "sin" $(nada)')
+  await page.getByRole('radio', { name: /My coding assistant/ }).click()
+  await page.getByRole('button', { name: 'Get the folder ready' }).click()
+  await expect(page.getByText(/claude "Make the MDlearn course on .+ No exercises, notes to read only\. Temas 1 a 4; sin \(nada\)"/)).toBeVisible()
+  await page.getByRole('radio', { name: /A chat/ }).click()
+  await expect(page.getByRole('blockquote')).toHaveText('Make an MDlearn course from the attached files. I know the basics. It is to pass an exam. No exercises, notes to read only. Temas 1 a 4; "sin" $(nada)')
+  await expect(page.getByRole('button', { name: 'Copy what to ask' })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('region', { name: 'How do you want your course?' }).getByRole('checkbox', { name: 'Exercises' })).not.toBeChecked()
+  await expect(page.getByRole('region', { name: 'How do you want your course?' }).getByLabel('Anything else? (optional)')).toHaveValue('')
 })
 
 test('a chat can write it too: the prompt is there, and so is the way back', async ({ page }) => {

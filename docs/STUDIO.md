@@ -456,7 +456,12 @@ that document as its notes. `web` on either recipe adds `WebSearch` and tells Cl
 returned; the query leaves the computer, and the box says so. `WebFetch` stays out, because an address can carry text out.
 
 **From a topic and class files.** The first page's *Make a course* opens `/start`: say what you want to learn, add any files,
-choose who writes it. With no files, `course.class` writes from the topic at the top of the same folder. `POST /api/courses?name=` (local only) makes a library folder, with or without files, and `POST /api/w/:ws/sources` adds
+say how you want it, choose who writes it. *How do you want your course?* (`web/start/ShapeForm.tsx`) asks the length (short,
+normal, complete), the level, what it is for (an exam, understanding, looking things up), what to include (exercises, visuals,
+code, exam practice) and anything else, and remembers all but the last in the browser. Claude gets the answers as `length`,
+`goal`, `include` and `level` (`coursePrompt` turns each into one line); a coding assistant gets them as plain words in its
+command (`plainText` keeps letters, numbers and plain punctuation, so nothing in them is read by a shell); a chat gets a line to
+copy. Without exercises the notes are written without `study: true`, so they are for reading and stay out of Study. With no files, `course.class` writes from the topic at the top of the same folder. `POST /api/courses?name=` (local only) makes a library folder, with or without files, and `POST /api/w/:ws/sources` adds
 to one (100 MB a file, 400 MB at a time, 100 files). Originals go to `sources/`, in the folders of a dropped folder (each folder
 name cleaned like a file name, at most four deep; a `paths` field beside each file says where it sat). The browser takes what an AI
 can read (documents, pictures, text, code, notebooks, data; `CLASS_ACCEPT` in `web/lib/upload.ts`) and names what it leaves out
