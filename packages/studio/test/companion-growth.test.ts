@@ -9,7 +9,7 @@ import { createApp } from '../server/app'
 import { EventBus } from '../server/bus'
 import { settingsStore } from '../server/settings'
 import { Workspaces } from '../server/workspaces'
-import { award, levelOf, stageOf, MAX_COUNTED } from '../server/companion'
+import { award, hashed, levelOf, stageOf, MAX_COUNTED } from '../server/companion'
 import type { CompanionView, ServerEvent } from '../shared/types'
 
 const fixture = resolve(__dirname, '../../core/test/fixtures/curriculum')
@@ -62,13 +62,15 @@ describe('growing', () => {
   })
   it('remembers only the most recent things it counted, and the last twenty in its log', () => {
     const { settings, bus } = setup()
-    for (let i = 0; i < MAX_COUNTED + 5; i++) award({ settings, bus }, 'w', { kind: 'exercise', key: `ex:${i}`, title: `Q${i}` })
+    // as if it had already counted ex:0 … ex:4999 (each award writes the settings, so 5000 real ones are slow on CI)
+    settings.update((s) => ({ ...s, companion: { ...s.companion, counted: Array.from({ length: MAX_COUNTED }, (_, i) => hashed(`ex:${i}`)) } }))
+    for (let i = MAX_COUNTED; i < MAX_COUNTED + 25; i++) award({ settings, bus }, 'w', { kind: 'exercise', key: `ex:${i}`, title: `Q${i}` })
     const c = settings.get().companion
     expect(c.counted).toHaveLength(MAX_COUNTED)
     expect(c.log).toHaveLength(20)
-    expect(c.points).toBe(2 * (MAX_COUNTED + 5))
-    expect(award({ settings, bus }, 'w', { kind: 'exercise', key: 'ex:6', title: '' })).toBeNull() // still remembered
-    expect(award({ settings, bus }, 'w', { kind: 'exercise', key: 'ex:0', title: '' })).not.toBeNull() // forgotten long ago
+    expect(c.points).toBe(2 * 25)
+    expect(award({ settings, bus }, 'w', { kind: 'exercise', key: 'ex:30', title: '' })).toBeNull() // still remembered
+    expect(award({ settings, bus }, 'w', { kind: 'exercise', key: 'ex:0', title: '' })).not.toBeNull() // the oldest 25 were let go
   })
 })
 

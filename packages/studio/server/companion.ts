@@ -28,7 +28,7 @@ export function levelOf(points: number): { level: number; from: number; to: numb
   return { level, from: need(level - 1), to: need(level) }
 }
 export const stageOf = (level: number) => STAGE_FROM.filter((l) => level >= l).length
-const hashed = (key: string) => createHash('sha256').update(key).digest('base64url').slice(0, 16)
+export const hashed = (key: string) => createHash('sha256').update(key).digest('base64url').slice(0, 16)
 
 export interface Growth { settings: SettingsStore; bus: EventBus }
 export interface Deed { kind: GrowthKind; key: string; title: string; cards?: number }
