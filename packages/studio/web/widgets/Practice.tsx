@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { RotateCcw } from 'lucide-react'
 import type { Checked, PosedWidget, WebAnswer } from '@mdlearn/core'
 import { WidgetView } from './WidgetView'
+import { AiCorrection, type CorrectWith } from './AiCorrection'
 import { Verdict } from './Verdict'
 import { emptyDraft, prepareAnswer, ready, selfSubmitting, type Draft } from './draft'
 import { Button } from '../ui/primitives'
@@ -11,7 +12,7 @@ import { t } from '../i18n'
 const kindName = (type: PosedWidget['type']) => ({ quiz: t('Question'), cloze: t('Fill in the gaps'), order: t('Put in order'), explain: t('Explain'), steps: t('Worked example'), code: t('Exercise'),
   match: t('Match the pairs'), sort: t('Sort into groups'), speed: t('Speed round') } satisfies Record<PosedWidget['type'], string>)[type]
 export const kindLabel = (w: PosedWidget) => (w.type === 'match' && w.memory ? t('Memory game') : kindName(w.type))
-export function Practice({ widget, check }: { widget: PosedWidget; check: (a: WebAnswer) => Promise<Checked> }) {
+export function Practice({ widget, check, correct }: { widget: PosedWidget; check: (a: WebAnswer) => Promise<Checked>; correct?: CorrectWith }) {
   const [draft, setDraft] = useState<Draft>(() => emptyDraft(widget))
   const [result, setResult] = useState<Checked | null>(null)
   const [skipped, setSkipped] = useState(false)
@@ -33,6 +34,7 @@ export function Practice({ widget, check }: { widget: PosedWidget; check: (a: We
       {!worked && (result ? (
         <>
           <Verdict result={result} skipped={skipped} />
+          {correct && widget.type === 'explain' && !skipped && draft.type === 'text' && <AiCorrection at={correct} widgetId={widget.id} text={draft.text} />}
           <Button className="mt-4" size="sm" variant="ghost" icon={RotateCcw} onClick={() => { setResult(null); setSkipped(false); setDraft(emptyDraft(widget)) }}>{t('Try again')}</Button>
         </>
       ) : (

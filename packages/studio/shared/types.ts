@@ -95,7 +95,20 @@ export type ServerEvent =
   | { type: 'ai.done'; ws: string; doc: string; noteId: string; messageId: string; error?: string }
   | { type: 'job'; ws: string; job: JobSummary }
   | { type: 'job.event'; ws: string; jobId: string; event: JobEvent }
+  | { type: 'companion.grew'; ws: string; grew: Grew }
   | { type: 'resync' }
+
+// ---- the companion's growth (server/companion.ts)
+export type GrowthKind = 'read' | 'exercise' | 'explain' | 'session'
+/** One thing counted: what it was, the points it gave, and where the companion is now. */
+export interface Grew { kind: GrowthKind; title: string; gained: number; points: number; level: number; levelUp: boolean }
+export interface CompanionView {
+  growth: boolean; points: number; level: number
+  /** Which of the five looks it has, and the points at which this level began and the next begins. */
+  stage: number; from: number; to: number
+  log: { at: number; kind: GrowthKind; title: string; points: number }[]
+  name?: string
+}
 
 export interface ApiError { error: { code: string; message: string } }
 
@@ -234,7 +247,7 @@ export interface ScinetDetail extends ScinetPaper { authors: string[]; venue: st
 export interface Integrations { prompt: string; pluginDir?: string; skillZip: boolean; guide: boolean }
 /** One class file brought into a course: where it is, what text came out of it, and anything the person should know. */
 export interface ClassFile {
-  name: string; path: string; kind: 'word' | 'slides' | 'pdf' | 'picture' | 'text' | 'other'
+  name: string; path: string; kind: 'word' | 'slides' | 'pdf' | 'picture' | 'text' | 'code' | 'data' | 'other'
   /** The Markdown made from it. */ text?: string
   slides?: number; pictures?: number; skipped?: number; equations?: number
   problem?: 'old-format' | 'unknown-type' | 'no-text' | 'unreadable'

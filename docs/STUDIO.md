@@ -26,7 +26,7 @@ packages/studio/
     knowledge/       per-folder index (formulas, defined terms, links, text chunks), kept current by the watcher
     notes.ts         notes + AI threads in <folder>/.mdlearn/notes/<doc>.json
     insert.ts        insert a block after a passage (explicit "Insert" action; refuses stale views)
-    ai/              ollama.ts · ask.ts · judge.ts · visualise.ts (local model)
+    ai/              ollama.ts · ask.ts · teachback.ts · visualise.ts (local model)
                      claude.ts · jobs.ts · guard.ts · recipes.ts · fake.ts (course jobs)
   sandbox/           sim.html + sim.js: the simulation runner · py.html + py.js: the Python runner · html.html + html.js:
                      the :::html runner (each its own origin and CSP)
@@ -62,6 +62,7 @@ atomically, so the CLI, the MCP tutor and the Studio can study at the same time 
 | Local AI | `GET /api/ai/local` (Ollama, this computer, installed and recommended models, the download) · `POST /api/ai/local/pull` · `…/cancel` · `…/choose` · `…/delete` (`{ model }`) |
 | Folders | `GET /api/workspaces` · `POST /api/workspaces/open` · `GET /api/fs/browse` · `POST /api/workspaces/upload` · `POST /api/workspaces/tutorial` (copy the tutorial into the library and open it; `reset` starts over) |
 | Help | `GET/POST /api/onboarding` (welcome tour seen) · `GET /api/help` (the Help document) |
+| Companion | `GET/POST /api/companion` (growth on or off, its name) · `POST /api/w/:ws/companion/read` (a note read to the end) · `POST /api/w/:ws/companion/session` (a finished review) · growth arrives as `companion.grew` events |
 | Reading | `GET /api/w/:ws/tree` · `doc?path=` (ETag) · `doc/section` · `raw` · `asset` · `lesson` · `search?q=` · `POST compile` · `POST doc/check` (practice) |
 | Today & goals | `GET today` · `GET/POST goals` (daily goal, deadlines, restore suspended cards) · `POST cards/suspend` |
 | Quick cards | `GET doc/passage?path&quote` (the passage's source) · `POST cards` (adds a card to the document's my-cards lesson) |
@@ -73,7 +74,7 @@ atomically, so the CLI, the MCP tutor and the Studio can study at the same time 
 | Import & export | `POST import/web` · `import/file` (multipart: pdf-fast, pdf-quality, anki, notebook) · `GET export/anki?scope=` · `GET sheet?path` · `POST sheet/ideas` |
 | Batch courses | `GET ai/batch/candidates` · `POST ai/batches` · `GET ai/batches[/:id]` · `POST ai/batches/:id/stop` · `resume` |
 | Library | `GET formulas?q&doc&limit` · `glossary?q&compact` · `links?path` · `doc/summary?path` · `map` · `knowledge/status` |
-| Study | `GET study/queue` (`?widgets=` for chosen questions) · `study/item` · `POST study/check` · `study/hint` · `study/record` · `study/judge` · `GET study/report` (with the confidence check) · `study/map` · `GET exam/plan?count&doc` · `POST exam/grade` · `POST teachback` · `GET study/pack?days=1\|3\|7` · `POST study/sync` |
+| Study | `GET study/queue` (`?widgets=` for chosen questions) · `study/item` · `POST study/check` · `study/hint` · `study/record` · `GET study/report` (with the confidence check) · `study/map` · `GET exam/plan?count&doc` · `POST exam/grade` · `POST teachback` · `GET study/pack?days=1\|3\|7` · `POST study/sync` |
 | Notes & local AI | `GET/POST notes` · `POST notes/:id/update` · `notes/:id/delete` · `POST ai/ask` · `ai/cancel` · `ai/visualise` · `POST files/insert` |
 | Course jobs | `GET/POST ai/jobs` · `GET ai/jobs/:id` · `POST ai/jobs/:id/cancel` · `undo` · `followup` |
 | Live | `GET /api/events?ws=` (SSE: fs/tree/progress/notes changes, AI deltas, job events; replay by `Last-Event-ID`) |
@@ -218,6 +219,13 @@ no tools, no MCP, run from the temp directory). Back come each idea covered / pa
 learner's words, what to correct, and one question a beginner would ask next. Ideas the model skipped count
 as missing; nothing is graded or scheduled. The draft is kept in the browser.
 
+**Correct with AI.** The same feedback for one "explain in your own words" question: after *Check* in a note,
+a lesson page or a Study session, *Correct with AI* (local AI or Claude, `widgets/AiCorrection.tsx`) sends the
+answer with `widget` (and `doc` in a note) to `POST teachback`. The server finds the question itself, so its key
+ideas never reach the browser, and compares the answer with them and the text of its section (or card). A short
+answer is fine here; the button waits for three words. In Study, *Use this* takes its suggestion as your rating.
+It never changes the schedule.
+
 **Study offline** (`/offline/:ws`, outside the main layout). For a phone on the LAN, where plain HTTP allows no
 service worker: `study/pack` returns the cards due by the end of 1, 3 or 7 days and the new ones for those days
 (code exercises left out: no Python offline), their lessons trimmed to those cards *with* the answers, and their
@@ -271,9 +279,12 @@ unchanged files are skipped by mtime) and updated by the file watcher.
 
 - **Formulas** — every display formula in the folder, searchable by words and TeX, filtered by document;
   copy the TeX or open it in its section.
-- **Glossary** — terms defined as "**term** is …", "**term**: …", "**term** — …", in `Term | Meaning` tables
-  and list items, A to Z with where each is defined. The heuristics favour precision (instructions, citations,
-  file names and one-liners are dropped); a wrong entry costs a glance.
+- **Glossary** — terms a note marks with `<mark data-tone="definition">` (the sentence around the mark is the
+  definition, carried across a formula that interrupts it), terms defined as "**term** is …" (in English,
+  Italian, Spanish, French and Catalan), lists whose every item is "**term**: …", and `Term | Meaning` tables,
+  A to Z with where each is defined. A lone "**term**: …" line is shown only with *Include looser matches*,
+  because it is as often a heading. The heuristics favour precision (instructions, citations, numbered labels
+  and file names are dropped); a wrong entry costs a glance.
 - **Hovers** — in the reader each defined term is underlined once per document (dotted) with its definition on
   hover or focus; everyday short words are left alone. Links to other documents show a card (what it is, how
   well you remember it). Both can be switched off with the button in the top bar.
@@ -445,14 +456,24 @@ that document as its notes. `web` on either recipe adds `WebSearch` and tells Cl
 returned; the query leaves the computer, and the box says so. `WebFetch` stays out, because an address can carry text out.
 
 **From a topic and class files.** The first page's *Make a course* opens `/start`: say what you want to learn, add any files,
-choose who writes it. With no files, `course.class` writes from the topic at the top of the same folder. `POST /api/courses?name=` (local only) makes a library folder, with or without files, and `POST /api/w/:ws/sources` adds
-to one (100 MB a file, 400 MB at a time, 100 files). Originals go to `sources/`. `server/import/office.ts` turns `.pptx` (slide
+say how you want it, choose who writes it. *How do you want your course?* (`web/start/ShapeForm.tsx`) asks the length (short,
+normal, complete), the level, what it is for (an exam, understanding, looking things up), what to include (exercises, visuals,
+code, exam practice) and anything else, and remembers all but the last in the browser. Claude gets the answers as `length`,
+`goal`, `include` and `level` (`coursePrompt` turns each into one line); a coding assistant gets them as plain words in its
+command (`plainText` keeps letters, numbers and plain punctuation, so nothing in them is read by a shell); a chat gets a line to
+copy. Without exercises the notes are written without `study: true`, so they are for reading and stay out of Study. With no files, `course.class` writes from the topic at the top of the same folder. `POST /api/courses?name=` (local only) makes a library folder, with or without files, and `POST /api/w/:ws/sources` adds
+to one (100 MB a file, 400 MB at a time, 100 files). Originals go to `sources/`, in the folders of a dropped folder (each folder
+name cleaned like a file name, at most four deep; a `paths` field beside each file says where it sat). The browser takes what an AI
+can read (documents, pictures, text, code, notebooks, data; `CLASS_ACCEPT` in `web/lib/upload.ts`) and names what it leaves out
+(video, audio, archives, programs, with a hint to save spreadsheets as `.csv`). Code and data are kept as they are for the AI to
+read itself. `server/import/office.ts` turns `.pptx` (slide
 order, titles, bullets, tables, speaker notes, pictures; `fflate` + `linkedom`) and `.docx` (mammoth, then Turndown) into
 `sources/text/<name>.md` with pictures in `sources/media/<name>/`; a PDF goes through the quick reader.
 Each file reports what was read. An equation can't come through as text, so it is counted and the person is told: a PowerPoint
 keeps its picture of the equation, a Word file doesn't. Old `.ppt`/`.doc` files are kept, with a note to save them in the new format;
 one file that can't be read never stops the others. The `course.class` job writes `course.md` and the lessons at the top of the
-folder (`coursePrompt` with `classFiles`), and its `keepOut` stops it changing `sources/`, `AGENTS.md` or `CLAUDE.md`.
+folder (`coursePrompt` with `classFiles`, which tells it to read code, data and photos of exams or whiteboards itself), with 40
+turns a file up to 400, and its `keepOut` stops it changing `sources/`, `AGENTS.md` or `CLAUDE.md`.
 
 **Changing a started course.** Progress belongs to `lessonId/cardId`, and a card's id is its title's slug unless the heading says
 `{#id}`, so a renamed card would silently start over. `core/src/revise.ts` guards that: `pinIds` writes ids into a lesson, `courseChanges`
@@ -481,8 +502,20 @@ panel where you can ask anything about your course (`web/companion/AskBox.tsx`),
 got wrong), so it can say what to review; the page you are on; and the last three questions, so a follow-up can name nothing. When your course does
 not cover a question it says so, then answers from general knowledge and says that part is not from your course, where the Ask page declines. The panel
 is not modal: Esc closes it, and the conversation stays until you start a new one or reload. It hides on Study and Mock exam until the session ends,
-stays off phones, and always says in words what it shows. There is no hunger, currency, sound, or reward for time in the app: the research found agents help a little and virtual pets mixed at best,
-and that engagement without a link to study didn't raise learning. Keep one or remove it after a week of use; it's one folder and one commit.
+stays off phones, and always says in words what it shows, in your accent colour. There is no hunger, sound, or reward for time in the app: the research found agents help a little and virtual pets mixed at best,
+and that engagement without a link to study didn't raise learning.
+
+**Your companion grows** (optional; *Let it grow* on its page or in *Settings → Appearance*). It gains points for things done, and
+`server/companion.ts` alone decides how many, so the browser can't: 10 for a note read to the end, 2 for a question in a note or a
+lesson page (right or wrong), 5 for an explanation corrected by an AI (once a day for each question or topic), and 5 plus 1 a card
+for a finished review (30 at most). Each thing counts once, kept as short hashes in the settings (the last 5000), so it is the same
+companion in every folder. "Read to the end" (`web/reader/useFinishedReading.ts`) means the end of the note has been on screen
+and you spent a third of its reading time on it (20 s to 4 min), counted only while the tab is visible and you aren't away; notes
+under 150 words and anything in `sources/` don't count. The next level needs 25·n·(n+1)/2 points in all (25, 75, 150 …), and its
+look changes at levels 3, 5, 8 and 12: the pixel creature grows a tuft, feet, arms and a crown; the orb gets denser and bolder.
+When it grows it says why beside it; a note read and a new level also show as a notice. Its page (`/w/:ws/companion`) shows the
+level, what makes it grow and the last twenty things, and lets you name it or stop it. Points are never lost, and turned off it
+counts nothing.
 
 **Coding assistants.** A folder can carry the instructions, so Codex, OpenCode, Pi and Claude Code need no setup:
 `mdlearn agents [folder]`, or *Get this folder ready for my AI* in the palette (`POST /api/w/:ws/agents/prepare`), writes

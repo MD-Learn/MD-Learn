@@ -101,6 +101,13 @@ describe('what a course is, for the AI', () => {
     expect(p).not.toContain('.learn.md')
     expect(p).not.toContain('cards each')
   })
+  it('tells the AI to read code, data and pictures among the class files itself, in every folder', () => {
+    const p = coursePrompt({ topic: 'Python', classFiles: 'sources' })
+    expect(p).toContain('in all its folders')
+    expect(p).toContain('Code, notebooks, data and pictures are there as they are')
+    expect(p).toContain('A photo of an exam, a worksheet or a whiteboard is material too')
+    expect(p).toMatch(/runnable/)
+  })
   it('says the same from class files', () => {
     const p = coursePrompt({ topic: 'Marketing', classFiles: 'sources' })
     expect(p).toContain('`01-slug.md`')
@@ -116,6 +123,40 @@ describe('what a course is, for the AI', () => {
   it('takes as long as the subject needs, unless a length is given', () => {
     expect(coursePrompt({ topic: 'Marketing' })).toContain('as long as the subject needs')
     expect(coursePrompt({ topic: 'Marketing', minutes: 60 })).toContain('about 60 minutes')
+  })
+  it('follows how the learner wants the course, from files or a topic', () => {
+    for (const classFiles of ['sources', undefined]) {
+      const short = coursePrompt({ topic: 'Optimisation', classFiles, here: true, folder: '.', length: 'short', goal: 'exam', include: ['exercises', 'code', 'exam-practice'] })
+      expect(short).toContain('Keep it short: the essentials only')
+      expect(short).toContain('preparing for an exam')
+      expect(short).toContain('runnable code blocks')
+      expect(short).toContain('End with a practice note of mixed questions')
+      expect(short).toContain('Use visuals only where an idea can’t be understood without one')
+      const full = coursePrompt({ topic: 'Optimisation', classFiles, here: true, folder: '.', length: 'full', goal: 'understand', include: ['exercises', 'visuals'] })
+      expect(full).toContain('Make it complete')
+      expect(full).toContain('intuition and examples before the formal statements')
+      expect(full).not.toContain('runnable code blocks that show')
+      expect(full).not.toContain('End with a practice note')
+      expect(coursePrompt({ topic: 'Optimisation', classFiles, goal: 'reference' })).toContain('summary tables')
+    }
+    // with no time given, short means about 45 minutes
+    expect(coursePrompt({ topic: 'Optimisation', length: 'short' })).toContain('about 45 minutes')
+  })
+  it('writes notes to read, outside Study, when exercises are left out', () => {
+    for (const classFiles of ['sources', undefined]) {
+      const p = coursePrompt({ topic: 'Optimisation', classFiles, include: ['visuals'] })
+      expect(p).toContain('Write no exercises')
+      expect(p).not.toContain('`study: true`')
+    }
+  })
+  it('says nothing more when no answers are given', () => {
+    const p = coursePrompt({ topic: 'Optimisation', classFiles: 'sources' })
+    expect(p).not.toMatch(/Keep it short|Make it complete|preparing for an exam|Write no exercises|End with a practice note/)
+  })
+  it('says what the level means', () => {
+    expect(coursePrompt({ topic: 'X', classFiles: 'sources', level: 'beginner' })).toContain('starts from scratch')
+    expect(coursePrompt({ topic: 'X', level: 'intermediate' })).toContain('has the basics')
+    expect(coursePrompt({ topic: 'X', level: 'advanced' })).toContain('skip the basics')
   })
   it('mentions the web only when the learner allowed it', () => {
     expect(coursePrompt({ topic: 'Marketing' })).not.toContain('WebSearch')

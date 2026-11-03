@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.8.0 — 2026-11-03
+
+**Correct an explanation with AI.** After *Check* on an "explain in your own words" question, in a note, a lesson page
+or a Study session, *Correct with AI* compares your answer with the question's key ideas and its section, using the local
+AI or Claude. You see which ideas you covered, half covered or missed, what to correct and a question to go on with. In
+Study, *Use this* takes its suggestion as your rating. It never changes your schedule. The old Study-only button, which
+needed the local AI, is gone.
+
+**Your companion can grow.** It gains points for what you finish: 10 for a note read to the end, 2 for a question tried in
+your notes (right or wrong), 5 for an explanation corrected by an AI, and 5 plus 1 a card for a finished review. It says
+why beside it, and when it reaches a new level its look changes, up to five looks. It wears your accent colour, and it has
+its own page in the sidebar where you can name it, see what it counted and stop it growing. Points are never lost, each
+thing counts once, and time in the app counts for nothing. The server decides every point, from what it recorded.
+
+**The glossary finds your definitions.** It now reads the definitions marked in notes, sentences like "X es…", "X è…",
+"X est…" and "X és…" as well as "X is…", and lists of definitions, so a course written in Spanish or Italian no longer
+shows an empty glossary. A definition cut by a formula keeps its formula and the rest of the sentence.
+
+**Make a course from any file an AI can read.** Code, notebooks, data, text and SVG pictures now go in with PDFs, slides,
+Word files and pictures, and a dropped folder keeps its folders. Video, audio, archives and programs are left out, and the
+page says which. The AI is told to read code, data and photos of exams or whiteboards itself.
+
+**Say how you want your course.** Before anyone writes it: short, normal or complete; from scratch, with a base or
+advanced; to pass an exam, to understand or to look things up; and whether to include exercises, visuals, code or exam
+practice. Claude, a coding assistant's command and a chat's ask all carry the answers, and they are remembered for the
+next course. Without exercises the notes are for reading and stay out of Study.
+
 ## 1.7.1 — 2026-11-02
 
 **Studio opens the same way from anywhere.** `mdlearn studio` without a folder now starts on its home page, with your

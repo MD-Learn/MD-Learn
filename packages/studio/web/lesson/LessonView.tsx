@@ -25,6 +25,7 @@ export default function LessonView({ ws }: { ws: string }) {
     cx: { linkTo: (url) => linkTarget(ws, path, url), imageSrc: (url) => assetUrl(ws, path, url), runPython: true },
     // practice through the study API (practice: true is never logged or scheduled)
     check: async (widgetId: string, answer: WebAnswer) => (await api.post<{ checked: Checked }>(`/api/w/${ws}/study/check`, { widgetId, answer, practice: true })).checked,
+    correct: { ws },
   }), [ws, path])
   if (!path) return <Empty icon={GraduationCap} title={t('No lesson selected')} />
   if (lesson.isLoading) return <div className="p-10"><Spinner label={t('Opening lesson')} /></div>

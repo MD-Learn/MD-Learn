@@ -1,10 +1,17 @@
 import { describe, it, expect } from 'vitest'
-import { goTo, plainWords, shellPath } from '../web/lib/shell'
+import { goTo, plainText, plainWords, shellPath } from '../web/lib/shell'
 
 describe('a language in a pasted command', () => {
   for (const name of ['Español', 'Português do Brasil', 'العربية', 'हिन्दी', '日本語']) it(`keeps ${name}`, () => expect(plainWords(name)).toBe(name))
   it('keeps nothing a shell could read', () => {
     expect(plainWords('Greek"; x $(y) `z` !\\')).toBe('Greek x y z')
+  })
+})
+
+describe('wishes in a pasted command', () => {
+  it('keeps numbers and ordinary punctuation, and nothing a shell could read', () => {
+    expect(plainText('El examen cubre los temas 1 a 4, ¿vale? (sobre todo problemas).')).toBe('El examen cubre los temas 1 a 4, ¿vale? (sobre todo problemas).')
+    expect(plainText('a"; echo ~ $(y) `z` !x %PATH% ^& | > <\n\\')).toBe('a ; echo (y) z x PATH') // brackets are plain text once the $ is gone
   })
 })
 

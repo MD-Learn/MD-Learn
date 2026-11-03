@@ -25,9 +25,10 @@ function setup() {
   const workspaces = new Workspaces(settings), bus = new EventBus()
   const app = createApp({ version: 't', security: { port: 1, lan: false, lanFull: false, token: 'x'.repeat(43) }, settings, workspaces, bus, serverId: 't', jobs: new JobManager(bus), engine: () => new FakeEngine(0) })
   const headers = { host: 'localhost:1', 'x-mdl': '1' }
-  const send = async (path: string, files: [string, Uint8Array][]) => {
+  /** Files as a browser sends them; a third item is the path inside a dropped folder. */
+  const send = async (path: string, files: ([string, Uint8Array] | [string, Uint8Array, string])[]) => {
     const form = new FormData()
-    for (const [name, bytes] of files) form.append('files', new File([bytes as BlobPart], name))
+    for (const [name, bytes, at] of files) { form.append('files', new File([bytes as BlobPart], name)); form.append('paths', at ?? name) }
     return app.request(path, { method: 'POST', body: form, headers })
   }
   return { app, headers, library, workspaces, send }
@@ -109,11 +110,28 @@ describe('a course from class files', () => {
       ['old slides.ppt', 'old-format'], ['broken.docx', 'unreadable'], ['fake.pdf', 'unreadable'], ['thing.xyz', 'unknown-type'], ['ok.pptx', undefined],
     ])
   })
+  it('keeps code, notebooks and data as they are, for the AI to read', async () => {
+    const { send } = setup()
+    const r = await (await send('/api/courses?name=Code', [['gd.py', strToU8('print(1)\n')], ['lab.ipynb', strToU8('{"cells":[]}')], ['data.csv', strToU8('x,y\n1,2\n')], ['plot.svg', strToU8('<svg/>')], ['notes.tex', strToU8('\\section{A}')]])).json() as ClassUpload
+    expect(r.files.map((f) => [f.name, f.kind, f.problem])).toEqual([['gd.py', 'code', undefined], ['lab.ipynb', 'code', undefined], ['data.csv', 'data', undefined], ['plot.svg', 'picture', undefined], ['notes.tex', 'text', undefined]])
+  })
+  it('keeps the folders of a dropped folder, cleaned and at most four deep, and the AI is told about them', async () => {
+    const { send, app, headers } = setup()
+    const r = await (await send('/api/courses?name=Project', [
+      ['main.py', strToU8('import util\n'), 'proyecto/main.py'], ['util.py', strToU8('x = 1\n'), 'proyecto/lib/util.py'],
+      ['deep.py', strToU8('\n'), 'a/b/c/d/e/f/deep.py'], ['up.py', strToU8('\n'), '../../up.py'],
+    ])).json() as ClassUpload
+    expect(r.files.map((f) => f.path)).toEqual(['sources/proyecto/main.py', 'sources/proyecto/lib/util.py', 'sources/a/b/c/d/deep.py', 'sources/up.py'])
+    const job = await (await app.request(`/api/w/${r.id}/ai/jobs`, { method: 'POST', body: JSON.stringify({ recipe: 'course.class', name: 'Project' }), headers: { ...headers, 'content-type': 'application/json' } })).json() as JobSummary
+    const full = await (await app.request(`/api/w/${r.id}/ai/jobs/${job.id}`, { headers })).json() as { prompt: string }
+    expect(full.prompt).toContain('from the class files in `sources/`') // files only in sub-folders still make a course from the files
+  })
   it('keeps names Windows reserves or cannot store from breaking the folder', async () => {
     const { send } = setup()
-    const r = await (await send('/api/courses?name=Reserved', [['CON.md', strToU8('# x')], ['notes.md. ', strToU8('# y')]])).json() as ClassUpload
+    const r = await (await send('/api/courses?name=Reserved', [['CON.md', strToU8('# x')], ['notes.md. ', strToU8('# y')], ['a:b?.py', strToU8('\n'), 'week<1>/a:b?.py']])).json() as ClassUpload
     expect(r.files[0].path).toBe('sources/_CON.md')
     expect(r.files[1].path).toBe('sources/notes.md')
+    expect(r.files[2].path).toBe('sources/week_1_/a_b_.py') // a colon would be a hidden stream on Windows
   })
   it('never lets a file name lead out of the folder, and adds to a course without replacing anything', async () => {
     const { send, library } = setup()

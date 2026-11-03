@@ -5,6 +5,7 @@ import { ChevronRight, Link2, TriangleAlert } from 'lucide-react'
 import type { Checked, DocBlock, MdNode, PosedWidget, WebAnswer } from '@mdlearn/core'
 import { Prose, Inline, type ProseContext } from '../prose/Prose'
 import { Practice } from '../widgets/Practice'
+import type { CorrectWith } from '../widgets/AiCorrection'
 import { VisualBlock, VISUAL_TYPES } from '../visuals/VisualBlock'
 import { VideoBlock, type Checkpoint } from '../visuals/VideoBlock'
 import { t } from '../i18n'
@@ -23,6 +24,8 @@ export interface BlockEnv {
   cx: ProseContext; check: (widgetId: string, a: WebAnswer) => Promise<Checked>; hideTitle?: string
   /** Documents: pin a note to a moment of a video (the label is the text the note is anchored to). */
   noteAt?: (label: HTMLElement, t: number) => void
+  /** Where an "explain" answer can be corrected by an AI. */
+  correct?: CorrectWith
 }
 /** Each video's checkpoint questions (found among the same blocks), and those questions, which the player shows instead. */
 function checkpointsOf(blocks: DocBlock[]): { byVideo: Map<string, Checkpoint[]>; held: Set<string> } {
@@ -81,7 +84,7 @@ function Block({ b, env, checkpoints }: { b: DocBlock; env: BlockEnv; checkpoint
   if (b.type === 'video') return <VideoBlock b={b} cx={env.cx} checkpoints={checkpoints.get(b.id) ?? []} check={env.check} noteAt={env.noteAt} />
   if (WIDGETS.has(b.type)) {
     const w = b as unknown as PosedWidget
-    return <Practice widget={w} check={(a) => env.check(w.id, a)} />
+    return <Practice widget={w} check={(a) => env.check(w.id, a)} correct={env.correct} />
   }
   return null
 }

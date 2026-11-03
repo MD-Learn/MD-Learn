@@ -4,8 +4,11 @@ import { toMarkdown, resolveRel, type DocModel, type DocBlock, type MdNode } fro
 
 export interface SectionRef { num: string | null; anchor: string; title: string }
 export interface FormulaFact { tex: string; section: SectionRef | null; line: number; lead: string }
-/** How a definition was found: `is` ("X is …"), `label` ("X: …" / "X — …"), `table` (Term | Meaning), `item` (list item). */
-export type TermKind = 'is' | 'label' | 'table'
+/**
+ * How a definition was found: `is` ("X is …"), `label` ("X: …" / "X — …"), `table` (Term | Meaning), `list` (a list
+ * whose every item is "X: …"), `mark` (`<mark data-tone="definition">`, the author's own word for it).
+ */
+export type TermKind = 'is' | 'label' | 'table' | 'list' | 'mark'
 export interface TermFact { term: string; definition: string; section: SectionRef | null; line: number; kind: TermKind }
 export interface LinkFact { to: string; count: number; kind: 'link' | 'prereq' }
 export interface ChunkFact { section: SectionRef | null; title: string; text: string; line: number }
@@ -16,34 +19,59 @@ export interface DocFacts {
 }
 
 /** Bump when extraction changes: saved indexes are rebuilt. */
-export const EXTRACTOR_VERSION = 6
+export const EXTRACTOR_VERSION = 7
 const md = (nodes: MdNode[]) => toMarkdown(nodes, { math: 'tex' }).replace(/\s+/g, ' ').trim()
 const plain = (n: MdNode): string => (n.type === 'text' || n.type === 'inlineCode' ? String(n.value) : n.type === 'inlineMath' ? `$${String(n.value)}$` : (n.children ?? []).map(plain).join(''))
-const first = (s: string, max = 300) => {
-  const end = s.search(/(?<=[.!?])\s+(?=[A-Z$*])/)
-  const one = end > 0 ? s.slice(0, end) : s
-  return one.length > max ? `${one.slice(0, max).replace(/\s+\S*$/, '')}…` : one
-}
-const IS = /^\s*(?:\([^)]{1,40}\)\s*)?(?:is|are|means|denotes|refers to|stands for|is defined as|are defined as)\b/i
+/** Where one sentence ends and the next begins (a capital in any alphabet, a formula, bold, or ¿ ¡). */
+const SENTENCE_END = /(?<=[.!?])\s+(?=[\p{Lu}$*¿¡])/u
+const cut = (s: string, max: number) => (s.length > max ? `${s.slice(0, max).replace(/\s+\S*$/, '')}…` : s)
+const first = (s: string, max = 300) => cut(s.split(SENTENCE_END)[0], max)
+/** "is" in the languages Studio speaks, longest first so "is defined as" wins over "is". */
+const VERBS = ['is defined as', 'are defined as', 'refers to', 'stands for', 'denotes', 'means', 'is', 'are',
+  'se define como', 'se definen como', 'se refiere a', 'se llama', 'se llaman', 'consiste en', 'significa', 'es', 'son',
+  'si definisce', 'si chiama', 'indica', 'è', 'sono',
+  'se définit comme', 'désigne', 'signifie', 'est', 'sont',
+  'es defineix com', "s'anomena", 's’anomena', 'és', 'són'].sort((a, b) => b.length - a.length).join('|')
+const IS = new RegExp(`^\\s*(?:\\([^)]{1,40}\\)\\s*)?(?:${VERBS})(?![\\p{L}\\p{N}])`, 'iu')
 const SEP = /^\s*(?:\([^)]{1,40}\)\s*)?[:—–-]\s+(?=\S)/
-const BAD_TERM = /^(step|note|example|answer|warning|tip|why|how|what|check|result|exercise|goal|input|output|returns?|todo|caution|important|key|rule|fix|bug|q\d*|a\d*|measure|read|look|use|run|write|install|set|choose|report|compare|record|build|train|open|compute|plot|verify|explain|derive|show|state|if|when|most|going|down|part|row|project|section|figure|table|chapter|appendix|eligibility|then|else|so|but|and|or|first|second|third|finally|also|only|each|every|any|no|not)\b/i
+const BAD_TERM = /^(step|note|example|answer|warning|tip|why|how|what|check|result|exercise|goal|input|output|returns?|todo|caution|important|key|rule|fix|bug|q\d*|a\d*|measure|read|look|use|run|write|install|set|choose|report|compare|record|build|train|open|compute|plot|verify|explain|derive|show|state|if|when|most|going|down|part|row|project|section|figure|table|chapter|appendix|eligibility|then|else|so|but|and|or|first|second|third|finally|also|only|each|every|any|no|not|paso|ejemplo|nota|respuesta|ejercicio|solución|consejo|cuidado|importante|objetivo|resultado|passo|esempio|risposta|esercizio|soluzione|attenzione|obiettivo|étape|exemple|réponse|exercice|solution|objectif|resposta|exercici|solució|compte)(?![\p{L}\p{N}])/iu
 const CITATION = /^\d{4}|^[A-Z]{1,2}-?[A-Z]?\d|\(\d{4}\)|\bet al\b|\band colleagues\b|\bdocumentation\b|\bhandbook\b|\bwhitepaper\b|^\(|^\d+\s*\(|^\d+[.)]\s/i
 const INSTRUCTION = /^(look up|read|see|check|use|run|measure|install|open|write|compute|report|compare|set|choose|record|build|plot|verify|explain|derive|show|state|find|cite|compare)\b/i
 const usable = (term: string, def: string) => def.replace(/[*_`$]/g, '').length >= 12 && /\p{L}{4,}/u.test(def.replace(/\$[^$]*\$/g, ' ')) && !/\b(is|are|means|as|by|of|the|a|an|to|that|which)\s*[:—–-]?\s*$/i.test(def.replace(/[*]/g, '').trim()) && !/[:—–-]\s*$/.test(def.trim()) && !INSTRUCTION.test(def.replace(/^[*\s]+/, ''))
 const goodTerm = (t: string) => {
   if (/\.(md|py|json|ya?ml)\b|§/i.test(t)) return false
-  const s = t.trim().replace(/[.:]$/, ''); return s.length >= 2 && s.length <= 60 && !/[.!?]$/.test(s) && s.split(/\s+/).length <= 6 && !BAD_TERM.test(s) && !CITATION.test(s) && !/^\d+(\s|$)/.test(s)
+  // "Step 2", "Ejemplo 3": a numbered label, not a term
+  const s = t.trim().replace(/[.:]$/, ''); return s.length >= 2 && s.length <= 60 && !/[.!?]$/.test(s) && s.split(/\s+/).length <= 6 && !BAD_TERM.test(s) && !CITATION.test(s) && !/^\d+(\s|$)/.test(s) && !/\s\d+[a-z]?$/i.test(s)
 }
 
 /** "**Revisit** is when the same point is imaged again." → "when the same point is imaged again." The term is shown beside it. */
-const asDefinition = (sentence: string) => sentence.replace(/^\*\*[^*]+\*\*\s+(?:is defined as|are defined as|refers to|stands for|denotes|means|is|are)\s+/i, '')
+const AS_DEFINITION = new RegExp(`^\\*\\*[^*]+\\*\\*\\s+(?:${VERBS})\\s+`, 'iu')
+const asDefinition = (sentence: string) => sentence.replace(AS_DEFINITION, '')
+
+const isDefinitionMark = (n: MdNode) => n.type === 'htmlInline' && n.tag === 'mark' && (n.attrs as Record<string, string> | undefined)?.['data-tone'] === 'definition'
+/** A paragraph that starts "**X**: text", the shape of one entry in a list of definitions. */
+const isLabelLine = (p: MdNode | undefined) => { const [a, b] = p?.children ?? []; return a?.type === 'strong' && b?.type === 'text' && SEP.test(String(b.value)) }
+const MARK = ''
+/** A term the author marked as a definition: the sentence around it is the definition, whatever language it is in. */
+function markedTerms(kids: MdNode[], section: SectionRef | null, line: number): TermFact[] {
+  return kids.flatMap((k, i) => {
+    if (!isDefinitionMark(k)) return []
+    const term = plain(k).trim()
+    if (!term || term.length > 80 || term.split(/\s+/).length > 8 || /[.!?]$/.test(term)) return []
+    const sentences = md([{ type: 'paragraph', children: [...kids.slice(0, i), k, { type: 'text', value: MARK }, ...kids.slice(i + 1)] }]).split(SENTENCE_END)
+    const definition = (sentences.find((s) => s.includes(MARK)) ?? '').replace(MARK, '').trim()
+    return definition.length >= term.length + 3 ? [{ term, definition, section, line, kind: 'mark' as const }] : []
+  })
+}
 
 export function extractTerms(block: MdNode, section: SectionRef | null, line: number): TermFact[] {
   const out: TermFact[] = []
   const kids = block.children ?? []
   if (block.type === 'paragraph') {
+    const marked = markedTerms(kids, section, line)
+    out.push(...marked)
     kids.forEach((k, i) => {
-      if (k.type !== 'strong') return
+      if (k.type !== 'strong' || marked.length) return // the author said what this paragraph defines
       const term = plain(k).trim()
       const rest = kids.slice(i + 1)
       const next = rest[0]?.type === 'text' ? String(rest[0].value) : ''
@@ -56,7 +84,10 @@ export function extractTerms(block: MdNode, section: SectionRef | null, line: nu
       out.push({ term, definition: def, section, line, kind: label ? 'label' : 'is' })
     })
   } else if (block.type === 'list') {
-    for (const li of kids) for (const p of (li.children ?? []).filter((c) => c.type === 'paragraph')) out.push(...extractTerms(p, section, line))
+    const items = kids.map((li) => (li.children ?? []).filter((c) => c.type === 'paragraph'))
+    // a list where every item is "**X**: text" is a glossary, so its entries are shown like any other definition
+    const glossary = items.length >= 2 && items.every((ps) => isLabelLine(ps[0]))
+    for (const ps of items) for (const p of ps) out.push(...extractTerms(p, section, line).map((t) => (glossary && t.kind === 'label' ? { ...t, kind: 'list' as const } : t)))
   } else if (block.type === 'table') {
     const [head, ...rows] = kids
     const cells = (head?.children ?? []).map((c) => plain(c).trim())
@@ -77,6 +108,17 @@ export function extractFacts(doc: DocModel, source: string): DocFacts {
   const links = new Map<string, LinkFact>()
   const titles = new Map(doc.outline.sections.map((s) => [s.anchor, s.title]))
   let section: SectionRef | null = null, lastParagraph = ''
+  // a marked definition that a formula interrupts ("… is a rule $$…$$ that takes …") goes on into the next blocks
+  let open: TermFact | null = null
+  const goOn = (n: MdNode) => {
+    if (!open) return
+    const tex = n.type === 'math' ? String(n.value).trim() : ''
+    if (tex) { open.definition += ` $$${tex}$$`; if (!tex.endsWith('.')) return }
+    // the sentence goes on only if the paragraph carries on from it ("… $$…$$ that takes …"), not if a new one starts
+    const next = n.type === 'paragraph' ? md([n]) : ''
+    if (/^\p{Ll}/u.test(next)) open.definition = cut(`${open.definition} ${first(next)}`, 320)
+    open = null
+  }
   const addLink = (url: string, kind: LinkFact['kind']) => {
     const r = resolveRel(doc.path, url)?.split('#')[0]
     if (!r || !/\.(md|markdown)$/i.test(r) || r === doc.path) return
@@ -87,15 +129,20 @@ export function extractFacts(doc: DocModel, source: string): DocFacts {
   const urls = (n: MdNode, f: (u: string) => void) => { if (n.type === 'link') f(String(n.url)); (n.children ?? []).forEach((c) => urls(c, f)) }
   const walk = (blocks: DocBlock[]) => {
     for (const b of blocks) {
+      if (b.type !== 'prose') open = null
       if (b.type === 'heading') { section = { num: b.num, anchor: b.anchor, title: titles.get(b.anchor) ?? md(b.text) }; lastParagraph = ''; continue }
       if (b.type === 'details') { walk(b.children); continue }
       if (b.type !== 'prose') continue
       const n = b.node
+      goOn(n)
       if (n.type === 'math') formulas.push({ tex: String(n.value).trim(), section, line: b.line, lead: lastParagraph })
       else {
         urls(n, (u) => addLink(u, 'link'))
         if (n.type === 'paragraph') lastParagraph = first(md([n]), 220)
-        terms.push(...extractTerms(n, section, b.line))
+        const found = extractTerms(n, section, b.line)
+        terms.push(...found)
+        const last = found.at(-1)
+        if (n.type === 'paragraph' && last?.kind === 'mark' && !/[.!?]$/.test(last.definition)) open = last
       }
     }
   }

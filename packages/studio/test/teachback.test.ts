@@ -7,6 +7,7 @@ import { createApp } from '../server/app'
 import { EventBus } from '../server/bus'
 import { settingsStore } from '../server/settings'
 import { Workspaces } from '../server/workspaces'
+import { parseDocument, type DocBlock } from '@mdlearn/core'
 import type { TeachResult } from '../shared/types'
 
 const fixture = resolve(__dirname, '../../core/test/fixtures/curriculum')
@@ -36,14 +37,18 @@ function setup(claudeOnce?: (r: { system: string; prompt: string; signal?: Abort
   mkdirSync(join(root, 'learn/speckle'), { recursive: true })
   writeFileSync(join(root, 'learn/speckle/01-speckle.learn.md'), LESSON)
   writeFileSync(join(root, 'notes.md'), '# Notes\n\n## 1. Doppler\n\nA moving target shifts the echo frequency in proportion to its radial speed.\n')
+  writeFileSync(join(root, 'explain-note.md'), NOTE)
   const settings = settingsStore(join(tmp('mdl-cfg-'), 's.json'))
   settings.update((s) => ({ ...s, ollama: { url, model: 'qwen3:8b', embedModel: 'embeddinggemma' } }))
   const workspaces = new Workspaces(settings)
   const app = createApp({ version: 't', security: { port: 1, lan: false, lanFull: false, token: 'x'.repeat(43) }, settings, workspaces, bus: new EventBus(), serverId: 't', ...(claudeOnce ? { claudeOnce } : {}) })
   const h = workspaces.open(root)
   const post = (body: unknown) => app.request(`/api/w/${h.id}/teachback`, { method: 'POST', body: JSON.stringify(body), headers: { host: 'localhost:1', 'content-type': 'application/json', 'x-mdl': '1' } })
-  return { post }
+  const get = async <T>(p: string) => (await app.request(`/api/w/${h.id}${p}`, { headers: { host: 'localhost:1' } })).json() as Promise<T>
+  return { post, get }
 }
+const NOTE = `# Speckle notes\n\n## Speckle\n\nSpeckle is granular noise from the coherent sum of many echoes.\n\n${LESSON.slice(LESSON.indexOf(':::explain'))}`
+const explainId = (blocks: DocBlock[]) => (blocks.find((b) => (b as { type: string }).type === 'explain') as unknown as { id: string }).id
 const EXPLANATION = 'Speckle happens because the radar adds up many echoes. If you average several looks the picture gets smoother, and it is always sharper.'
 
 describe('teach-back', () => {
@@ -99,6 +104,35 @@ describe('teach-back', () => {
     await new Promise((r) => setTimeout(r, 20))
     waiting.at(-1)!()
     expect((await again).status).toBe(200)
+  })
+  it('corrects the answer to one "explain" question in a document, against that question\'s own key ideas', async () => {
+    const { post } = setup()
+    const widget = explainId(parseDocument(NOTE, { path: 'explain-note.md' }).blocks)
+    reply = JSON.stringify({ ideas: [{ index: 1, verdict: 'covered', evidence: 'average looks' }], misconceptions: [], followUp: 'What does it cost?', feedback: 'Good.' })
+    const r = await post({ doc: 'explain-note.md', widget, text: 'You average looks.' }) // a short answer is fine for one question
+    expect(r.status).toBe(200)
+    const t = await r.json() as TeachResult
+    expect(t.title).toBe('Why does multi-looking reduce speckle?')
+    expect(t.ideas.map((i) => [i.idea, i.verdict])).toEqual([['Averaging independent looks lowers the variance.', 'covered'], ['The price is a coarser resolution.', 'missing']])
+    const prompt = last!.messages.at(-1)!.content
+    expect(prompt).toContain('Question: Why does multi-looking reduce speckle?')
+    expect(prompt).toContain('coherent sum of many echoes') // the text of its section
+    expect(last!.messages[0].content).toMatch(/answers one question/)
+  })
+  it('corrects the same question in Study or a lesson page by its card id, with Claude too', async () => {
+    let asked = ''
+    const { post, get } = setup(async (r) => { asked = r.prompt; return '{"ideas":[{"index":2,"verdict":"partly"}],"misconceptions":[],"followUp":"Why?","feedback":"Fine."}' })
+    const lesson = await get<{ lesson: { cards: { blocks: { type: string; id?: string }[] }[] } }>('/lesson?path=learn%2Fspeckle%2F01-speckle.learn.md')
+    const widget = lesson.lesson.cards.flatMap((c) => c.blocks).find((b) => b.type === 'explain')!.id
+    const t = await (await post({ widget, text: 'It averages looks.', engine: 'claude' })).json() as TeachResult
+    expect(t.ideas.map((i) => i.verdict)).toEqual(['missing', 'partly'])
+    expect(asked).toContain('Why does multi-looking reduce speckle?')
+  })
+  it('refuses a question that is not an "explain" one, and an empty answer', async () => {
+    const { post } = setup()
+    expect((await post({ doc: 'notes.md', widget: '1-doppler/quiz-abc', text: 'Something.' })).status).toBe(404)
+    expect((await post({ widget: 'nowhere/explain-1', text: 'Something.' })).status).toBe(404)
+    expect((await post({ widget: 'nowhere/explain-1', text: '  ' })).status).toBe(400)
   })
   it('refuses a one-line explanation, Claude where it is not set up, and a lesson that is gone', async () => {
     const { post } = setup()

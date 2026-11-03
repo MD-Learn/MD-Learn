@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { openFolder } from './helpers'
+import type { CompanionView } from '../shared/types'
 
 const pick = async (page: import('@playwright/test').Page, ws: string, name: string) => {
   await page.goto(`/w/${ws}/settings`)
@@ -115,4 +116,68 @@ test('the panel fits beside the reading column, and goes away for questions', as
   await expect(panel).toBeHidden()
   await page.goto(`/w/${ws}/today`)
   await pick(page, ws, 'Off')
+})
+
+/** A change through the API, before or without a page open. */
+const post = async <T>(page: import('@playwright/test').Page, path: string, body: unknown): Promise<T> => {
+  const r = await page.request.post(path, { data: body, headers: { 'x-mdl': '1' } })
+  if (!r.ok()) throw new Error(`${path}: ${r.status()} ${await r.text()}`)
+  return r.json() as Promise<T>
+}
+
+test.describe('growing', () => {
+  test.afterEach(async ({ page }) => { await post(page, '/api/companion', { growth: false }) })
+
+  test('a note read to the end makes it grow once, it says so, and its page shows it', async ({ page }) => {
+    await page.clock.install()
+    const ws = await openFolder(page)
+    const before = await post<CompanionView>(page, '/api/companion', { growth: true })
+    await page.goto(`/w/${ws}/doc?path=${encodeURIComponent('demo/apuntes.md')}`)
+    await expect(page.getByRole('heading', { name: 'Optimización', level: 1 })).toBeVisible()
+    const end = page.locator('.read > [aria-hidden="true"]').last()
+    await end.scrollIntoViewIfNeeded()
+    await page.clock.runFor(10_000)
+    await expect(page.locator('[data-companion]').getByRole('status')).not.toContainText('+10') // too soon: not read yet
+    await end.scrollIntoViewIfNeeded()
+    // advance a second at a time and stop once it counts, so the message it shows is not timed out at once
+    let sent = false
+    const read = page.waitForRequest((r) => r.url().endsWith('/companion/read')).then(() => { sent = true })
+    for (let i = 0; i < 90 && !sent; i++) await page.clock.runFor(1000)
+    await read
+    await expect(page.getByRole('status').filter({ hasText: 'Well done, you read “Optimización” · +10' }).first()).toBeVisible()
+    await expect(page.locator('[data-companion]').getByRole('link', { name: /^Lv \d+$/ })).toBeVisible()
+
+    await page.goto(`/w/${ws}/companion`)
+    await expect(page.getByRole('heading', { name: 'Your companion', level: 1 })).toBeVisible()
+    await expect(page.getByRole('progressbar', { name: 'Points to the next level' })).toHaveAttribute('aria-valuenow', String(before.points + 10))
+    await expect(page.getByRole('listitem').filter({ hasText: 'Read a note · Optimización' })).toBeVisible()
+    // reading it again does not count twice
+    expect((await post<{ gained: number }>(page, `/api/w/${ws}/companion/read`, { doc: 'demo/apuntes.md' })).gained).toBe(0)
+  })
+
+  test('it can be named and stopped, and stopped it counts nothing', async ({ page }) => {
+    const ws = await openFolder(page)
+    await post(page, '/api/companion', { growth: true })
+    await page.goto(`/w/${ws}/companion`)
+    await page.getByRole('textbox', { name: 'Its name' }).fill('Pip')
+    await page.getByRole('textbox', { name: 'Its name' }).press('Enter')
+    await expect(page.getByRole('heading', { name: 'Pip', level: 1 })).toBeVisible()
+    await page.getByRole('checkbox', { name: /Let it grow/ }).click()
+    await expect(page.getByRole('checkbox', { name: /Let it grow/ })).not.toBeChecked()
+    await expect(page.getByText('It stays as it is, and nothing is counted while it does not grow.')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Your companion' })).toHaveCount(0) // gone from the sidebar
+    expect((await post<{ gained: number }>(page, `/api/w/${ws}/companion/session`, { session: String(Date.now()) })).gained).toBe(0)
+    await post(page, '/api/companion', { name: '' })
+  })
+
+  test('it wears the accent colour', async ({ page }) => {
+    const ws = await openFolder(page)
+    await post(page, '/api/companion', { growth: true })
+    await page.goto(`/w/${ws}/settings`)
+    await page.getByRole('radiogroup', { name: 'Accent colour' }).getByRole('radio', { name: 'Green' }).click()
+    const ink = await page.locator('[data-companion] button span').first().evaluate((el) => getComputedStyle(el).color)
+    const accent = await page.evaluate(() => { const d = document.createElement('div'); d.style.color = 'var(--accent-ink)'; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c })
+    expect(ink).toBe(accent)
+    await page.getByRole('radiogroup', { name: 'Accent colour' }).getByRole('radio', { name: 'Graphite' }).click()
+  })
 })

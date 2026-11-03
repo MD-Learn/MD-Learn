@@ -73,3 +73,70 @@ describe('extractFacts', () => {
     expect(facts.intro).toMatch(/^Intro paragraph about radar/)
   })
 })
+
+const NOTE = `---
+id: opt-intro
+study: true
+---
+
+# Optimización
+
+## Funciones
+
+Una <mark data-tone="definition">función de varias variables</mark> es una regla
+
+$$f : \\mathbb{R}^n \\to \\mathbb{R}$$
+
+que toma un vector de entradas y produce un solo número.
+
+El <mark data-tone="definition">dominio</mark> $D$ es el conjunto de entradas permitidas. Puede ser una región del plano.
+
+La <mark data-tone="definition">teoría de la decisión</mark> estudia cómo elegir entre alternativas según un criterio.
+
+<mark data-tone="key">Contextos distintos, la misma idea matemática.</mark>
+
+**Gradiente** es el vector de todas las derivadas parciales de una función.
+
+## Clasificación
+
+- **Mínimo local**: los valores cercanos son mayores o iguales.
+- **Máximo local**: los valores cercanos son menores o iguales.
+- **Punto de silla**: la función sube en unas direcciones y baja en otras.
+
+**Paso 1**: calcula el gradiente.
+`
+const noteFacts = extractFacts(parseDocument(NOTE, { path: '01-intro.md' }), NOTE)
+const byTerm = (ts: typeof noteFacts.terms) => Object.fromEntries(ts.map((x) => [x.term, x]))
+
+describe('definitions in notes in other languages', () => {
+  it('reads the terms an author marked as definitions, with the sentence around them', () => {
+    const t = byTerm(noteFacts.terms)
+    expect(t['dominio']).toMatchObject({ kind: 'mark', definition: 'El dominio $D$ es el conjunto de entradas permitidas.' })
+    expect(t['teoría de la decisión'].definition).toBe('La teoría de la decisión estudia cómo elegir entre alternativas según un criterio.')
+    expect(Object.keys(t)).not.toContain('Contextos distintos, la misma idea matemática.') // a key idea, not a definition
+  })
+  it('follows a definition across the formula that interrupts it, but not into the next sentence', () => {
+    expect(byTerm(noteFacts.terms)['función de varias variables'].definition).toBe('Una función de varias variables es una regla $$f : \\mathbb{R}^n \\to \\mathbb{R}$$ que toma un vector de entradas y produce un solo número.')
+    const src = '# T\n\nLas <mark data-tone="definition">parciales</mark> son\n\n$$f_x = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}$$\n\nEn $f_x$ solo cambia $x$.\n\nUn **punto** del <mark data-tone="definition">dominio</mark> es una entrada válida de la función.\n'
+    const t = byTerm(extractFacts(parseDocument(src, { path: 'p.md' }), src).terms)
+    expect(t['parciales'].definition).toBe('Las parciales son $$f_x = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}$$')
+    expect(Object.keys(t)).toEqual(['parciales', 'dominio']) // bold in a paragraph that marks its definition is not a second guess
+  })
+  it('knows how "X is …" is said in Spanish, Italian, French and Catalan', () => {
+    expect(byTerm(noteFacts.terms)['Gradiente']).toMatchObject({ kind: 'is', definition: 'El vector de todas las derivadas parciales de una función.' })
+    for (const [lang, line] of [['it', '**Dominio** è l’insieme dei valori di ingresso ammessi dalla funzione.'], ['fr', '**Domaine** désigne l’ensemble des entrées permises par la fonction.'], ['ca', '**Domini** és el conjunt d’entrades permeses per la funció.'], ['es', '**Dominio** se llama al conjunto de entradas permitidas por la función.']]) {
+      const src = `# T\n\n${line}\n`
+      expect(extractFacts(parseDocument(src, { path: `${lang}.md` }), src).terms.map((x) => x.kind), lang).toEqual(['is'])
+    }
+  })
+  it('keeps one sentence when the next starts with an accented capital', () => {
+    const src = '# T\n\n**Hessiano** es la matriz de las segundas derivadas parciales. Él decide la curvatura.\n'
+    expect(extractFacts(parseDocument(src, { path: 'h.md' }), src).terms[0].definition).toBe('La matriz de las segundas derivadas parciales.')
+  })
+  it('treats a list where every item is "term: text" as a glossary, but not a lone label', () => {
+    const t = byTerm(noteFacts.terms)
+    expect(t['Mínimo local']).toMatchObject({ kind: 'list', definition: 'Los valores cercanos son mayores o iguales.' })
+    expect(t['Punto de silla'].kind).toBe('list')
+    expect(t['Paso 1']).toBeUndefined()
+  })
+})

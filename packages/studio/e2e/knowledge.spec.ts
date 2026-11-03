@@ -25,6 +25,14 @@ test('the glossary shows definitions with their source', async ({ page }) => {
   await expect(page.getByText('No term matches')).toBeVisible()
 })
 
+test('the glossary shows what a Spanish note marks as definitions, without asking for looser matches', async ({ page }) => {
+  const ws = await openFolder(page)
+  await page.goto(`/w/${ws}/glossary`)
+  await expect(page.getByRole('term').filter({ hasText: 'función de varias variables' })).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByRole('definition').filter({ hasText: 'es una regla que toma varias entradas' })).toBeVisible()
+  await expect(page.getByRole('term').filter({ hasText: 'Mínimo local' })).toBeVisible()
+})
+
 test('a defined term is underlined once per document and explained on hover', async ({ page }) => {
   const ws = await openFolder(page)
   await page.goto(`/w/${ws}/doc?path=demo%2Fradar-terms.md`)

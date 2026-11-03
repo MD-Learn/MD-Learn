@@ -13,8 +13,8 @@ import { addClassFile } from './import/class-files.js'
 import { extname, relative, join, dirname, posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
-import { compile, parseDocument, findSection, sectionText, isWidget, parseWebAnswer, checkStructured, MAX_EXAM_QUESTIONS } from '@mdlearn/core'
-import { loadLessons, compileSource, searchCurriculum, loadDoc, loadGoals, saveGoals, inRoot } from '@mdlearn/core/node'
+import { compile, parseDocument, findSection, sectionText, isWidget, parseWebAnswer, checkStructured, locate, MAX_EXAM_QUESTIONS } from '@mdlearn/core'
+import { loadLessons, compileSource, searchCurriculum, loadDoc, loadGoals, saveGoals, inRoot, loadProgress } from '@mdlearn/core/node'
 import { security, capsOf, clientOf, need, type SecurityOptions } from './security.js'
 import { Workspaces, UserError, browse, type Handle } from './workspaces.js'
 import { redactLesson, redactDoc, findDocWidget } from './redact.js'
@@ -27,8 +27,8 @@ import { notesStore, AnchorSchema, NoteColorSchema } from './notes.js'
 import { ask, cancelAsk, EXPLAIN_QUESTION } from './ai/ask.js'
 import { ollamaStatus, ollamaBusy, ollamaDelete, ollamaModels } from './ai/ollama.js'
 import { MODEL_NAME, ModelDownloads, hardware, installedName, isEmbedding, localAi } from './ai/models.js'
-import { judge } from './ai/judge.js'
 import { teachBack, type OneShot } from './ai/teachback.js'
+import { award, awardSession, companionView, MIN_READ_WORDS } from './companion.js'
 import { PyodideStore } from './python.js'
 import { Knowledge } from './knowledge/index.js'
 import { AskService } from './ask/service.js'
@@ -56,7 +56,7 @@ import type { EventBus, Envelope } from './bus.js'
 import type { SettingsStore } from './settings.js'
 import { Latex } from './latex.js'
 import { TEX_FILE, texRoot } from './latex-files.js'
-import type { SessionInfo, LessonResponse, CompileResponse, PreviewResponse, Integrations, MapNode, MapResponse, Hardware, ImportResult, LocalAiInfo, McpSetup, PreparedFolder, ClassFile, ClassUpload } from '../shared/types.js'
+import type { SessionInfo, LessonResponse, CompileResponse, PreviewResponse, Integrations, MapNode, MapResponse, Hardware, ImportResult, LocalAiInfo, McpSetup, PreparedFolder, ClassFile, ClassUpload, Grew } from '../shared/types.js'
 
 /** Languages with a translated help page (help.<lang>.md). */
 const HELP_LANGS = new Set(['it', 'es', 'fr', 'ca'])
@@ -141,6 +141,17 @@ export function createApp(deps: Deps): Hono {
     const { tourDone } = z.object({ tourDone: z.boolean() }).parse(await c.req.json())
     return c.json(deps.settings.update((s) => ({ ...s, onboarding: { ...s.onboarding, tourDone } })).onboarding)
   })
+  // ---- the companion's growth (optional; companion.ts decides the points)
+  const growth = { settings: deps.settings, bus: deps.bus }
+  const grown = (g: Grew | null) => ({ gained: g?.gained ?? 0, ...companionView(deps.settings) })
+  /** One spelling for a path in a folder, so `./a.md` and `a.md` count as the same note. */
+  const samePath = (p: string) => posix.normalize(p.replace(/\\/g, '/')).replace(/^\.\//, '')
+  app.get('/api/companion', need('read', o), (c) => c.json(companionView(deps.settings)))
+  app.post('/api/companion', need('notes', o), async (c) => {
+    const b = z.object({ growth: z.boolean().optional(), name: z.string().trim().max(40).optional() }).parse(await c.req.json())
+    deps.settings.update((s) => ({ ...s, companion: { ...s.companion, ...(b.growth !== undefined ? { growth: b.growth } : {}), ...(b.name !== undefined ? { name: b.name || undefined } : {}) } }))
+    return c.json(companionView(deps.settings))
+  })
   app.post('/api/workspaces/tutorial', need('fs', o), async (c) => {
     const { reset } = z.object({ reset: z.boolean().optional() }).parse(await c.req.json().catch(() => ({})))
     const h = deps.workspaces.tutorial(tutorialSource(), reset)
@@ -202,12 +213,13 @@ export function createApp(deps: Deps): Hono {
   // ---- a course from a class's files: a new folder, or more files for one that exists
   const classFiles = async (c: Context, folder: () => Handle): Promise<ClassUpload> => {
     const body = await c.req.parseBody({ all: true })
-    const raw = body['files'] ?? body['files[]']
+    const raw = body['files'] ?? body['files[]'], rawPaths = body['paths']
     const files = (Array.isArray(raw) ? raw : raw ? [raw] : []).filter((f): f is File => typeof f === 'object' && 'arrayBuffer' in f)
+    const paths = (Array.isArray(rawPaths) ? rawPaths : rawPaths ? [rawPaths] : []).map((p) => (typeof p === 'string' ? p.slice(0, 1024) : undefined)) // where each sat in a dropped folder
     if (files.length > MAX_CLASS_FILES) throw new UserError('too-many', 'At most 100 files at a time.')
     if (files.some((f) => f.size > MAX_IMPORT_BYTES)) throw new UserError('too-large', 'That file is larger than 100 MB.')
     const h = folder(), saved: ClassFile[] = []
-    for (const f of files) saved.push(await addClassFile(h, f.name, new Uint8Array(await f.arrayBuffer())))
+    for (const [i, f] of files.entries()) saved.push(await addClassFile(h, f.name, new Uint8Array(await f.arrayBuffer()), paths[i]))
     return { id: h.id, name: h.name, root: h.root, files: saved }
   }
   const classLimit = bodyLimit({ maxSize: MAX_CLASS_UPLOAD, onError: (c) => c.json({ error: { code: 'too-large', message: 'At most 400 MB at a time.' } }, 413) })
@@ -277,7 +289,9 @@ export function createApp(deps: Deps): Hono {
     const answer = parseWebAnswer(w, body.answer)
     if (!answer) throw new UserError('invalid', 'That answer does not fit this question.')
     const lesson = { id: 'doc', title: model.title, lang: (typeof model.frontmatter?.lang === 'string' ? model.frontmatter.lang : 'en') } as never
-    return c.json({ checked: checkStructured({ lesson, card: { id: 'doc', title: '', blocks: [] }, widget: w }, answer) })
+    const checked = checkStructured({ lesson, card: { id: 'doc', title: '', blocks: [] }, widget: w }, answer)
+    if (answer.type !== 'skip') award(growth, h.id, { kind: 'exercise', key: `ex:${h.id}:${samePath(body.path)}:${body.widgetId}`, title: model.title }) // trying counts, right or wrong
+    return c.json({ checked })
   })
   // ---- quick cards from what you are reading
   app.get('/api/w/:ws/doc/passage', need('notes', o), (c) => {
@@ -363,7 +377,10 @@ export function createApp(deps: Deps): Hono {
   app.get('/api/w/:ws/study/item', need('study', o), (c) => c.json(study.item(ws(c), z.string().min(1).max(300).parse(c.req.query('widget')))))
   app.post('/api/w/:ws/study/check', need('study', o), async (c) => {
     const body = z.object({ widgetId: z.string().min(1).max(300), answer: z.unknown(), sure: z.boolean().optional(), practice: z.boolean().optional() }).parse(await c.req.json())
-    return c.json({ checked: study.check(ws(c), body) })
+    const h = ws(c), checked = study.check(h, body)
+    // a lesson page's question counts like a note's; Study sessions count as a whole (companion/session)
+    if (body.practice && (body.answer as { type?: string } | null)?.type !== 'skip') award(growth, h.id, { kind: 'exercise', key: `ex:${h.id}:${body.widgetId}`, title: locate(study.course(h).lessons, body.widgetId)?.lesson.title ?? '' })
+    return c.json({ checked })
   })
   app.post('/api/w/:ws/study/hint', need('study', o), async (c) => {
     const { widgetId, n } = z.object({ widgetId: z.string().min(1).max(300), n: z.number().int().min(0).max(20) }).parse(await c.req.json())
@@ -714,18 +731,32 @@ export function createApp(deps: Deps): Hono {
     const { messageId } = z.object({ messageId: z.string().max(64) }).parse(await c.req.json())
     return c.json({ stopped: cancelAsk(messageId) })
   })
-  app.post('/api/w/:ws/study/judge', need('askLocal', o), async (c) => {
+  // a note read to the end (the browser waits for the end of the page and enough time on it; a short note does not count)
+  app.post('/api/w/:ws/companion/read', need('notes', o), async (c) => {
     const h = ws(c)
-    const body = z.object({ widgetId: z.string().min(1).max(300), text: z.string().min(1).max(4000) }).parse(await c.req.json())
-    return c.json(await judge(h, deps.settings.get().ollama, body.widgetId, body.text))
+    const { doc } = z.object({ doc: z.string().min(1).max(1024) }).parse(await c.req.json())
+    if (!existsSync(deps.workspaces.resolve(h, doc))) throw new UserError('not-found', 'This note no longer exists.')
+    const model = deps.workspaces.doc(h, doc), path = samePath(doc)
+    const counts = model.outline.words >= MIN_READ_WORDS && !path.startsWith('sources/')
+    return c.json(grown(counts ? award(growth, h.id, { kind: 'read', key: `read:${h.id}:${path}`, title: model.title }) : null))
+  })
+  app.post('/api/w/:ws/companion/session', need('study', o), async (c) => {
+    const h = ws(c)
+    const { session } = z.object({ session: z.string().regex(/^\d{1,16}$/) }).parse(await c.req.json()) // when it began
+    return c.json(grown(awardSession(growth, h.id, Number(session), loadProgress(h.ws).reviews)))
   })
   app.post('/api/w/:ws/teachback', need('askLocal', o), async (c) => {
     const h = ws(c)
-    const body = z.object({ lesson: z.string().min(1).max(1024).optional(), doc: z.string().min(1).max(1024).optional(), section: z.string().min(1).max(300).optional(),
-      text: z.string().trim().min(20).max(6000), lang: z.enum(['en', 'it', 'es', 'fr', 'ca']).default('en'), engine: z.enum(['local', 'claude']).default('local') }).parse(await c.req.json())
+    const body = z.object({ lesson: z.string().min(1).max(1024).optional(), doc: z.string().min(1).max(1024).optional(), section: z.string().min(1).max(300).optional(), widget: z.string().min(1).max(300).optional(),
+      text: z.string().trim().min(1).max(6000), lang: z.enum(['en', 'it', 'es', 'fr', 'ca']).default('en'), engine: z.enum(['local', 'claude']).default('local') })
+      .refine((b) => b.widget || b.text.length >= 20, { message: 'Explain it in a few sentences.' }) // one question may have a short answer; a topic needs more
+      .parse(await c.req.json())
     // Claude runs on this computer's account: only from this computer (the 'ai' capability)
     if (body.engine === 'claude' && !capsOf(c, o).includes('ai')) throw new UserError('capability', 'Claude can be used only on the computer running MDlearn Studio.')
-    return c.json(await teachBack(h, deps.workspaces, { local: deps.settings.get().ollama, ...(deps.claudeOnce ? { claude: deps.claudeOnce } : {}) }, body))
+    const result = await teachBack(h, deps.workspaces, { local: deps.settings.get().ollama, ...(deps.claudeOnce ? { claude: deps.claudeOnce } : {}) }, body)
+    const target = body.widget ? `${samePath(body.doc ?? '')}:${body.widget}` : body.lesson ?? `${samePath(body.doc ?? '')}#${body.section}` // two notes can share a widget id
+    award(growth, h.id, { kind: 'explain', key: `explain:${h.id}:${target}:${new Date().toISOString().slice(0, 10)}`, title: result.title }) // once a day for each
+    return c.json(result)
   })
   app.get('/api/engines', need('read', o), async (c) => {
     const local = await ollamaStatus(deps.settings.get().ollama)
@@ -787,7 +818,8 @@ export function createApp(deps: Deps): Hono {
         card: z.object({ key: z.string().max(300), title: z.string().max(200), wrong: z.array(z.string().max(300)).max(5).default([]) }).optional() }),
       z.object({ recipe: z.literal('course.change'), doc: z.string().min(1).max(1024), request: z.string().trim().min(2).max(2000) }),
       z.object({ recipe: z.literal('course.translate'), doc: z.string().min(1).max(1024), language: z.string().trim().min(2).max(40) }),
-      z.object({ recipe: z.literal('course.class'), web: z.boolean().default(false), name: z.string().trim().min(1).max(200), level: z.enum(['beginner', 'intermediate', 'advanced']).default('beginner'), language: z.string().max(40).optional(), request: z.string().max(2000).optional() }),
+      z.object({ recipe: z.literal('course.class'), web: z.boolean().default(false), name: z.string().trim().min(1).max(200), level: z.enum(['beginner', 'intermediate', 'advanced']).default('beginner'), language: z.string().max(40).optional(), request: z.string().max(2000).optional(),
+        length: z.enum(['short', 'normal', 'full']).optional(), goal: z.enum(['exam', 'understand', 'reference']).optional(), include: z.array(z.enum(['exercises', 'visuals', 'code', 'exam-practice'])).max(4).optional() }),
       z.object({ recipe: z.literal('custom'), request: z.string().min(3).max(4000), scope: z.string().max(512).default('learn') }),
       z.object({ recipe: z.literal('course.topic'), web: z.boolean().default(false), topic: z.string().trim().min(2).max(300), level: z.enum(['beginner', 'intermediate', 'advanced']).default('beginner'),
         language: z.string().max(40).optional(), minutes: z.number().int().min(5).max(600).default(45), notes: z.string().max(1024).optional() }),

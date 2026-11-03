@@ -1,6 +1,9 @@
 // Settings → Appearance (theme, accent colour) and Language. All three are per device, like the sidebar's
 // theme switch: they live in localStorage and apply before the first paint.
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { companionApi, useCompanion } from '../api/queries'
+import type { CompanionView } from '../../shared/types'
 import { Check, Monitor, Moon, Sun } from 'lucide-react'
 import { useUi, type CompanionKind, type Theme } from '../state/ui'
 import { ACCENTS, applyAccent, parseHex, savedAccent, swatch, type Accent, type AccentId } from '../lib/accent'
@@ -21,6 +24,8 @@ export function Appearance() {
   const sites = useSitesAnywhere()
   const companion = useUi((s) => s.companion), setCompanion = useUi((s) => s.setCompanion)
   const companions: [CompanionKind, string][] = [['off', t('Off')], ['orb', t('Orb')], ['pixel', t('Pixel')]]
+  const me = useCompanion(), qc = useQueryClient()
+  const grow = async (growth: boolean) => { try { qc.setQueryData<CompanionView>(['companion'], await companionApi.update({ growth })) } catch { void me.refetch() } }
   const custom = parseHex(accent) ? accent : null
   const pick = (a: Accent) => { applyAccent(a); setAccent(a) }
   const themes: [Theme, typeof Sun, string][] = [['light', Sun, t('Light')], ['dark', Moon, t('Dark')], ['system', Monitor, t('Match system')]]
@@ -49,7 +54,13 @@ export function Appearance() {
         <div role="radiogroup" aria-labelledby="companion-label" className="mt-1.5 flex flex-wrap gap-1.5">
           {companions.map(([value, label]) => <button key={value} type="button" role="radio" aria-checked={companion === value} onClick={() => setCompanion(value)} className={option(companion === value)}>{label}</button>)}
         </div>
-        <p className="mt-1.5 text-[12.5px] text-muted">{t('A small sign of what MDlearn is doing, at the foot of the sidebar. A test. It never rewards or nags you, and it hides during questions.')}</p>
+        <p className="mt-1.5 text-[12.5px] text-muted">{t('A small sign of what MDlearn is doing, at the foot of the sidebar, in your accent colour. It hides during questions.')}</p>
+        {companion !== 'off' && me.data && (
+          <label className="mt-2 flex items-start gap-2 text-[13.5px]">
+            <input type="checkbox" checked={me.data.growth} onChange={(e) => void grow(e.target.checked)} className="mt-0.5" />
+            <span>{t('Let it grow')}<span className="block text-[12.5px] text-muted">{t('It gains points when you finish reading a note, answer its questions, explain in your own words or finish a review. Points are never lost, and time in the app does not count.')}</span></span>
+          </label>
+        )}
       </div>
       <div>
         <p className="text-[12.5px] text-muted" id="accent-label">{t('Accent colour')}</p>

@@ -12,6 +12,16 @@ const SettingsSchema = z.object({
   scinet: z.object({ url: z.string().default('http://127.0.0.1:8000') }).default({ url: 'http://127.0.0.1:8000' }),
   /** First-run help: the welcome tour is shown until it is finished or skipped once. */
   onboarding: z.object({ tourDone: z.boolean().default(false) }).default({ tourDone: false }),
+  /** The companion's growth (companion.ts): points never lost, what was already counted (hashed), the last few things. */
+  companion: z.object({
+    growth: z.boolean().default(true),
+    points: z.number().int().min(0).default(0),
+    counted: z.array(z.string()).default([]),
+    log: z.array(z.object({ at: z.number(), kind: z.enum(['read', 'exercise', 'explain', 'session']), title: z.string(), points: z.number() })).default([]),
+    name: z.string().max(40).optional(),
+    /** Per folder, the time up to which Study reviews have been counted, so none counts twice. */
+    reviewed: z.record(z.string(), z.number()).default({}),
+  }).default({ growth: true, points: 0, counted: [], log: [], reviewed: {} }),
 })
 export type Settings = z.infer<typeof SettingsSchema>
 export const defaultSettingsFile = () => join(process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config'), 'mdlearn', 'studio.json')

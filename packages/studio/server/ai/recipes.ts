@@ -2,7 +2,7 @@
 // and any files the server prepares first (lesson scaffolds), all inside the job's undo snapshot.
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, relative, sep } from 'node:path'
-import { coursePrompt, pinIds } from '@mdlearn/core'
+import { coursePrompt, pinIds, type CourseExtra, type CourseGoal, type CourseLength } from '@mdlearn/core'
 import { findDoc, isStudyFile, lessonDirFor, scaffoldLessons, loadDoc, inRoot } from '@mdlearn/core/node'
 import { slugify } from '../import/common.js'
 import { SOURCES } from '../import/class-files.js'
@@ -62,7 +62,7 @@ const NOTE_FOCUS: Record<string, string> = {
   questions: 'Strengthen the exercises: one or two in each section and a final Practice; wrong quiz options need feedback naming the misconception; vary the kinds.',
   clarity: 'Make the explanations clearer, with a concrete case and a worked example wherever one is missing, without losing anything the note says.',
   lint: FOCUS.lint,
-  marks: 'Mark what a skimming reader must not miss, with `<mark data-tone="…">`: key, definition, example, trap or rule. Phrases of at most 12 words, on no more than a sixth of a section, and change no other text. Leave a section unmarked if nothing stands out.',
+  marks: 'Mark what a skimming reader must not miss, with `<mark data-tone="…">`: key, definition, example, trap or rule. Phrases of at most 12 words, on no more than a sixth of a section, and change no other text. Leave a section unmarked if nothing stands out. A definition mark goes on the term alone, inside the sentence that says what it means: that sentence is its glossary entry.',
   all: 'Fix lint problems, make sure each section teaches with a concrete case, a worked example and an exercise (feedback on every wrong option), and add a visual where it shows what words can\'t.',
 }
 export interface LeechContext { cardKey: string; title: string; wrong: string[] }
@@ -155,16 +155,22 @@ export function translateCourse(h: Handle, doc: string, language: string): Recip
   return { ...change, spec: { ...change.spec, recipe: 'course.translate', title: `Translate into ${language}` } }
 }
 
-export interface ClassCourse { name: string; level?: string; language?: string; request?: string; web?: boolean }
+export interface ClassCourse { name: string; level?: string; language?: string; request?: string; web?: boolean; length?: CourseLength; goal?: CourseGoal; include?: CourseExtra[] }
+/** Turns for a course: more for more files, but a folder of code must not mean thousands. */
+const MAX_COURSE_TURNS = 400
+/** The class's own files in sources/, in any folder, leaving out what MDlearn made from them (text/, media/). */
+function originals(dir: string, top = true): number {
+  if (!existsSync(dir)) return 0
+  return readdirSync(dir, { withFileTypes: true }).reduce((n, f) => n + (f.isFile() ? 1 : f.isDirectory() && !f.name.startsWith('.') && !(top && (f.name === 'text' || f.name === 'media')) ? originals(join(dir, f.name), false) : 0), 0)
+}
 /** A course at the top of its own folder, from the class files in sources/ when it has any. */
 export function classCourse(h: Handle, o: ClassCourse): Recipe {
-  const sources = join(h.root, SOURCES)
-  const files = existsSync(sources) ? readdirSync(sources, { withFileTypes: true }).filter((f) => f.isFile()).length : 0
+  const files = originals(join(h.root, SOURCES))
   return {
     spec: {
-      recipe: 'course.class', title: `Course: ${o.name.slice(0, 70)}`, maxTurns: 60 + 40 * Math.max(1, files), webSearch: o.web,
+      recipe: 'course.class', title: `Course: ${o.name.slice(0, 70)}`, maxTurns: Math.min(MAX_COURSE_TURNS, 60 + 40 * Math.max(1, files)), webSearch: o.web,
       writeScope: [h.root], keepOut: keptOut(h.root),
-      prompt: coursePrompt({ topic: o.name, level: o.level, language: o.language, request: o.request, web: o.web, save: 'write', ...(files ? { classFiles: SOURCES } : { here: true, folder: '.' }) }),
+      prompt: coursePrompt({ topic: o.name, level: o.level, language: o.language, request: o.request, web: o.web, length: o.length, goal: o.goal, include: o.include, save: 'write', ...(files ? { classFiles: SOURCES } : { here: true, folder: '.' }) }),
     },
   }
 }

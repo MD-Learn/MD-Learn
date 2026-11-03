@@ -1,4 +1,4 @@
-// Second step: who writes the course. Claude from here, a coding assistant in the folder, or any chat.
+// Second step: how you want the course, and who writes it. Claude from here, a coding assistant in the folder, or any chat.
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { BookOpenCheck, FolderCheck, MessageSquareText, Sparkles, TerminalSquare, type LucideIcon } from 'lucide-react'
@@ -8,18 +8,24 @@ import { useUi } from '../state/ui'
 import { Button, ErrorNote, Spinner } from '../ui/primitives'
 import { Command, CopyButton } from '../settings/Command'
 import { promptFor } from '../settings/prompt'
-import { goTo, plainWords } from '../lib/shell'
+import { goTo, plainText, plainWords } from '../lib/shell'
 import { isNote } from '../layout/useTreeRows'
 import { LanguageField } from './LanguageField'
 import { WebSearchField } from './WebSearchField'
+import { ShapeForm, shapeWords, useShape, type Shape } from './ShapeForm'
 import { t, tp } from '../i18n'
 import type { PreparedFolder } from '../../shared/types'
 
 type Writer = 'claude' | 'assistant' | 'chat'
-const request = (name: string, language: string) => {
-  const ask = `Make the MDlearn course on ${plainWords(name) || 'this topic'}, following AGENTS.md.`
-  return plainWords(language) ? `${ask} Write it in ${plainWords(language)}.` : ask
-}
+const request = (name: string, language: string, shape: Shape) => [
+  `Make the MDlearn course on ${plainWords(name) || 'this topic'}, following AGENTS.md.`,
+  plainWords(language) && `Write it in ${plainWords(language)}.`,
+  shapeWords(shape), plainText(shape.wishes.slice(0, 600)),
+].filter(Boolean).join(' ')
+/** What to ask a chat after the MDlearn prompt: not a command, so the wishes go as they were written. */
+const chatAsk = (language: string, shape: Shape) => [
+  'Make an MDlearn course from the attached files.', language.trim() && `Write it in ${language.trim()}.`, shapeWords(shape), shape.wishes.trim(),
+].filter(Boolean).join(' ')
 const TOOLS: { id: string; name: string; run: (ask: string) => string }[] = [
   { id: 'claude', name: 'Claude Code', run: (ask) => `claude "${ask}"` },
   { id: 'codex', name: 'Codex', run: (ask) => `codex "${ask}"` },
@@ -38,25 +44,21 @@ function Option({ icon: Icon, title, hint, chosen, onChoose }: { icon: LucideIco
   )
 }
 
-function FromHere({ ws, name, language }: { ws: string; name: string; language: string }) {
+function FromHere({ ws, name, language, shape }: { ws: string; name: string; language: string; shape: Shape }) {
   const [, navigate] = useLocation()
-  const [wishes, setWishes] = useState('')
   const [web, setWeb] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const start = async () => {
     setBusy(true); setError(null)
     try {
-      const job = await jobsApi.start(ws, { recipe: 'course.class', name, language: language.trim() || undefined, web, ...(wishes.trim() ? { request: wishes.trim() } : {}) })
+      const { wishes, ...answers } = shape
+      const job = await jobsApi.start(ws, { recipe: 'course.class', name, language: language.trim() || undefined, web, ...answers, ...(wishes.trim() ? { request: wishes.trim() } : {}) })
       navigate(`/w/${ws}/studio?job=${job.id}`)
     } catch (e) { setError(e); setBusy(false) }
   }
   return (
     <div className="flex flex-col gap-3">
-      <label className="block text-[13px] font-medium">{t('Anything it should know? (optional)')}
-        <textarea value={wishes} onChange={(e) => setWishes(e.target.value)} maxLength={2000} rows={2} placeholder={t('e.g. The exam covers chapters 1 to 4 and is mostly problems')}
-          className="mt-1.5 w-full rounded-[6px] border border-border-strong bg-bg px-3 py-2 text-[14px] outline-none focus:border-accent" />
-      </label>
       <WebSearchField value={web} onChange={setWeb} />
       {!!error && <ErrorNote error={error} />}
       <div><Button variant="primary" icon={Sparkles} busy={busy} onClick={() => void start()}>{t('Write the course')}</Button></div>
@@ -65,7 +67,7 @@ function FromHere({ ws, name, language }: { ws: string; name: string; language: 
   )
 }
 
-function WithAssistant({ ws, name, root, language }: { ws: string; name: string; root: string; language: string }) {
+function WithAssistant({ ws, name, root, language, shape }: { ws: string; name: string; root: string; language: string; shape: Shape }) {
   const [tool, setTool] = useState(TOOLS[0])
   const [ready, setReady] = useState<PreparedFolder | null>(null)
   const [busy, setBusy] = useState(false)
@@ -87,21 +89,25 @@ function WithAssistant({ ws, name, root, language }: { ws: string; name: string;
         {TOOLS.map((x) => <button key={x.id} role="tab" aria-selected={x.id === tool.id} onClick={() => setTool(x)} className={`rounded-[6px] px-2.5 py-1 text-[13px] cursor-pointer ${x.id === tool.id ? 'bg-hover font-medium' : 'text-muted hover:text-text'}`}>{x.name}</button>)}
       </div>
       <p className="text-[13.5px]">{t('Run this in a terminal:')}</p>
-      <Command text={`${goTo(root)}\n${tool.run(request(name, language))}`} />
+      <Command text={`${goTo(root)}\n${tool.run(request(name, language, shape))}`} />
       {!!ready.kept.length && <p className="text-[13px] text-warn">{t('Your own {file} was kept. Add a line to it: follow .agents/skills/mdlearn-course/SKILL.md.', { file: ready.kept[0] })}</p>}
     </div>
   )
 }
 
-function InAChat({ ws, language }: { ws: string; language: string }) {
+function InAChat({ ws, language, shape }: { ws: string; language: string; shape: Shape }) {
   const info = useIntegrations()
   const setImportOpen = useUi((u) => u.setImportOpen)
   const [, navigate] = useLocation()
   return (
     <ol className="flex list-decimal flex-col gap-2 pl-5 text-[13.5px] leading-relaxed">
       <li>{t('Open ChatGPT, Claude.ai or Gemini and attach your files. Chats read PDF, PowerPoint and Word themselves.')}</li>
-      <li className="flex flex-col items-start gap-1.5">{language.trim() ? t('Paste the MDlearn prompt, then ask for a course in {language} from the attached files.', { language: language.trim() }) : t('Paste the MDlearn prompt, then ask for a course from the attached files.')}
+      <li className="flex flex-col items-start gap-1.5">{t('Paste the MDlearn prompt.')}
         {info.data ? <CopyButton text={promptFor(info.data.prompt).text} label={t('Copy the prompt')} /> : <Spinner />}
+      </li>
+      <li className="flex flex-col items-start gap-1.5">{t('Then ask for your course with this:')}
+        <blockquote className="w-full border-l-2 border-border-strong pl-3 text-[13px] text-muted">{chatAsk(language, shape)}</blockquote>
+        <CopyButton text={chatAsk(language, shape)} label={t('Copy what to ask')} />
       </li>
       <li className="flex flex-col items-start gap-1.5">{t('Copy its whole answer and bring it here.')}
         <Button size="sm" variant="secondary" onClick={() => { setImportOpen(true); navigate(`/w/${ws}`) }}>{t('Import from a chat…')}</Button>
@@ -138,9 +144,14 @@ export function WriterStep({ ws }: { ws: string }) {
   const claude = engines.data?.claude?.available
   const [picked, setPicked] = useState<Writer | null>(null)
   const [language, setLanguage] = useState('')
+  const [shape, setShape] = useShape()
   const writer = picked ?? (claude ? 'claude' : 'assistant')
   if (!tree.data) return <div className="mt-6"><Spinner /></div>
   return (
+    <>
+    <ShapeForm shape={shape} onChange={setShape}>
+      <LanguageField value={language} onChange={setLanguage} label={t('Language of the course')} placeholder={t('Same as my files')} />
+    </ShapeForm>
     <section aria-labelledby="writer" className="mt-8">
       <h2 id="writer" className="text-[16px] font-semibold">{t('Who writes the course?')}</h2>
       <div role="radiogroup" aria-labelledby="writer" className={`mt-3 grid gap-2 ${claude ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
@@ -151,13 +162,13 @@ export function WriterStep({ ws }: { ws: string }) {
       {engines.data && !claude && (
         <p className="mt-2 text-[13px] text-muted">{t('Claude can also write it from here, but Claude Code was not found on this computer, or it did not start.')} <Link href={`/w/${ws}/settings#local-ai`} className="underline underline-offset-2 hover:text-text">{t('See why in Settings')}</Link></p>
       )}
-      <div className="mt-4"><LanguageField value={language} onChange={setLanguage} label={t('Language of the course')} placeholder={t('Same as my files')} /></div>
       <div className="mt-4">
-        {writer === 'claude' && <FromHere ws={ws} name={tree.data.name} language={language} />}
-        {writer === 'assistant' && <WithAssistant ws={ws} name={tree.data.name} root={tree.data.root} language={language} />}
-        {writer === 'chat' && <InAChat ws={ws} language={language} />}
+        {writer === 'claude' && <FromHere ws={ws} name={tree.data.name} language={language} shape={shape} />}
+        {writer === 'assistant' && <WithAssistant ws={ws} name={tree.data.name} root={tree.data.root} language={language} shape={shape} />}
+        {writer === 'chat' && <InAChat ws={ws} language={language} shape={shape} />}
       </div>
       <div className="mt-6 border-t border-border pt-4"><Arriving ws={ws} /></div>
     </section>
+    </>
   )
 }
