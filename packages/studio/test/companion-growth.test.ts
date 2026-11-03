@@ -83,6 +83,7 @@ describe('the companion API', () => {
     const { post, h } = setup()
     expect(await post(`/api/w/${h.id}/companion/read`, { doc: 'funciones.md' })).toMatchObject({ gained: 10, points: 10 })
     expect(await post(`/api/w/${h.id}/companion/read`, { doc: 'funciones.md' })).toMatchObject({ gained: 0, points: 10 })
+    expect(await post(`/api/w/${h.id}/companion/read`, { doc: './x/../funciones.md' })).toMatchObject({ gained: 0, points: 10 }) // the same note
     expect(await post(`/api/w/${h.id}/companion/read`, { doc: 'corta.md' })).toMatchObject({ gained: 0 })
     expect(await post(`/api/w/${h.id}/companion/read`, { doc: 'nada.md' })).toMatchObject({ error: { code: 'not-found' } })
   })
@@ -103,6 +104,9 @@ describe('the companion API', () => {
     expect(await session(start)).toMatchObject({ gained: 9 }) // 5, and one for each of the 4 cards
     expect(await session(start)).toMatchObject({ gained: 0 }) // sent again
     expect(await session(start - 1)).toMatchObject({ gained: 0 }) // another session, the same reviews
+    // a phone whose clock runs a few minutes ahead still gets its session
+    appendProgress(h.ws, { reviews: [{ id: randomUUID(), t: Date.now(), key: 'a/5', rating: 3 }] })
+    expect(await session(Date.now() + 5 * 60_000)).toMatchObject({ gained: 6 })
     expect(await post(`/api/w/${h.id}/companion/session`, { session: '../x' })).toMatchObject({ error: { code: expect.any(String) } })
   })
 })

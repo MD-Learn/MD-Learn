@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { companionApi } from '../api/queries'
 import { useAway } from '../companion/useActivity'
 
-const WPM = 230, MIN_SECONDS = 20, MAX_SECONDS = 240, MIN_WORDS = 150
+const WPM = 230, MIN_SECONDS = 20, MAX_SECONDS = 240, MIN_WORDS = 150, RETRY_SECONDS = 30
 
 /** Returns the ref for an element at the very end of the note. */
 export function useFinishedReading(ws: string, path: string | undefined, words: number, minutes: number | undefined, on: boolean): (el: HTMLElement | null) => void {
@@ -14,9 +14,13 @@ export function useFinishedReading(ws: string, path: string | undefined, words: 
   away.current = useAway()
   useEffect(() => {
     if (!on || !path || !end || words < MIN_WORDS || path.startsWith('sources/')) return
-    const need = Math.min(MAX_SECONDS, Math.max(MIN_SECONDS, ((minutes ?? words / WPM) * 60) / 3))
+    let need = Math.min(MAX_SECONDS, Math.max(MIN_SECONDS, ((minutes ?? words / WPM) * 60) / 3))
     let seen = 0, reached = false, done = false
-    const finish = () => { if (done || !reached || seen < need) return; done = true; void companionApi.read(ws, path).catch(() => undefined) }
+    const finish = () => {
+      if (done || !reached || seen < need) return
+      done = true
+      companionApi.read(ws, path).catch(() => { done = false; need = seen + RETRY_SECONDS }) // the server was away: try again a little later
+    }
     const io = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) { reached = true; finish() } })
     io.observe(end)
     const tick = window.setInterval(() => { if (document.visibilityState === 'visible' && !away.current) { seen++; finish() } }, 1000)

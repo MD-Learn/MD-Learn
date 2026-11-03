@@ -17,6 +17,8 @@ const LOG = 20
 export const MIN_READ_WORDS = 150
 /** The level at which each of the five looks begins. */
 const STAGE_FROM = [1, 3, 5, 8, 12]
+/** A session's start comes from the device's clock, which may run ahead of this computer's. */
+const CLOCK_SKEW = 60 * 60_000
 
 /** Points needed in all to reach the level after `n`: 25, 75, 150, 250 … */
 const need = (n: number) => (25 * n * (n + 1)) / 2
@@ -50,7 +52,7 @@ export function award(deps: Growth, ws: string, d: Deed): Grew | null {
  * Each review counts in one session only: the companion remembers, per folder, up to when it has counted.
  */
 export function awardSession(deps: Growth, ws: string, startedAt: number, reviews: readonly { t: number; key: string }[]): Grew | null {
-  const since = Math.max(startedAt, deps.settings.get().companion.reviewed[ws] ?? 0)
+  const since = Math.max(startedAt - CLOCK_SKEW, deps.settings.get().companion.reviewed[ws] ?? 0)
   const done = reviews.filter((r) => r.t >= since)
   if (!done.length) return null
   const grew = award(deps, ws, { kind: 'session', key: `session:${ws}:${startedAt}`, title: '', cards: new Set(done.map((r) => r.key)).size })

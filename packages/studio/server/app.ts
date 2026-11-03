@@ -144,6 +144,8 @@ export function createApp(deps: Deps): Hono {
   // ---- the companion's growth (optional; companion.ts decides the points)
   const growth = { settings: deps.settings, bus: deps.bus }
   const grown = (g: Grew | null) => ({ gained: g?.gained ?? 0, ...companionView(deps.settings) })
+  /** One spelling for a path in a folder, so `./a.md` and `a.md` count as the same note. */
+  const samePath = (p: string) => posix.normalize(p.replace(/\\/g, '/')).replace(/^\.\//, '')
   app.get('/api/companion', need('read', o), (c) => c.json(companionView(deps.settings)))
   app.post('/api/companion', need('notes', o), async (c) => {
     const b = z.object({ growth: z.boolean().optional(), name: z.string().trim().max(40).optional() }).parse(await c.req.json())
@@ -288,7 +290,7 @@ export function createApp(deps: Deps): Hono {
     if (!answer) throw new UserError('invalid', 'That answer does not fit this question.')
     const lesson = { id: 'doc', title: model.title, lang: (typeof model.frontmatter?.lang === 'string' ? model.frontmatter.lang : 'en') } as never
     const checked = checkStructured({ lesson, card: { id: 'doc', title: '', blocks: [] }, widget: w }, answer)
-    if (answer.type !== 'skip') award(growth, h.id, { kind: 'exercise', key: `ex:${h.id}:${body.path}:${body.widgetId}`, title: model.title }) // trying counts, right or wrong
+    if (answer.type !== 'skip') award(growth, h.id, { kind: 'exercise', key: `ex:${h.id}:${samePath(body.path)}:${body.widgetId}`, title: model.title }) // trying counts, right or wrong
     return c.json({ checked })
   })
   // ---- quick cards from what you are reading
@@ -734,9 +736,9 @@ export function createApp(deps: Deps): Hono {
     const h = ws(c)
     const { doc } = z.object({ doc: z.string().min(1).max(1024) }).parse(await c.req.json())
     if (!existsSync(deps.workspaces.resolve(h, doc))) throw new UserError('not-found', 'This note no longer exists.')
-    const model = deps.workspaces.doc(h, doc)
-    const counts = model.outline.words >= MIN_READ_WORDS && !doc.startsWith('sources/')
-    return c.json(grown(counts ? award(growth, h.id, { kind: 'read', key: `read:${h.id}:${doc}`, title: model.title }) : null))
+    const model = deps.workspaces.doc(h, doc), path = samePath(doc)
+    const counts = model.outline.words >= MIN_READ_WORDS && !path.startsWith('sources/')
+    return c.json(grown(counts ? award(growth, h.id, { kind: 'read', key: `read:${h.id}:${path}`, title: model.title }) : null))
   })
   app.post('/api/w/:ws/companion/session', need('study', o), async (c) => {
     const h = ws(c)
@@ -752,7 +754,7 @@ export function createApp(deps: Deps): Hono {
     // Claude runs on this computer's account: only from this computer (the 'ai' capability)
     if (body.engine === 'claude' && !capsOf(c, o).includes('ai')) throw new UserError('capability', 'Claude can be used only on the computer running MDlearn Studio.')
     const result = await teachBack(h, deps.workspaces, { local: deps.settings.get().ollama, ...(deps.claudeOnce ? { claude: deps.claudeOnce } : {}) }, body)
-    const target = body.widget ?? body.lesson ?? `${body.doc}#${body.section}`
+    const target = body.widget ? `${samePath(body.doc ?? '')}:${body.widget}` : body.lesson ?? `${samePath(body.doc ?? '')}#${body.section}` // two notes can share a widget id
     award(growth, h.id, { kind: 'explain', key: `explain:${h.id}:${target}:${new Date().toISOString().slice(0, 10)}`, title: result.title }) // once a day for each
     return c.json(result)
   })
