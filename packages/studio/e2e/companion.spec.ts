@@ -166,7 +166,7 @@ test.describe('growing', () => {
     await expect(page.getByRole('checkbox', { name: /Let it grow/ })).not.toBeChecked()
     await expect(page.getByText('It stays as it is, and nothing is counted while it does not grow.')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Your companion' })).toHaveCount(0) // gone from the sidebar
-    expect((await post<{ gained: number }>(page, `/api/w/${ws}/companion/session`, { session: 'stopped', cards: 3 })).gained).toBe(0)
+    expect((await post<{ gained: number }>(page, `/api/w/${ws}/companion/session`, { session: String(Date.now()) })).gained).toBe(0)
     await post(page, '/api/companion', { name: '' })
   })
 
