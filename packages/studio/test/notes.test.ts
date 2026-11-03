@@ -108,16 +108,3 @@ describe('asking the local model about a passage', () => {
     expect(Date.now() - t).toBeLessThan(3000)
   })
 })
-
-describe('explanation feedback', () => {
-  it('returns per-idea verdicts validated against the card', async () => {
-    const { post } = setup()
-    reply = JSON.stringify({ ideas: [{ index: 1, verdict: 'covered', evidence: 'spreads' }, { index: 9, verdict: 'missing' }], feedback: 'Add the way back.' })
-    const lessonsWithExplain = (await import('@mdlearn/core/node')).loadCourse(join(fixture, 'learn'))
-      .flatMap((l) => l.lesson?.cards.flatMap((c) => c.blocks) ?? []).find((b) => b.type === 'explain') as { id: string } | undefined
-    if (!lessonsWithExplain) return // fixture without an explain card
-    const r = await (await post('/study/judge', { widgetId: lessonsWithExplain.id, text: 'it spreads out' })).json() as { ideas: { index: number }[]; feedback: string }
-    expect(r.ideas.every((i) => i.index >= 1)).toBe(true)
-    expect(lastChat!.format).toBeTruthy()
-  })
-})

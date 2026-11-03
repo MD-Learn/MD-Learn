@@ -15,7 +15,7 @@ import { TopLeft } from '../layout/Shell'
 import { docRoute } from '../lib/paths'
 import { prettyTitle } from '../lib/title'
 import { Summary } from './Summary'
-import { Judge } from './Judge'
+import { AiCorrection } from '../widgets/AiCorrection'
 import { studyApi, useTree } from '../api/queries'
 import { t, tp } from '../i18n'
 import { whenText } from '../lib/when'
@@ -147,7 +147,7 @@ function Card({ ws, s }: { ws: string; s: ReturnType<typeof useStudySession> }) 
             <Button onClick={() => s.selfAssess('missed')}>{t('Missed it')} <Kbd>M</Kbd></Button>
           </div>
           {item.widget.type === 'explain' && !skipped && st.answer?.type === 'explain' && (
-            <Judge ws={ws} widgetId={item.widget.id} text={st.answer.text} suggest={(how) => s.selfAssess(how)} />
+            <AiCorrection at={{ ws }} widgetId={item.widget.id} text={st.answer.text} onUse={(how) => s.selfAssess(how)} />
           )}
         </div>
       )}

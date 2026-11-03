@@ -217,7 +217,6 @@ export const studyApi = {
   check: (ws: string, body: { widgetId: string; answer: WebAnswer; sure?: boolean; practice?: boolean }) => api.post<{ checked: Checked }>(`/api/w/${ws}/study/check`, body),
   hint: (ws: string, widgetId: string, n: number) => api.post<{ hint: MdNode[] | null }>(`/api/w/${ws}/study/hint`, { widgetId, n }),
   record: (ws: string, cardKey: string, outcome: Outcome) => api.post<RecordResponse>(`/api/w/${ws}/study/record`, { cardKey, outcome }),
-  judge: (ws: string, widgetId: string, text: string) => api.post<JudgeResult>(`/api/w/${ws}/study/judge`, { widgetId, text }),
 }
 export const examApi = {
   plan: (ws: string, o: { count: number; doc?: string; lesson?: string }) => api.get<ExamPlan>(`/api/w/${ws}/exam/plan?${qs(o)}`),
@@ -231,7 +230,6 @@ export interface ReportResponse {
   nextDue: string | null; nextDueText: string | null; streak: number
   confidence: ConfidenceInfo
 }
-export interface JudgeResult { ideas: { index: number; verdict: 'covered' | 'partly' | 'missing'; evidence?: string }[]; feedback: string }
 export interface Passage { text: string; startLine: number; endLine: number; section: { num: string | null; anchor: string; title: string } | null }
 // ---- help: the welcome tour (once), the tutorial folder, the help page
 export const useOnboarding = () => useQuery({ queryKey: ['onboarding'], queryFn: () => api.get<{ tourDone: boolean }>('/api/onboarding'), staleTime: Infinity })

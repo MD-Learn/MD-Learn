@@ -106,6 +106,7 @@ export default function Reader({ ws }: { ws: string }) {
       decorateText: decorate(plan), wrapLink: (url, a) => <PreviewLink ws={ws} from={path} url={url}>{a}</PreviewLink>,
     },
     check: async (widgetId: string, answer: WebAnswer) => (await api.post<{ checked: Checked }>(`/api/w/${ws}/doc/check`, { path, widgetId, answer })).checked,
+    correct: { ws, doc: path },
     ...(!source && article ? { noteAt: (label: HTMLElement, at: number) => { const a = anchorForMoment(article, label, at); if (a) void onSelection('note', a) } } : {}),
   }), [ws, path, plan, source, article]) // eslint-disable-line react-hooks/exhaustive-deps -- onSelection reads only stable setters
 
