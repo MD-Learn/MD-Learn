@@ -210,9 +210,10 @@ await new Promise((r) => scinet.once('listening', r))
 writeFileSync(join(here, '.scinet-port'), String(scinet.address().port))
 const cfgDir = mkdtempSync(join(tmpdir(), 'mdl-e2e-cfg-'))
 const settingsFile = join(cfgDir, 's.json')
-// the welcome tour is tested on its own (onboarding.spec); the library (tutorial, uploads) stays in the temp folder
+// the welcome tour is tested on its own (onboarding.spec), and so is the companion's growth (companion.spec), whose
+// notices would land in other tests; the library (tutorial, uploads) stays in the temp folder
 writeFileSync(settingsFile, JSON.stringify({ ollama: { url: `http://127.0.0.1:${ollama.address().port}`, model: 'qwen3:8b', embedModel: 'embeddinggemma' },
-  scinet: { url: `http://127.0.0.1:${scinet.address().port}` }, libraryDir: join(cfgDir, 'library'), onboarding: { tourDone: true } }))
+  scinet: { url: `http://127.0.0.1:${scinet.address().port}` }, libraryDir: join(cfgDir, 'library'), onboarding: { tourDone: true }, companion: { growth: false } }))
 // the network behind web pictures: every test address is public, and gone.png is gone
 const PICTURE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
 const pictureFetch = { resolve: async () => ['93.184.216.34'], fetch: async (url) => (String(url).endsWith('/gone.png') ? new Response('gone', { status: 404 }) : new Response(PICTURE)) }

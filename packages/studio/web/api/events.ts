@@ -3,6 +3,8 @@ import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { keys } from './queries'
 import { useStream } from '../state/stream'
+import { useUi } from '../state/ui'
+import type { CompanionView } from '../../shared/types'
 import type { ServerEvent } from '../../shared/types'
 
 export function useLiveEvents(ws: string | undefined): void {
@@ -35,6 +37,10 @@ export function useLiveEvents(ws: string | undefined): void {
           break
         case 'job.event':
           qc.setQueryData(keys.job(e.ws, e.jobId), (old: { events: unknown[] } | undefined) => (old ? { ...old, events: [...old.events, e.event] } : old))
+          break
+        case 'companion.grew':
+          qc.invalidateQueries({ queryKey: ['companion'] })
+          useUi.getState().showGrowth(e.grew, qc.getQueryData<CompanionView>(['companion'])?.name)
           break
         case 'resync': qc.invalidateQueries(); break
       }

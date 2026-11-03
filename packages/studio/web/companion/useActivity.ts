@@ -1,5 +1,5 @@
-// What the companion shows comes from what is really happening, never from a score: a job, an answer on its way,
-// a teach-back, the end of a session. It stays out of the way of questions.
+// What the companion shows comes from what is really happening: a job, an answer on its way, a teach-back, the end
+// of a session, something you just finished that made it grow. It stays out of the way of questions.
 import { useEffect, useState } from 'react'
 import { useLocation } from 'wouter'
 import { useJobs } from '../api/queries'
@@ -11,7 +11,7 @@ import { t } from '../i18n'
 const AWAY_MS = 5 * 60_000
 const WAKE_EVENTS = ['pointerdown', 'keydown', 'wheel'] as const
 
-function useAway() {
+export function useAway(): boolean {
   const [away, setAway] = useState(false)
   useEffect(() => {
     let timer: number | undefined
@@ -32,7 +32,7 @@ export function useActivity(ws: string): { activity: Activity; hidden: boolean }
   const [location] = useLocation()
   const jobs = useJobs(ws)
   const thinking = useStream((s) => Object.keys(s.text).some((id) => !s.done[id]))
-  const happy = useUi((u) => u.sessionDone)
+  const happy = useUi((u) => u.sessionDone || !!u.growth)
   const away = useAway()
   const running = jobs.data?.some((j) => j.status === 'running' || j.status === 'queued')
   const asking = /\/(study|exam)(\/|$)/.test(location)

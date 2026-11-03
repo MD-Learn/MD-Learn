@@ -1,5 +1,7 @@
 // UI state that is not server data: theme, panels, the text currently selected in a document.
 import { create } from 'zustand'
+import { growthLabel, levelNotice } from '../companion/growth'
+import type { Grew } from '../../shared/types'
 
 export type Theme = 'system' | 'light' | 'dark'
 export type CompanionKind = 'off' | 'orb' | 'pixel'
@@ -17,6 +19,9 @@ interface UiState {
   /** A study session just ended: a few seconds for the companion to be glad. */
   sessionDone: boolean
   celebrate(): void
+  /** The companion just grew: what for, said beside it for a few seconds; a note read or a new level also as a notice. */
+  growth: Grew | null
+  showGrowth(g: Grew, name?: string): void
   /** Class files dropped on the start page, on their way to /start. */
   classFiles: File[]
   setClassFiles(files: File[]): void
@@ -57,6 +62,13 @@ export const useUi = create<UiState>((set) => ({
   celebrate() {
     set({ sessionDone: true })
     window.setTimeout(() => set({ sessionDone: false }), CELEBRATE_MS)
+  },
+  growth: null,
+  showGrowth(growth, name) {
+    set({ growth })
+    if (growth.levelUp) set({ notice: levelNotice(growth.level, name) })
+    else if (growth.kind === 'read') set({ notice: growthLabel(growth) })
+    window.setTimeout(() => set((s) => (s.growth === growth ? { growth: null } : {})), CELEBRATE_MS)
   },
   sidebar: typeof window === 'undefined' || window.matchMedia('(min-width: 900px)').matches,
   panel: wide(),

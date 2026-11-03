@@ -95,7 +95,20 @@ export type ServerEvent =
   | { type: 'ai.done'; ws: string; doc: string; noteId: string; messageId: string; error?: string }
   | { type: 'job'; ws: string; job: JobSummary }
   | { type: 'job.event'; ws: string; jobId: string; event: JobEvent }
+  | { type: 'companion.grew'; ws: string; grew: Grew }
   | { type: 'resync' }
+
+// ---- the companion's growth (server/companion.ts)
+export type GrowthKind = 'read' | 'exercise' | 'explain' | 'session'
+/** One thing counted: what it was, the points it gave, and where the companion is now. */
+export interface Grew { kind: GrowthKind; title: string; gained: number; points: number; level: number; levelUp: boolean }
+export interface CompanionView {
+  growth: boolean; points: number; level: number
+  /** Which of the five looks it has, and the points at which this level began and the next begins. */
+  stage: number; from: number; to: number
+  log: { at: number; kind: GrowthKind; title: string; points: number }[]
+  name?: string
+}
 
 export interface ApiError { error: { code: string; message: string } }
 

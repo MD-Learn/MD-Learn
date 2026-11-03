@@ -191,7 +191,7 @@ when the test is immediate **[E]**. §4.4 shows how MDlearn reconciles these.
 | Multiple choice can plant errors (Roediger & Marsh, 2005). | Few options, misconception-based distractors, feedback on every attempt, answer-until-correct (Butler & Roediger, 2008). |
 | Immediate vs delayed feedback (Kulik & Kulik, 1988). | Immediate, elaborated feedback in the lesson; the delayed re-exposure comes from spaced review. |
 | Revisiting earlier cards helps understanding (transient information) but turns a check into lookup. | "Look back" is always allowed and simply rated Hard. |
-| Gamification raises engagement but performance rewards can backfire (Deci, Koestner, & Ryan, 1999). | Reward review consistency (streak of cleared review days), never scores. |
+| Gamification raises engagement but performance rewards can backfire (Deci, Koestner, & Ryan, 1999). | Reward review consistency (streak of cleared review days), never scores. The optional companion grows with things done (a note read, a question tried), never with scores or time, and loses nothing. |
 | Interleaving helps discrimination but hurts word-list learning (Brunmair & Richter, 2019). | Interleave across related lessons and in recap method-choice questions only. |
 
 ---
@@ -290,9 +290,9 @@ Kim, Jia, McLaughlin, & Bier, 2015; correlational) **[E]**.
 
 **Games are questions with motion, not rewards.** Match, sort and speed rounds are graded and scheduled
 exactly like the other widgets; their animation shows what happened (a pair joined, an item placed, a
-statement judged) and never stands in for feedback. No points, badges or leaderboards: extrinsic
-rewards for an activity people already find interesting can lower their interest in it (Deci, Koestner,
-& Ryan, 1999) **[E]**. A timer is opt-in (`{time}`) because time pressure helps fluency practice on
+statement judged) and never stands in for feedback. No points for scores, no badges or leaderboards:
+extrinsic rewards for an activity people already find interesting can lower their interest in it (Deci,
+Koestner, & Ryan, 1999) **[E]**. A timer is opt-in (`{time}`) because time pressure helps fluency practice on
 known facts but hurts first learning and anxious learners **[H]**. Sandboxed `:::html` games and visual
 blocks are never graded: their score is self-reported by the page and cannot be checked.
 
@@ -350,7 +350,15 @@ Homner, 2020) **[E]** — but rewards for performance can undermine intrinsic mo
 Ryan, 1999) **[E]** and would push learners away from desirable difficulties and honest "Not sure"
 answers. MDlearn rewards the *behaviour* that the evidence supports: the streak counts days on which
 the learner studied and cleared what was due (days with nothing due and no study neither extend nor
-break it). Mastery
+break it).
+
+**The companion's growth** is optional, and on until turned off because learners asked for it. In the same
+meta-analysis tangible rewards lowered intrinsic motivation while verbal rewards, positive feedback, raised
+it (Deci, Koestner, & Ryan, 1999) **[E]**. Points are neither, so MDlearn keeps them as close to feedback as it
+can: the companion says in words what you did ("you read *Gradients*"), the points buy nothing, are never lost,
+and come from things done (a note read to the end, a question tried right or wrong, an explanation, a finished
+review), never from scores, speed or time in the app. Nothing shows that it raises learning; it is there because
+it is pleasant, and it can be turned off. Mastery
 learning — not advancing until mastered — has a mean effect of 0.52 (Kulik, Kulik, & Bangert-Drowns,
 1990) **[E]**; MDlearn applies it softly: lessons do not lock, but a lesson counts as mastered only when
 all its cards have been recalled at Good in a spaced review.

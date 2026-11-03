@@ -6,7 +6,8 @@ import { Link, useLocation, useSearch } from 'wouter'
 import { BookOpenCheck, Code2, Ellipsis, FileText, Pencil, Sparkles, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { api, qs } from '../api/client'
-import { inboxApi, keys, notesApi, useDoc, useEngines, useLinks, useNotes, useSectionMap, useSession, useTermHovers, useTree } from '../api/queries'
+import { inboxApi, keys, notesApi, useCompanion, useDoc, useEngines, useLinks, useNotes, useSectionMap, useSession, useTermHovers, useTree } from '../api/queries'
+import { useFinishedReading } from './useFinishedReading'
 import { NotesPanel, useNoteHighlights } from '../notes/NotesPanel'
 import { SelectionToolbar, type SelectionKind } from '../notes/SelectionToolbar'
 import { MAX_CAPTURE } from '../inbox/CaptureForm'
@@ -98,6 +99,8 @@ export default function Reader({ ws }: { ws: string }) {
   }, [doc.data?.path, section]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const links = useLinks(ws, path)
+  const growing = !!useCompanion().data?.growth
+  const markEnd = useFinishedReading(ws, path, doc.data?.outline.words ?? 0, doc.data?.outline.timeMin, growing && !source)
   const hovers = useTermHovers(ws, termHints)
   const plan = useMemo(() => (termHints && doc.data && path && hovers.data?.terms.length ? planTerms(doc.data.blocks, hovers.data.terms, path) : null), [termHints, doc.data, path, hovers.data])
   const env = useMemo<BlockEnv | null>(() => !path ? null : ({
@@ -176,6 +179,7 @@ export default function Reader({ ws }: { ws: string }) {
           <div className="read" ref={setArticle}>
             <MarkLegend blocks={doc.data.blocks} />
             <DocBlocks blocks={doc.data.blocks.filter((b, i) => !(i < 3 && b.type === 'heading' && b.depth === 1))} env={env} />
+            <div ref={markEnd} aria-hidden />
           </div>
         </article>
       ))}

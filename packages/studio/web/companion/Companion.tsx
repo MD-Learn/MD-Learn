@@ -1,15 +1,16 @@
-// A small sign of what MDlearn is doing at the foot of the sidebar, and someone to ask about your course. No hunger, no
-// coins, no guilt, nothing for time spent here. It always says in words what it shows, and it stays away from study
-// sessions and exams. Settings can change it or turn it off.
+// A small sign of what MDlearn is doing at the foot of the sidebar, and someone to ask about your course. It can grow
+// with what you finish (companion.ts on the server), but no hunger, no guilt, nothing for time spent here. It always
+// says in words what it shows, and it stays away from study sessions and exams. Settings can change it or turn it off.
 import { lazy, Suspense, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { Link, useLocation, useSearch } from 'wouter'
-import { useInbox, useJobs, useTree } from '../api/queries'
+import { useCompanion, useInbox, useJobs, useTree } from '../api/queries'
 import { useUi } from '../state/ui'
 import { IconButton } from '../ui/primitives'
 import { AskBox } from './AskBox'
 import { PixelPet } from './PixelPet'
 import { activityLabel, useActivity } from './useActivity'
+import { growthLabel, useAccentColor } from './growth'
 import { t, tp } from '../i18n'
 
 const Orb = lazy(() => import('./Orb'))
@@ -40,19 +41,24 @@ function Panel({ ws, thread, onThread, onClose }: { ws: string; thread: string[]
 
 function Present({ ws, kind }: { ws: string; kind: 'orb' | 'pixel' }) {
   const { activity, hidden } = useActivity(ws)
+  const growth = useUi((u) => u.growth)
+  const me = useCompanion().data
+  const color = useAccentColor()
+  const stage = me?.growth ? me.stage : 1
   const [open, setOpen] = useState(false)
   const [thread, setThread] = useState<string[]>([]) // here, so the conversation is still there when you open it again
   const toggle = useRef<HTMLButtonElement>(null)
   if (hidden) return null
   const close = () => { setOpen(false); toggle.current?.focus() }
   return (
-    <div className="relative px-2 pt-1 max-[899px]:hidden" data-companion={kind}>
-      <button ref={toggle} aria-expanded={open} title={t('Ask about your course')} onClick={() => setOpen((o) => !o)} className="flex h-8 w-full items-center gap-2 rounded-[6px] px-1.5 text-[13px] text-muted hover:bg-hover hover:text-text cursor-pointer">
-        <span className="flex size-6 shrink-0 items-center justify-center" aria-hidden>
-          {kind === 'orb' ? <Suspense fallback={null}><Orb activity={activity} /></Suspense> : <PixelPet activity={activity} />}
+    <div className="relative flex items-center gap-1 px-2 pt-1 max-[899px]:hidden" data-companion={kind}>
+      <button ref={toggle} aria-expanded={open} title={t('Ask about your course')} onClick={() => setOpen((o) => !o)} className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-[6px] px-1.5 text-[13px] text-muted hover:bg-hover hover:text-text cursor-pointer">
+        <span className="flex size-6 shrink-0 items-center justify-center text-accent-ink" aria-hidden>
+          {kind === 'orb' ? <Suspense fallback={null}><Orb activity={activity} stage={stage} color={color} /></Suspense> : <PixelPet activity={activity} stage={stage} />}
         </span>
-        <span className="truncate" role="status" aria-live="off">{activityLabel(activity)}</span>
+        <span className="truncate" role="status" aria-live="off">{growth ? growthLabel(growth) : activityLabel(activity)}</span>
       </button>
+      {me?.growth && <Link href={`/w/${ws}/companion`} title={t('Your companion')} className="shrink-0 rounded-full bg-accent-soft px-1.5 py-px text-[11.5px] font-medium tabular text-accent-ink hover:underline">{t('Lv {n}', { n: me.level })}</Link>}
       {open && <Panel ws={ws} thread={thread} onThread={setThread} onClose={close} />}
     </div>
   )

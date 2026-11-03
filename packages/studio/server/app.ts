@@ -13,7 +13,7 @@ import { addClassFile } from './import/class-files.js'
 import { extname, relative, join, dirname, posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
-import { compile, parseDocument, findSection, sectionText, isWidget, parseWebAnswer, checkStructured, MAX_EXAM_QUESTIONS } from '@mdlearn/core'
+import { compile, parseDocument, findSection, sectionText, isWidget, parseWebAnswer, checkStructured, locate, MAX_EXAM_QUESTIONS } from '@mdlearn/core'
 import { loadLessons, compileSource, searchCurriculum, loadDoc, loadGoals, saveGoals, inRoot } from '@mdlearn/core/node'
 import { security, capsOf, clientOf, need, type SecurityOptions } from './security.js'
 import { Workspaces, UserError, browse, type Handle } from './workspaces.js'
@@ -28,6 +28,7 @@ import { ask, cancelAsk, EXPLAIN_QUESTION } from './ai/ask.js'
 import { ollamaStatus, ollamaBusy, ollamaDelete, ollamaModels } from './ai/ollama.js'
 import { MODEL_NAME, ModelDownloads, hardware, installedName, isEmbedding, localAi } from './ai/models.js'
 import { teachBack, type OneShot } from './ai/teachback.js'
+import { award, companionView, MIN_READ_WORDS } from './companion.js'
 import { PyodideStore } from './python.js'
 import { Knowledge } from './knowledge/index.js'
 import { AskService } from './ask/service.js'
@@ -55,7 +56,7 @@ import type { EventBus, Envelope } from './bus.js'
 import type { SettingsStore } from './settings.js'
 import { Latex } from './latex.js'
 import { TEX_FILE, texRoot } from './latex-files.js'
-import type { SessionInfo, LessonResponse, CompileResponse, PreviewResponse, Integrations, MapNode, MapResponse, Hardware, ImportResult, LocalAiInfo, McpSetup, PreparedFolder, ClassFile, ClassUpload } from '../shared/types.js'
+import type { SessionInfo, LessonResponse, CompileResponse, PreviewResponse, Integrations, MapNode, MapResponse, Hardware, ImportResult, LocalAiInfo, McpSetup, PreparedFolder, ClassFile, ClassUpload, Grew } from '../shared/types.js'
 
 /** Languages with a translated help page (help.<lang>.md). */
 const HELP_LANGS = new Set(['it', 'es', 'fr', 'ca'])
@@ -139,6 +140,15 @@ export function createApp(deps: Deps): Hono {
   app.post('/api/onboarding', need('notes', o), async (c) => {
     const { tourDone } = z.object({ tourDone: z.boolean() }).parse(await c.req.json())
     return c.json(deps.settings.update((s) => ({ ...s, onboarding: { ...s.onboarding, tourDone } })).onboarding)
+  })
+  // ---- the companion's growth (optional; companion.ts decides the points)
+  const growth = { settings: deps.settings, bus: deps.bus }
+  const grown = (g: Grew | null) => ({ gained: g?.gained ?? 0, ...companionView(deps.settings) })
+  app.get('/api/companion', need('read', o), (c) => c.json(companionView(deps.settings)))
+  app.post('/api/companion', need('notes', o), async (c) => {
+    const b = z.object({ growth: z.boolean().optional(), name: z.string().trim().max(40).optional() }).parse(await c.req.json())
+    deps.settings.update((s) => ({ ...s, companion: { ...s.companion, ...(b.growth !== undefined ? { growth: b.growth } : {}), ...(b.name !== undefined ? { name: b.name || undefined } : {}) } }))
+    return c.json(companionView(deps.settings))
   })
   app.post('/api/workspaces/tutorial', need('fs', o), async (c) => {
     const { reset } = z.object({ reset: z.boolean().optional() }).parse(await c.req.json().catch(() => ({})))
@@ -276,7 +286,9 @@ export function createApp(deps: Deps): Hono {
     const answer = parseWebAnswer(w, body.answer)
     if (!answer) throw new UserError('invalid', 'That answer does not fit this question.')
     const lesson = { id: 'doc', title: model.title, lang: (typeof model.frontmatter?.lang === 'string' ? model.frontmatter.lang : 'en') } as never
-    return c.json({ checked: checkStructured({ lesson, card: { id: 'doc', title: '', blocks: [] }, widget: w }, answer) })
+    const checked = checkStructured({ lesson, card: { id: 'doc', title: '', blocks: [] }, widget: w }, answer)
+    if (answer.type !== 'skip') award(growth, h.id, { kind: 'exercise', key: `ex:${h.id}:${body.path}:${body.widgetId}`, title: model.title }) // trying counts, right or wrong
+    return c.json({ checked })
   })
   // ---- quick cards from what you are reading
   app.get('/api/w/:ws/doc/passage', need('notes', o), (c) => {
@@ -362,7 +374,10 @@ export function createApp(deps: Deps): Hono {
   app.get('/api/w/:ws/study/item', need('study', o), (c) => c.json(study.item(ws(c), z.string().min(1).max(300).parse(c.req.query('widget')))))
   app.post('/api/w/:ws/study/check', need('study', o), async (c) => {
     const body = z.object({ widgetId: z.string().min(1).max(300), answer: z.unknown(), sure: z.boolean().optional(), practice: z.boolean().optional() }).parse(await c.req.json())
-    return c.json({ checked: study.check(ws(c), body) })
+    const h = ws(c), checked = study.check(h, body)
+    // a lesson page's question counts like a note's; Study sessions count as a whole (companion/session)
+    if (body.practice && (body.answer as { type?: string } | null)?.type !== 'skip') award(growth, h.id, { kind: 'exercise', key: `ex:${h.id}:${body.widgetId}`, title: locate(study.course(h).lessons, body.widgetId)?.lesson.title ?? '' })
+    return c.json({ checked })
   })
   app.post('/api/w/:ws/study/hint', need('study', o), async (c) => {
     const { widgetId, n } = z.object({ widgetId: z.string().min(1).max(300), n: z.number().int().min(0).max(20) }).parse(await c.req.json())
@@ -713,6 +728,20 @@ export function createApp(deps: Deps): Hono {
     const { messageId } = z.object({ messageId: z.string().max(64) }).parse(await c.req.json())
     return c.json({ stopped: cancelAsk(messageId) })
   })
+  // a note read to the end (the browser waits for the end of the page and enough time on it; a short note does not count)
+  app.post('/api/w/:ws/companion/read', need('notes', o), async (c) => {
+    const h = ws(c)
+    const { doc } = z.object({ doc: z.string().min(1).max(1024) }).parse(await c.req.json())
+    if (!existsSync(deps.workspaces.resolve(h, doc))) throw new UserError('not-found', 'This note no longer exists.')
+    const model = deps.workspaces.doc(h, doc)
+    const counts = model.outline.words >= MIN_READ_WORDS && !doc.startsWith('sources/')
+    return c.json(grown(counts ? award(growth, h.id, { kind: 'read', key: `read:${h.id}:${doc}`, title: model.title }) : null))
+  })
+  app.post('/api/w/:ws/companion/session', need('study', o), async (c) => {
+    const h = ws(c)
+    const { session, cards } = z.object({ session: z.string().min(1).max(64), cards: z.number().int().min(0).max(1000) }).parse(await c.req.json())
+    return c.json(grown(award(growth, h.id, { kind: 'session', key: `session:${h.id}:${session}`, title: '', cards })))
+  })
   app.post('/api/w/:ws/teachback', need('askLocal', o), async (c) => {
     const h = ws(c)
     const body = z.object({ lesson: z.string().min(1).max(1024).optional(), doc: z.string().min(1).max(1024).optional(), section: z.string().min(1).max(300).optional(), widget: z.string().min(1).max(300).optional(),
@@ -721,7 +750,10 @@ export function createApp(deps: Deps): Hono {
       .parse(await c.req.json())
     // Claude runs on this computer's account: only from this computer (the 'ai' capability)
     if (body.engine === 'claude' && !capsOf(c, o).includes('ai')) throw new UserError('capability', 'Claude can be used only on the computer running MDlearn Studio.')
-    return c.json(await teachBack(h, deps.workspaces, { local: deps.settings.get().ollama, ...(deps.claudeOnce ? { claude: deps.claudeOnce } : {}) }, body))
+    const result = await teachBack(h, deps.workspaces, { local: deps.settings.get().ollama, ...(deps.claudeOnce ? { claude: deps.claudeOnce } : {}) }, body)
+    const target = body.widget ?? body.lesson ?? `${body.doc}#${body.section}`
+    award(growth, h.id, { kind: 'explain', key: `explain:${h.id}:${target}:${new Date().toISOString().slice(0, 10)}`, title: result.title }) // once a day for each
+    return c.json(result)
   })
   app.get('/api/engines', need('read', o), async (c) => {
     const local = await ollamaStatus(deps.settings.get().ollama)

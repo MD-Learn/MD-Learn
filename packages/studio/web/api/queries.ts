@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { api, qs } from './client'
 import { currentLang } from '../i18n'
-import type { SessionInfo, WorkspaceSummary, Tree, DocResponse, LessonResponse, BrowseResult, StudyPlan, StudyItem, RecordResponse, SearchHit, Note, NoteAnchor, NoteColor, EnginesInfo, JobSummary, JobEvent, TodayResponse, GoalsInfo, FormulasResponse, GlossaryResponse, LinksResponse, MapResponse, DocSummary, AskStatus, AskEntry, SheetResponse, FileInfo, HistoryEntry, PreviewResponse, ImportResult, ChatCheck, Integrations, Batch, BatchCandidate, ConfidenceInfo, ExamPlan, ExamResult, TexResult, TexStatus, LocalAiInfo, ModelDownload, ScinetDetail, ScinetPaper, ScinetStatus, RelatedResponse, InboxItem, InboxList } from '../../shared/types'
+import type { SessionInfo, WorkspaceSummary, Tree, DocResponse, LessonResponse, BrowseResult, StudyPlan, StudyItem, RecordResponse, SearchHit, Note, NoteAnchor, NoteColor, EnginesInfo, JobSummary, JobEvent, TodayResponse, GoalsInfo, FormulasResponse, GlossaryResponse, LinksResponse, MapResponse, DocSummary, AskStatus, AskEntry, SheetResponse, FileInfo, HistoryEntry, PreviewResponse, ImportResult, ChatCheck, Integrations, Batch, BatchCandidate, ConfidenceInfo, ExamPlan, ExamResult, TexResult, TexStatus, LocalAiInfo, ModelDownload, ScinetDetail, ScinetPaper, ScinetStatus, RelatedResponse, InboxItem, InboxList, CompanionView } from '../../shared/types'
 import type { Checked, MdNode, WebAnswer, Outcome } from '@mdlearn/core'
 
 export const keys = {
@@ -232,6 +232,14 @@ export interface ReportResponse {
 }
 export interface Passage { text: string; startLine: number; endLine: number; section: { num: string | null; anchor: string; title: string } | null }
 // ---- help: the welcome tour (once), the tutorial folder, the help page
+// ---- the companion's growth (the server decides the points)
+export const useCompanion = () => useQuery({ queryKey: ['companion'], queryFn: () => api.get<CompanionView>('/api/companion'), staleTime: 60_000 })
+type Grown = CompanionView & { gained: number }
+export const companionApi = {
+  update: (b: { growth?: boolean; name?: string }) => api.post<CompanionView>('/api/companion', b),
+  read: (ws: string, doc: string) => api.post<Grown>(`/api/w/${ws}/companion/read`, { doc }),
+  session: (ws: string, session: string, cards: number) => api.post<Grown>(`/api/w/${ws}/companion/session`, { session, cards }),
+}
 export const useOnboarding = () => useQuery({ queryKey: ['onboarding'], queryFn: () => api.get<{ tourDone: boolean }>('/api/onboarding'), staleTime: Infinity })
 export const helpApi = {
   tourDone: (tourDone: boolean) => api.post<{ tourDone: boolean }>('/api/onboarding', { tourDone }),

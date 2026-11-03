@@ -25,6 +25,7 @@ const HelpPage = lazy(() => import('./help/HelpPage'))
 const SettingsPage = lazy(() => import('./settings/SettingsPage'))
 const CapturePage = lazy(() => import('./inbox/CapturePage'))
 const StartPage = lazy(() => import('./start/StartPage'))
+const CompanionPage = lazy(() => import('./companion/CompanionPage'))
 
 function Workspace() {
   const { ws } = useParams<{ ws: string }>()
@@ -47,6 +48,7 @@ function Workspace() {
           <Route path="/w/:ws/glossary"><GlossaryPage ws={ws} /></Route>
           <Route path="/w/:ws/map"><MapPage ws={ws} /></Route>
           <Route path="/w/:ws/help"><HelpPage ws={ws} /></Route>
+          <Route path="/w/:ws/companion"><CompanionPage ws={ws} /></Route>
           <Route path="/w/:ws/settings"><SettingsPage /></Route>
           <Route><TodayPage ws={ws} /></Route>
         </Switch>

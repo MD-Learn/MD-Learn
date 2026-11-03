@@ -1,8 +1,8 @@
 // Left sidebar: folder switcher, search, study entry with today's count, the document tree, theme.
 import { useMemo, useState } from 'react'
 import { Link, useLocation } from 'wouter'
-import { BookA, BookOpenCheck, ClipboardCheck, LifeBuoy, FilePlus, FileInput, ChartNoAxesColumn, ChevronsUpDown, FolderOpen, House, MessageSquareText, Monitor, Moon, Network, PanelLeftClose, Search, Settings, Sigma, Sparkles, Sun, Loader2 } from 'lucide-react'
-import { useJobs, useSession, useTree, useWorkspaces } from '../api/queries'
+import { BookA, BookOpenCheck, ClipboardCheck, LifeBuoy, FilePlus, FileInput, ChartNoAxesColumn, ChevronsUpDown, FolderOpen, House, MessageSquareText, Monitor, Moon, Network, PanelLeftClose, Search, Settings, Sigma, Sparkles, Sprout, Sun, Loader2 } from 'lucide-react'
+import { useCompanion, useJobs, useSession, useTree, useWorkspaces } from '../api/queries'
 import { useUi, type Theme } from '../state/ui'
 import { Companion } from '../companion/Companion'
 import { FileTree } from './FileTree'
@@ -11,7 +11,8 @@ import { NewNote } from '../editor/NewNote'
 import { t, tp } from '../i18n'
 
 export function Sidebar({ ws }: { ws: string }) {
-  const { sidebar, toggleSidebar, setPalette, setImportOpen } = useUi()
+  const { sidebar, toggleSidebar, setPalette, setImportOpen, companion } = useUi()
+  const grows = !!useCompanion().data?.growth && companion !== 'off'
   const tree = useTree(ws)
   const [location] = useLocation()
   const due = tree.data?.totals.due ?? 0
@@ -46,6 +47,7 @@ export function Sidebar({ ws }: { ws: string }) {
         <NavItem href={`/w/${ws}/glossary`} icon={BookA} active={location.startsWith(`/w/${ws}/glossary`)}>{t('Glossary')}</NavItem>
         <NavItem href={`/w/${ws}/map`} icon={Network} active={location.startsWith(`/w/${ws}/map`)}>{t('Map')}</NavItem>
         <NavItem href={`/w/${ws}/help`} icon={LifeBuoy} tour="help" active={location.startsWith(`/w/${ws}/help`)}>{t('Help')}</NavItem>
+        {grows && <NavItem href={`/w/${ws}/companion`} icon={Sprout} active={location.startsWith(`/w/${ws}/companion`)}>{t('Your companion')}</NavItem>}
       </div>
       <div data-tour="files" className="min-h-0 flex-1 overflow-y-auto border-t border-border px-2 pb-3 pt-2">
         {canWrite && (
