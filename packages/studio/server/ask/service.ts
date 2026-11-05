@@ -11,6 +11,7 @@ import { UserError } from '../workspaces.js'
 import type { SettingsStore } from '../settings.js'
 import type { Knowledge, KnowledgeIndex } from '../knowledge/index.js'
 import { hasModel, ollamaChat, ollamaEmbed, ollamaStatus, type ChatMessage, type OllamaConfig } from '../ai/ollama.js'
+import type { QuickChat } from '../ai/llm.js'
 import { ModelDownloads } from '../ai/models.js'
 import { trackRunning } from '../ai/ask.js'
 import type { OneShot } from '../ai/teachback.js'
@@ -38,8 +39,9 @@ const embedText = (p: Passage) => `title: ${p.docTitle}${p.section ? ` — ${p.s
 const plain = (s: string) => s.replace(/\$\$?[^$]*\$\$?/g, ' ').replace(/[*_`>#]/g, '').replace(/\s+/g, ' ').trim()
 const reference = (p: Passage): RelatedPassage => ({ doc: p.doc, docTitle: p.docTitle, section: p.section, line: p.line, snippet: plain(p.text).slice(0, 220) })
 
-export type AskEngine = 'local' | 'claude'
-export interface AskOptions { engine?: AskEngine; lang?: string; companion?: boolean; doc?: string; thread?: string[] }
+export type AskEngine = 'local' | 'claude' | 'cloud'
+/** `chat`: the local model or the cloud AI, already checked by the caller (without it, the local model). */
+export interface AskOptions { engine?: AskEngine; chat?: QuickChat; lang?: string; companion?: boolean; doc?: string; thread?: string[] }
 
 interface Build { running: boolean; error?: string; startedAt: number }
 const EntrySchema = z.object({
@@ -130,17 +132,17 @@ export class AskService {
   }
 
   /** A reply from the engine chosen, at once or as it is written. */
-  private reply(engine: AskEngine, messages: ChatMessage[], signal: AbortSignal, onDelta?: (t: string) => void): Promise<string> {
-    if (engine === 'local') return ollamaChat(this.cfg(), { messages, signal, temperature: 0.2, ...(onDelta ? { onDelta } : {}) })
+  private reply(engine: AskEngine, messages: ChatMessage[], signal: AbortSignal, onDelta?: (t: string) => void, chat?: QuickChat): Promise<string> {
+    if (engine !== 'claude') { const o = { messages, signal, temperature: 0.2, ...(onDelta ? { onDelta } : {}) }; return chat ? chat.chat(o) : ollamaChat(this.cfg(), o) }
     const [system, ...rest] = messages
     const prompt = rest.map((m) => (m.role === 'assistant' ? `Your earlier answer:\n${m.content}` : m.content)).join('\n\n')
     return this.claude!({ system: system.content, prompt, signal }).then((text) => { onDelta?.(text); return text })
   }
   /** Words the folder would use for a question it does not know the words of. Nothing if the AI cannot say: the question's own words still search. */
-  private async searchWords(engine: AskEngine, question: string, passages: Passage[]): Promise<string> {
+  private async searchWords(engine: AskEngine, question: string, passages: Passage[], chat?: QuickChat): Promise<string> {
     const all = [...new Set(passages.map((p) => p.docTitle))], every = Math.ceil(all.length / MAX_TITLES)
     const titles = all.filter((_, i) => i % every === 0) // a spread of the folder: it shows what language the folder is written in
-    try { return await this.reply(engine, searchWordsPrompt(question, titles), AbortSignal.timeout(WORDS_TIMEOUT)) } catch { return '' }
+    try { return await this.reply(engine, searchWordsPrompt(question, titles), AbortSignal.timeout(WORDS_TIMEOUT), undefined, chat) } catch { return '' }
   }
 
   private async retrieve(h: Handle, query: string, o: AskOptions): Promise<{ hits: Scored[]; passages: Passage[]; mode: 'meaning' | 'words'; notice?: string }> {
@@ -160,7 +162,7 @@ export class AskService {
     } else notice = 'words'
     // meaning crosses languages by itself; words need the question in the language of the folder, and then the
     // question's own words only match by accident
-    const other = !meaning.length && bm25.known(query) < MIN_KNOWN ? bm25.search(await this.searchWords(o.engine ?? 'local', query, passages), PER_LIST) : []
+    const other = !meaning.length && bm25.known(query) < MIN_KNOWN ? bm25.search(await this.searchWords(o.engine ?? 'local', query, passages, o.chat), PER_LIST) : []
     const inDoc = o.doc ? passages.flatMap((p, index) => (p.doc === o.doc ? [index] : [])) : []
     const here = [...words.filter((s) => inDoc.includes(s.index)), ...inDoc.slice(0, NEAR).map((index) => ({ index, score: 0 }))]
     return { hits: fuse([other.length ? other : words, meaning, here], TOP), passages, mode: meaning.length ? 'meaning' : 'words', ...(notice ? { notice } : {}) }
@@ -189,8 +191,10 @@ export class AskService {
     return { mode: 'words', passages: closest(words.filter((s) => s.score >= MIN_WORDS * words[0].score)) }
   }
 
-  private async ready(engine: AskEngine): Promise<void> {
+  private async ready(engine: AskEngine, chat?: QuickChat): Promise<void> {
     if (engine === 'claude') { if (!this.claude) throw new UserError('engine', 'Claude is not available here. Use the local AI.'); return }
+    if (chat) return
+    if (engine === 'cloud') throw new UserError('engine', 'The cloud AI is not set up.')
     const local = await ollamaStatus(this.cfg())
     if (!local.available) throw new UserError('engine', local.error ?? 'The local model is not available.')
   }
@@ -202,7 +206,7 @@ export class AskService {
 
   async ask(h: Handle, question: string, o: AskOptions = {}): Promise<{ id: string; entry: AskEntry }> {
     const engine = o.engine ?? 'local'
-    await this.ready(engine)
+    await this.ready(engine, o.chat)
     const thread = this.turns(h, o.thread ?? [])
     const { hits, passages, mode, notice } = await this.retrieve(h, [...thread.map((t) => t.question), question].join(' '), o)
     const sources: AskSource[] = hits.map((s, i) => ({ n: i + 1, ...reference(passages[s.index]) }))
@@ -231,7 +235,7 @@ export class AskService {
     publish('') // the answer has started, even if an engine says nothing until it is done
     const limit = engine === 'claude' ? AbortSignal.timeout(CLAUDE_TIMEOUT) : null
     // generation continues in the background; the browser follows it through ai.delta events
-    void this.reply(engine, messages, limit ? AbortSignal.any([ctl.signal, limit]) : ctl.signal, (t) => { pending += t; timer ??= setTimeout(flush, 50) })
+    void this.reply(engine, messages, limit ? AbortSignal.any([ctl.signal, limit]) : ctl.signal, (t) => { pending += t; timer ??= setTimeout(flush, 50) }, o.chat)
       .then((text) => finish(text)).catch((e: Error) => finish(null, ctl.signal.aborted ? 'Stopped.' : limit?.aborted ? TOO_LONG : e.message))
     return { id: entry.id, entry }
   }

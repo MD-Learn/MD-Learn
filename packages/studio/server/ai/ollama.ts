@@ -2,28 +2,35 @@
 // (an 8 GB GPU does not run two well); questions asked while studying go first.
 export interface OllamaConfig { url: string; model: string; embedModel?: string }
 export interface ChatMessage { role: 'system' | 'user' | 'assistant'; content: string }
-export interface EngineStatus { available: boolean; models: string[]; model: string; error?: string }
+/** `models`: on this computer. `cloudModels`: Ollama's cloud models, which run on Ollama's servers under your Ollama account. */
+export interface EngineStatus { available: boolean; models: string[]; cloudModels: string[]; model: string; cloud: boolean; error?: string }
 
 export async function ollamaStatus(cfg: OllamaConfig): Promise<EngineStatus> {
+  const none = { models: [], cloudModels: [], model: cfg.model, cloud: false }
   try {
     const r = await fetch(`${cfg.url}/api/tags`, { signal: AbortSignal.timeout(1500) })
-    if (!r.ok) return { available: false, models: [], model: cfg.model, error: `Ollama answered ${r.status}.` }
+    if (!r.ok) return { available: false, ...none, error: `Ollama answered ${r.status}.` }
     const body = await r.json() as { models?: { name: string; remote_host?: string }[] }
-    const models = (body.models ?? []).filter((m) => !m.remote_host).map((m) => m.name)
-    return { available: models.includes(cfg.model), models, model: cfg.model, ...(models.includes(cfg.model) ? {} : { error: `Model ${cfg.model} is not installed. Download it in Settings → Local AI.` }) }
+    const all = body.models ?? []
+    const models = all.filter((m) => !m.remote_host).map((m) => m.name), cloudModels = all.filter((m) => m.remote_host).map((m) => m.name)
+    const cloud = cloudModels.includes(cfg.model), has = cloud || models.includes(cfg.model)
+    return { available: has, models, cloudModels, model: cfg.model, cloud, ...(has ? {} : { error: `Model ${cfg.model} is not installed. Download it in Settings → Local AI.` }) }
   } catch {
-    return { available: false, models: [], model: cfg.model, error: 'Ollama is not running (start it with `ollama serve`).' }
+    return { available: false, ...none, error: 'Ollama is not running (start it with `ollama serve`).' }
   }
 }
 
-export interface InstalledModel { name: string; size: number; family?: string; parameters?: string; quantization?: string }
-/** The models on this computer (cloud models Ollama only links to are left out). */
+/** `cloud`: a model Ollama runs on its own servers (it takes no room here). */
+export interface InstalledModel { name: string; size: number; family?: string; parameters?: string; quantization?: string; cloud?: boolean }
 export async function ollamaModels(cfg: OllamaConfig): Promise<InstalledModel[]> {
   const r = await fetch(`${cfg.url}/api/tags`, { signal: AbortSignal.timeout(3000) })
   if (!r.ok) throw new Error(`Ollama answered ${r.status}.`)
   const body = await r.json() as { models?: { name: string; size?: number; remote_host?: string; details?: { family?: string; parameter_size?: string; quantization_level?: string } }[] }
-  return (body.models ?? []).filter((m) => !m.remote_host).map((m) => ({ name: m.name, size: m.size ?? 0, family: m.details?.family, parameters: m.details?.parameter_size, quantization: m.details?.quantization_level }))
+  return (body.models ?? []).map((m) => ({ name: m.name, size: m.remote_host ? 0 : m.size ?? 0, family: m.details?.family, parameters: m.details?.parameter_size, quantization: m.details?.quantization_level, ...(m.remote_host ? { cloud: true } : {}) }))
 }
+/** Ollama's cloud models need its account on this computer. */
+export const SIGN_IN = 'Sign in to Ollama first: run `ollama signin` in a terminal, then try again.'
+const failed = async (res: Response) => (res.status === 401 ? new Error(SIGN_IN) : new Error(`Ollama answered ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`))
 
 export async function ollamaVersion(cfg: OllamaConfig): Promise<string | null> {
   try {
@@ -57,7 +64,7 @@ export function ollamaChat(cfg: OllamaConfig, o: ChatOptions): Promise<string> {
       body: JSON.stringify({ model: cfg.model, messages: o.messages, stream: true, think: o.think ?? false, keep_alive: '15m',
         options: { num_ctx: o.numCtx ?? 8192, temperature: o.temperature ?? 0.3 }, ...(o.format ? { format: o.format } : {}) }),
     })
-    if (!res.ok || !res.body) throw new Error(`Ollama answered ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+    if (!res.ok || !res.body) throw await failed(res)
     const reader = res.body.getReader()
     const dec = new TextDecoder()
     let buf = '', text = ''
@@ -70,7 +77,7 @@ export function ollamaChat(cfg: OllamaConfig, o: ChatOptions): Promise<string> {
         const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1)
         if (!line) continue
         const msg = JSON.parse(line) as { message?: { content?: string }; error?: string; done?: boolean }
-        if (msg.error) throw new Error(msg.error)
+        if (msg.error) throw new Error(/unauthori[sz]ed/i.test(msg.error) ? SIGN_IN : msg.error)
         const piece = msg.message?.content ?? ''
         if (piece) { text += piece; o.onDelta?.(piece) }
       }
@@ -97,7 +104,7 @@ export interface PullProgress { status: string; completed?: number; total?: numb
 /** Download a model; `onProgress` gets the layer being downloaded. Resolves when Ollama says success. */
 export async function ollamaPull(cfg: OllamaConfig, model: string, onProgress: (p: PullProgress) => void, signal?: AbortSignal): Promise<void> {
   const res = await fetch(`${cfg.url}/api/pull`, { method: 'POST', signal, body: JSON.stringify({ model, stream: true }) })
-  if (!res.ok || !res.body) throw new Error(`Ollama answered ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  if (!res.ok || !res.body) throw await failed(res)
   const reader = res.body.getReader(), dec = new TextDecoder()
   let buf = '', ok = false
   for (;;) {
@@ -109,7 +116,7 @@ export async function ollamaPull(cfg: OllamaConfig, model: string, onProgress: (
       const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1)
       if (!line) continue
       const msg = JSON.parse(line) as PullProgress & { error?: string }
-      if (msg.error) throw new Error(msg.error)
+      if (msg.error) throw new Error(/unauthori[sz]ed/i.test(msg.error) ? SIGN_IN : msg.error)
       if (msg.status === 'success') ok = true
       onProgress({ status: msg.status, completed: msg.completed, total: msg.total })
     }

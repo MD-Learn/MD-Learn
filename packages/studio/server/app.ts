@@ -26,6 +26,9 @@ import { passageFor, addCard } from './cards.js'
 import { notesStore, AnchorSchema, NoteColorSchema } from './notes.js'
 import { ask, cancelAsk, EXPLAIN_QUESTION } from './ai/ask.js'
 import { ollamaStatus, ollamaBusy, ollamaDelete, ollamaModels } from './ai/ollama.js'
+import { CLOUD_KEY_ENV, cloudKey, cloudStatus, cloudTarget, quickChat, type QuickEngine } from './ai/llm.js'
+import { PROVIDERS, checkBaseUrl, cloudModels, providerOf } from './ai/cloud.js'
+import { secretsStore, type SecretsStore } from './secrets.js'
 import { MODEL_NAME, ModelDownloads, hardware, installedName, isEmbedding, localAi } from './ai/models.js'
 import { teachBack, type OneShot } from './ai/teachback.js'
 import { award, awardSession, companionView, MIN_READ_WORDS } from './companion.js'
@@ -61,6 +64,7 @@ import type { SessionInfo, LessonResponse, CompileResponse, PreviewResponse, Int
 /** Languages with a translated help page (help.<lang>.md). */
 const HELP_LANGS = new Set(['it', 'es', 'fr', 'ca'])
 
+const QuickEngineSchema = z.enum(['local', 'cloud']).default('local')
 export interface Deps {
   version: string
   security: SecurityOptions
@@ -88,6 +92,8 @@ export interface Deps {
   engine?: () => AiEngine
   /** One short answer from Claude (teach-back feedback when Claude is chosen); absent without Claude. */
   claudeOnce?: OneShot
+  /** Where the cloud AI's key is kept (default: secrets.json beside the settings file). */
+  secrets?: SecretsStore
   latex?: Latex
 }
 const IMAGE_TYPES: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' }
@@ -604,10 +610,14 @@ export function createApp(deps: Deps): Hono {
     if (!facts) throw new UserError('not-found', 'No such document.')
     return c.json(sheetOf(h, deps.workspaces, facts, ideaProgress(h, path)))
   })
+  // the engine for a short question (local model or cloud AI), checked for this device
+  const secrets = deps.secrets ?? secretsStore(join(dirname(deps.settings.file), 'secrets.json'))
+  const llm = { settings: deps.settings, secrets }
+  const quick = (c: Context, engine: QuickEngine) => quickChat(engine, llm, capsOf(c, o))
   app.post('/api/w/:ws/sheet/ideas', need('askLocal', o), async (c) => {
     const h = ws(c)
-    const body = z.object({ path: z.string().min(1).max(1024), regenerate: z.boolean().optional() }).parse(await c.req.json())
-    const progress = await startIdeas(h, deps.workspaces, deps.settings.get().ollama, body.path, () => undefined, body.regenerate)
+    const body = z.object({ path: z.string().min(1).max(1024), regenerate: z.boolean().optional(), engine: QuickEngineSchema }).parse(await c.req.json())
+    const progress = await startIdeas(h, deps.workspaces, await quick(c, body.engine), body.path, () => undefined, body.regenerate)
     return c.json(progress)
   })
 
@@ -619,11 +629,12 @@ export function createApp(deps: Deps): Hono {
   app.post('/api/w/:ws/ask/setup', need('ai', o), async (c) => { await askSvc.setup(ws(c)); return c.json(await askSvc.status(ws(c))) })
   app.get('/api/w/:ws/ask/history', need('askLocal', o), (c) => c.json(askSvc.history(ws(c))))
   app.post('/api/w/:ws/ask', need('askLocal', o), async (c) => {
-    const { question, ...options } = z.object({ question: z.string().trim().min(2).max(1000), engine: z.enum(['local', 'claude']).default('local'), lang: z.enum(['en', 'it', 'es', 'fr', 'ca']).default('en'),
+    const { question, ...options } = z.object({ question: z.string().trim().min(2).max(1000), engine: z.enum(['local', 'claude', 'cloud']).default('local'), lang: z.enum(['en', 'it', 'es', 'fr', 'ca']).default('en'),
       companion: z.boolean().default(false), doc: z.string().min(1).max(1024).optional(), thread: z.array(z.string().max(64)).max(6).default([]) }).parse(await c.req.json())
     // Claude runs on this computer's account: only from this computer (the 'ai' capability)
     if (options.engine === 'claude' && !capsOf(c, o).includes('ai')) throw new UserError('capability', 'Claude can be used only on the computer running MDlearn Studio.')
-    return c.json(await askSvc.ask(ws(c), question, options))
+    const chat = options.engine === 'claude' ? undefined : await quick(c, options.engine)
+    return c.json(await askSvc.ask(ws(c), question, { ...options, ...(chat ? { chat } : {}) }))
   })
   app.post('/api/w/:ws/ask/delete', need('askLocal', o), async (c) => {
     const { id } = z.object({ id: z.string().max(64).nullable() }).parse(await c.req.json())
@@ -709,21 +720,17 @@ export function createApp(deps: Deps): Hono {
   })
   app.post('/api/w/:ws/ai/ask', need('askLocal', o), async (c) => {
     const h = ws(c)
-    const body = z.object({ doc: z.string().min(1).max(1024), anchor: AnchorSchema, question: z.string().max(4000).optional(), mode: z.enum(['ask', 'explain']).default('ask'), noteId: z.string().max(64).optional() }).parse(await c.req.json())
-    const cfg = deps.settings.get().ollama
-    const status = await ollamaStatus(cfg)
-    if (!status.available) throw new UserError('engine', status.error ?? 'The local model is not available.')
+    const body = z.object({ doc: z.string().min(1).max(1024), anchor: AnchorSchema, question: z.string().max(4000).optional(), mode: z.enum(['ask', 'explain']).default('ask'), noteId: z.string().max(64).optional(), engine: QuickEngineSchema }).parse(await c.req.json())
+    const llm = await quick(c, body.engine)
     const question = body.mode === 'explain' || !body.question?.trim() ? EXPLAIN_QUESTION : body.question.trim()
-    const r = await ask(h, deps.workspaces, deps.bus, cfg, { doc: body.doc, anchor: body.anchor, question, ...(body.noteId ? { noteId: body.noteId } : {}) })
+    const r = await ask(h, deps.workspaces, deps.bus, llm, { doc: body.doc, anchor: body.anchor, question, ...(body.noteId ? { noteId: body.noteId } : {}) })
     return c.json(r)
   })
   app.post('/api/w/:ws/ai/visualise', need('askLocal', o), async (c) => {
     const h = ws(c)
-    const body = z.object({ doc: z.string().min(1).max(1024), anchor: AnchorSchema, kind: z.enum(['auto', 'plot', 'formula', 'animate']).default('auto') }).parse(await c.req.json())
-    const cfg = deps.settings.get().ollama
-    const status = await ollamaStatus(cfg)
-    if (!status.available) throw new UserError('engine', status.error ?? 'The local model is not available.')
-    return c.json(await visualise(h, deps.workspaces, cfg, body.doc, body.anchor, body.kind, c.req.raw.signal))
+    const body = z.object({ doc: z.string().min(1).max(1024), anchor: AnchorSchema, kind: z.enum(['auto', 'plot', 'formula', 'animate']).default('auto'), engine: QuickEngineSchema }).parse(await c.req.json())
+    const llm = await quick(c, body.engine)
+    return c.json(await visualise(h, deps.workspaces, llm.chat, body.doc, body.anchor, body.kind, c.req.raw.signal))
   })
   // insert a snippet into a document right after the paragraph that holds a passage (explicit user action)
   app.post('/api/w/:ws/files/insert', need('write', o), async (c) => {
@@ -753,12 +760,12 @@ export function createApp(deps: Deps): Hono {
   app.post('/api/w/:ws/teachback', need('askLocal', o), async (c) => {
     const h = ws(c)
     const body = z.object({ lesson: z.string().min(1).max(1024).optional(), doc: z.string().min(1).max(1024).optional(), section: z.string().min(1).max(300).optional(), widget: z.string().min(1).max(300).optional(),
-      text: z.string().trim().min(1).max(6000), lang: z.enum(['en', 'it', 'es', 'fr', 'ca']).default('en'), engine: z.enum(['local', 'claude']).default('local') })
+      text: z.string().trim().min(1).max(6000), lang: z.enum(['en', 'it', 'es', 'fr', 'ca']).default('en'), engine: z.enum(['local', 'claude', 'cloud']).default('local') })
       .refine((b) => b.widget || b.text.length >= 20, { message: 'Explain it in a few sentences.' }) // one question may have a short answer; a topic needs more
       .parse(await c.req.json())
     // Claude runs on this computer's account: only from this computer (the 'ai' capability)
     if (body.engine === 'claude' && !capsOf(c, o).includes('ai')) throw new UserError('capability', 'Claude can be used only on the computer running MDlearn Studio.')
-    const result = await teachBack(h, deps.workspaces, { local: deps.settings.get().ollama, ...(deps.claudeOnce ? { claude: deps.claudeOnce } : {}) }, body)
+    const result = await teachBack(h, deps.workspaces, { ...(body.engine !== 'claude' ? { quick: await quick(c, body.engine) } : {}), ...(deps.claudeOnce ? { claude: deps.claudeOnce } : {}) }, body)
     const target = body.widget ? `${samePath(body.doc ?? '')}:${body.widget}` : body.lesson ?? `${samePath(body.doc ?? '')}#${body.section}` // two notes can share a widget id
     award(growth, h.id, { kind: 'explain', key: `explain:${h.id}:${target}:${new Date().toISOString().slice(0, 10)}`, title: result.title }) // once a day for each
     return c.json(result)
@@ -766,7 +773,42 @@ export function createApp(deps: Deps): Hono {
   app.get('/api/engines', need('read', o), async (c) => {
     const local = await ollamaStatus(deps.settings.get().ollama)
     const claude = deps.claudeStatus ? await deps.claudeStatus() : { available: false, error: 'Not configured.' }
-    return c.json({ local: { ...local, busy: ollamaBusy() }, claude: capsOf(c, o).includes('ai') ? claude : { available: claude.available } }) // a phone doesn't learn where programs are
+    const mine = capsOf(c, o).includes('ai'), cloud = cloudStatus(llm)
+    // the cloud AI and Ollama's cloud models run on this computer's accounts: a phone without --lan-full can't use them
+    const localForThem = local.cloud && !mine ? { ...local, available: false, error: 'The model chosen runs on Ollama\'s servers; only the computer running MDlearn can use it.' } : local
+    return c.json({ local: { ...localForThem, busy: ollamaBusy() }, claude: mine ? claude : { available: claude.available }, // a phone doesn't learn where programs are
+      cloud: mine ? cloud : { available: false, provider: null, name: null, model: null } })
+  })
+
+  // ---- the cloud AI: a service with your own key (changes and use only from this computer)
+  const cloudView = () => {
+    const { provider, baseUrl, model } = deps.settings.get().cloud
+    const key = cloudKey(llm), { available, name, error } = cloudStatus(llm)
+    return { provider: provider ?? null, baseUrl: baseUrl ?? null, model: model ?? null, hasKey: !!key, keyEnd: key ? key.slice(-4) : null, fromEnv: !!process.env[CLOUD_KEY_ENV]?.trim(), providers: PROVIDERS, available, name, ...(error ? { error } : {}) }
+  }
+  app.get('/api/ai/cloud', need('ai', o), (c) => c.json(cloudView()))
+  app.post('/api/ai/cloud', need('ai', o), async (c) => {
+    const b = z.object({ provider: z.enum(PROVIDERS.map((p) => p.id) as [string, ...string[]]).optional(), baseUrl: z.string().trim().max(500).optional(), model: z.string().trim().max(200).optional(),
+      key: z.string().trim().min(8, 'That key is too short.').max(500).regex(/^\S+$/, 'A key has no spaces.').optional(), clearKey: z.boolean().optional() }).parse(await c.req.json())
+    const now = deps.settings.get().cloud
+    const provider = b.provider ?? now.provider
+    const preset = providerOf(provider)
+    const baseUrl = preset && preset.id !== 'other' ? preset.baseUrl : b.baseUrl !== undefined ? (b.baseUrl ? checkBaseUrl(b.baseUrl) : undefined) : now.baseUrl
+    const model = b.model !== undefined ? b.model || undefined : b.provider && b.provider !== now.provider ? undefined : now.model // another service has other models
+    if (b.key) secrets.set('cloudKey', b.key)
+    else if (b.clearKey) secrets.set('cloudKey', undefined)
+    deps.settings.update((s) => ({ ...s, cloud: { ...(provider ? { provider } : {}), ...(baseUrl ? { baseUrl } : {}), ...(model ? { model } : {}) } }))
+    return c.json(cloudView())
+  })
+  app.post('/api/ai/cloud/models', need('ai', o), async (c) => {
+    const t = cloudTarget(llm, false)
+    if (typeof t === 'string') throw new UserError('engine', t)
+    try { return c.json({ models: await cloudModels(t) }) } catch (e) { throw new UserError('engine', (e as Error).message) }
+  })
+  app.post('/api/ai/cloud/test', need('ai', o), async (c) => {
+    const q = await quick(c, 'cloud')
+    const reply = await q.chat({ messages: [{ role: 'user', content: 'Reply with one short sentence: what is 2 + 2?' }], temperature: 0, signal: c.req.raw.signal })
+    return c.json({ ok: true, label: q.label, reply: reply.trim().slice(0, 300) })
   })
 
   // ---- local AI models: what is installed, what this computer can run, downloads (changes only from this computer)

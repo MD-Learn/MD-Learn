@@ -87,10 +87,11 @@ describe('what this computer can run', () => {
 })
 
 describe('Settings → Local AI', () => {
-  it('shows installed models (not cloud links), the recommended list with what fits, and the model in use', async () => {
+  it('shows installed models and Ollama cloud models, the recommended list with what fits, and the model in use', async () => {
     const i = await setup().info()
     expect(i.ollama).toEqual({ running: true, installed: true, version: '0.17.4' })
-    expect(i.models.map((m) => [m.name, m.embedding])).toEqual([['qwen3:8b', false], ['embeddinggemma:latest', true], ['llama3:8b', false]])
+    expect(i.models.map((m) => [m.name, m.embedding])).toEqual([['qwen3:8b', false], ['embeddinggemma:latest', true], ['llama3:8b', false], ['kimi:cloud', false]])
+    expect(i.models.find((m) => m.name === 'kimi:cloud')).toMatchObject({ cloud: true, fit: 'good', sizeGb: 0 })
     expect(i.chosen).toBe('qwen3:8b')
     expect(i.catalog.find((c) => c.name === 'qwen3:8b')).toMatchObject({ installed: true, fit: 'good' })
     expect(i.catalog.find((c) => c.name === 'gpt-oss:20b')).toMatchObject({ installed: false, fit: 'slow' })

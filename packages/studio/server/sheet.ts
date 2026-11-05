@@ -11,7 +11,7 @@ import type { Handle, Workspaces } from './workspaces.js'
 import { UserError } from './workspaces.js'
 import type { KnowledgeIndex } from './knowledge/index.js'
 import type { DocFacts } from './knowledge/extract.js'
-import { ollamaChat, ollamaStatus, type OllamaConfig } from './ai/ollama.js'
+import type { QuickChat } from './ai/llm.js'
 import { withFile } from './notes.js'
 import type { SheetResponse, SheetSection } from '../shared/types.js'
 
@@ -65,13 +65,11 @@ export interface IdeaProgress { state: 'none' | 'running' | 'done' | 'error'; do
 const running = new Map<string, IdeaProgress>()
 export const ideaProgress = (h: Handle, path: string) => running.get(`${h.id}:${path}`)
 
-/** Write key ideas for every long section with the local model, one at a time; returns at once. */
-export async function startIdeas(h: Handle, workspaces: Workspaces, cfg: OllamaConfig, path: string, onDone: () => void, regenerate = false): Promise<IdeaProgress> {
+/** Write key ideas for every long section with the engine chosen (checked by the caller), one at a time; returns at once. */
+export async function startIdeas(h: Handle, workspaces: Workspaces, llm: QuickChat, path: string, onDone: () => void, regenerate = false): Promise<IdeaProgress> {
   const key = `${h.id}:${path}`
   const have = running.get(key)
   if (have?.state === 'running') return have
-  const status = await ollamaStatus(cfg)
-  if (!status.available) throw new UserError('engine', status.error ?? 'The local model is not available.')
   const abs = workspaces.resolve(h, path)
   const { outline, md } = loadDoc(abs, h.root)
   const todo = ideaSections(outline)
@@ -85,8 +83,8 @@ export async function startIdeas(h: Handle, workspaces: Workspaces, cfg: OllamaC
         const text = sectionText(md, outline, s.anchor, SECTION_WORDS)?.text ?? ''
         const hash = hashOf(text)
         if (!regenerate && cache[s.anchor]?.hash === hash) { progress.done++; continue }
-        const raw = await ollamaChat(cfg, { messages: [{ role: 'system', content: IDEAS_SYSTEM }, { role: 'user', content: `Document: ${outline.title}\n\n${text}` }], format: IDEAS_FORMAT, temperature: 0.2 })
-        const parsed = IdeasSchema.safeParse(JSON.parse(raw))
+        const raw = await llm.chat({ messages: [{ role: 'system', content: IDEAS_SYSTEM }, { role: 'user', content: `Document: ${outline.title}\n\n${text}` }], format: IDEAS_FORMAT, temperature: 0.2 })
+        const parsed = IdeasSchema.safeParse(jsonIn(raw))
         if (parsed.success) { cache[s.anchor] = { hash, ideas: parsed.data.ideas }; await save(h, path, cache) }
         progress.done++
       }
@@ -103,5 +101,10 @@ function save(h: Handle, path: string, sections: z.infer<typeof CacheSchema>['se
     writeFileSync(tmp, JSON.stringify({ version: 1, sections }))
     renameSync(tmp, f)
   })
+}
+/** The JSON object in a reply (a cloud model may wrap it in a code fence). */
+function jsonIn(raw: string): unknown {
+  const start = raw.indexOf('{'), end = raw.lastIndexOf('}')
+  try { return start >= 0 && end > start ? JSON.parse(raw.slice(start, end + 1)) : null } catch { return null }
 }
 export type { KnowledgeIndex }
