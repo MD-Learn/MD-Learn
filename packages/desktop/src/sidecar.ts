@@ -30,7 +30,8 @@ export function startSidecar(o: SidecarOptions): Promise<Sidecar> {
   log(`\n--- ${new Date().toISOString()} starting ${o.entry}\n`)
   const token = randomBytes(16).toString('hex')
   const child = spawn(o.execPath ?? process.execPath, [o.entry], {
-    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', MDLEARN_PORT: String(o.port), MDLEARN_READY_TOKEN: token },
+    // MDLEARN_DESKTOP: updates come through the app, so the server does not look on npm for them
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', MDLEARN_PORT: String(o.port), MDLEARN_READY_TOKEN: token, MDLEARN_DESKTOP: '1' },
     stdio: ['pipe', 'pipe', 'pipe'], detached: process.platform !== 'win32', windowsHide: true,
   })
   let output = ''

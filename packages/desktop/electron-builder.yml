@@ -1,5 +1,7 @@
 # Desktop builds: Linux (AppImage, deb, zip) here or on CI, Windows (installer, zip) and macOS (dmg, zip) on CI.
 # Unsigned for now: Windows SmartScreen and macOS Gatekeeper ask once on first open (docs/DESKTOP.md).
+# `publish` writes the update feeds (latest*.yml, .blockmap) and the app's app-update.yml; CI still builds with
+# --publish never and uploads them to the release itself (.github/workflows/desktop.yml).
 appId: io.github.teo-clerk.mdlearn
 productName: MDlearn
 copyright: Copyright © 2026 Teo Clerk
@@ -16,7 +18,11 @@ extraResources:
 afterPack: ./after-pack.cjs # copies build/server into resources/server
 asar: true
 npmRebuild: false
-publish: null
+publish:
+  provider: github
+  owner: teo-clerk
+  repo: MDlearn
+  releaseType: release
 linux:
   target: [AppImage, deb, zip]
   executableName: mdlearn

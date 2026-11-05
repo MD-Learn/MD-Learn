@@ -12,7 +12,7 @@ for (const dir of [join(home, 'config', 'mdlearn'), join(home, '.config', 'mdlea
   mkdirSync(dir, { recursive: true })
   writeFileSync(join(dir, 'studio.json'), JSON.stringify({ libraryDir: join(home, 'library') }))
 }
-const env = { ...process.env, XDG_CONFIG_HOME: join(home, 'config'), HOME: process.platform === 'linux' ? process.env.HOME! : home, MDLEARN_TEST: '1' }
+const env = { ...process.env, XDG_CONFIG_HOME: join(home, 'config'), HOME: process.platform === 'linux' ? process.env.HOME! : home, MDLEARN_TEST: '1', MDLEARN_NO_UPDATES: '1' }
 const exe = process.env.MDLEARN_DESKTOP_EXE
 const launch = () => electron.launch(exe ? { executablePath: resolve(exe), args: [], env } : { args: [resolve(__dirname, '..')], env })
 const portOpen = (port: number) => new Promise<boolean>((done) => { const s = createConnection(port, '127.0.0.1'); s.on('connect', () => { s.end(); done(true) }); s.on('error', () => done(false)) })
@@ -108,4 +108,12 @@ test('a second start shows the first window, and quitting stops the server', asy
   expect(await portOpen(4757)).toBe(true)
   await app.close()
   await expect.poll(() => portOpen(4757), { timeout: 10_000 }).toBe(false)
+})
+
+test('Help has the update items; with updates turned off they are greyed out', async () => {
+  app = await launch()
+  const win = await app.firstWindow()
+  await expect(win.getByRole('heading', { name: 'MDlearn Studio' })).toBeVisible({ timeout: 30_000 })
+  const help = await app.evaluate(({ Menu }) => Menu.getApplicationMenu()!.items.find((i) => i.role === 'help')!.submenu!.items.map((i) => [i.label, i.enabled]))
+  expect(help[0]).toEqual(['Check for updates…', false])
 })

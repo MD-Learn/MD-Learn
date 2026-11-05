@@ -7,6 +7,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { boundsFrom, onScreen, openingFor, type Bounds } from './rules'
 import { startSidecar, type Sidecar } from './sidecar'
+import { startUpdates, type Updates } from './updates'
 
 const PORT = 4757 // fixed, so the page's own preferences (theme, accent) persist from one start to the next
 app.setName('MDlearn')
@@ -74,7 +75,7 @@ function openCapture(origin: string) {
   capture = win
 }
 
-function menu(origin: string): Menu {
+function menu(origin: string, updates: Updates): Menu {
   const openInBrowser = () => {
     const here = main ? openingFor(main.webContents.getURL(), origin) : null
     void shell.openExternal(here?.where === 'window' ? here.url : `${origin}/`)
@@ -96,6 +97,7 @@ function menu(origin: string): Menu {
       { type: 'separator' }, { role: 'togglefullscreen' },
     ] },
     { role: 'windowMenu' },
+    { role: 'help', submenu: updates.menu() },
   ]
   return Menu.buildFromTemplate(template)
 }
@@ -114,7 +116,9 @@ async function start() {
   session.defaultSession.setPermissionRequestHandler((_wc, permission, done) => done(permission === 'clipboard-sanitized-write'))
   session.defaultSession.setPermissionCheckHandler((_wc, permission) => permission === 'clipboard-sanitized-write')
   app.on('web-contents-created', (_e, contents) => guard(contents, origin))
-  Menu.setApplicationMenu(menu(origin))
+  // an update starts the new version as this one quits: the server stops first, and the new one may take the lock
+  const updates = startUpdates({ window: () => main, beforeInstall: async () => { quitting = true; await sidecar?.stop(); app.releaseSingleInstanceLock() } })
+  Menu.setApplicationMenu(menu(origin, updates))
   createWindow(sidecar.url)
   // not every desktop lets an app take a global key (Wayland, a key already in use): the File menu still has it
   globalShortcut.register(CAPTURE_KEY, () => openCapture(origin))
