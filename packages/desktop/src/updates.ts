@@ -7,11 +7,12 @@ import { app, dialog, net, shell, type BrowserWindow, type MenuItemConstructorOp
 import { autoUpdater } from 'electron-updater'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { dueForCheck, feedName, feedVersion, installKind, isNewer, selfUpdates, testFeed, updatePrefs, UPDATE_EVERY_MS, type UpdatePrefs } from './rules'
+import { dueForCheck, feedName, feedVersion, installKind, isNewer, selfUpdates, testFeed, updatePrefs, type UpdatePrefs } from './rules'
 import { strings } from './strings'
 
 const RELEASES = 'https://github.com/teo-clerk/MDlearn/releases'
 const FIRST_CHECK_MS = 30_000
+const TICK_MS = 60 * 60_000 // whether a check is due (every 6 h) is asked hourly, so a sleeping laptop catches up
 const FEED_TIMEOUT_MS = 15_000
 
 /** `title`: the Help menu's name in the system language (Electron names it in English outside macOS). */
@@ -28,7 +29,9 @@ export function startUpdates(o: { window(): BrowserWindow | null; beforeInstall(
   const keep = (next: UpdatePrefs) => { prefs = next; try { writeFileSync(file, JSON.stringify(prefs)) } catch { /* only this run remembers */ } }
   const box = (opts: Electron.MessageBoxOptions) => { const w = o.window(); return w ? dialog.showMessageBox(w, opts) : dialog.showMessageBox(opts) }
   const failed = (e: unknown) => void box({ type: 'warning', message: s('failedTitle'), detail: (e as Error).message?.split('\n')[0] ?? String(e) })
-  let manual = false
+  // `checking`: a check by hand reports its own failure. `wanted`: it asked, so the version it finds is offered even
+  // if an automatic check offered it before (the download finishes after the check returns).
+  let checking = false, wanted = false
 
   if (!off && selfUpdates(kind)) {
     autoUpdater.autoDownload = true
@@ -37,7 +40,8 @@ export function startUpdates(o: { window(): BrowserWindow | null; beforeInstall(
     if (feed) autoUpdater.setFeedURL({ provider: 'generic', url: feed })
     autoUpdater.on('update-downloaded', (info) => {
       // an automatic check offers a version once; it still installs on quit
-      if (!manual && prefs.told === info.version) return
+      if (!wanted && prefs.told === info.version) return
+      wanted = false
       keep({ ...prefs, told: info.version })
       void box({ type: 'info', message: s('readyTitle', info.version), detail: s('readyDetail'), buttons: [s('restart'), s('later')], defaultId: 0, cancelId: 1 }).then(async ({ response }) => {
         if (response !== 0) return
@@ -45,7 +49,7 @@ export function startUpdates(o: { window(): BrowserWindow | null; beforeInstall(
         autoUpdater.quitAndInstall(false, true)
       })
     })
-    autoUpdater.on('error', (e) => { if (manual) failed(e) })
+    autoUpdater.on('error', (e) => { if (!checking && wanted) { wanted = false; failed(e) } })
   }
 
   /** Only the version in the release's feed (an install that cannot replace itself). */
@@ -55,12 +59,14 @@ export function startUpdates(o: { window(): BrowserWindow | null; beforeInstall(
     return feedVersion(await res.text())
   }
   async function check(byHand: boolean) {
-    manual = byHand
     keep({ ...prefs, lastCheck: Date.now() })
     try {
       if (selfUpdates(kind)) {
-        const r = await autoUpdater.checkForUpdates()
+        if (byHand) wanted = true
+        checking = true
+        const r = await autoUpdater.checkForUpdates().finally(() => { checking = false })
         const v = r?.updateInfo.version
+        if (!r?.isUpdateAvailable) wanted = false
         if (byHand) await box({ type: 'info', ...(r?.isUpdateAvailable && v ? { message: s('availableTitle', v), detail: s('downloading', v) } : { message: s('latestTitle'), detail: s('latestDetail', app.getVersion()) }) })
         return
       }
@@ -71,13 +77,14 @@ export function startUpdates(o: { window(): BrowserWindow | null; beforeInstall(
       const { response } = await box({ type: 'info', message: s('availableTitle', v), detail: s('availableDetail'), buttons: [s('download'), s('later')], defaultId: 0, cancelId: 1 })
       if (response === 0 && !feed) void shell.openExternal(`${RELEASES}/tag/v${v}`)
     } catch (e) {
+      wanted = false
       if (byHand) failed(e)
-    } finally { manual = false }
+    }
   }
   if (!off) {
     const auto = () => { if (dueForCheck(prefs, Date.now())) void check(false) }
     setTimeout(auto, FIRST_CHECK_MS)
-    setInterval(auto, UPDATE_EVERY_MS)
+    setInterval(auto, TICK_MS)
   }
   return {
     title: s('help'),
