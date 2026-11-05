@@ -87,7 +87,8 @@ an embedded video, downloading a local AI model, or running code that needs a Py
 
 When an AI writes your lessons, the files you give it go to that AI, under its own terms. When Claude answers a
 question, the passages and titles it reads go to Anthropic the same way, along with your study progress if you asked
-the companion. To keep everything on your computer, use a local model
+the companion. A cloud AI you set up with your own key (*Settings → Cloud AI*), or one of Ollama's cloud models,
+reads them the same way, and the page says so when it answers. To keep everything on your computer, use a local model
 through [Ollama](https://ollama.com) for asking and explaining.
 
 ## Optional extras
@@ -96,6 +97,7 @@ through [Ollama](https://ollama.com) for asking and explaining.
 |---|---|
 | [Claude Code](https://claude.com/claude-code), signed in once | writing lessons from inside MDlearn, asking about your course without a local model, and the terminal tutor |
 | [Ollama](https://ollama.com), then a model from *Settings → Local AI* | asking about a passage, explaining it, and searching your folder by meaning |
+| A key for an OpenAI-compatible service (OpenRouter, OpenAI, Gemini, Groq, Mistral, DeepSeek…), in *Settings → Cloud AI* | asking, explaining and correcting without a local model |
 | [SciNet](https://github.com/teo-clerk/SciNet) running on this computer | importing papers from your library |
 
 MDlearn runs the Claude Code you installed, under your own login, and never sees or stores that login. Your use of it
@@ -337,7 +339,8 @@ Run them inside your notes folder (or pass `--root <dir>`, or set `MDLEARN_ROOT`
 | `learn/.mdlearn/progress.json` | your reviews and answers, shared by Studio, terminal and Claude; **personal** |
 | `learn/.mdlearn/goals.json` | daily goal, deadlines, suspended cards |
 | `.mdlearn/` in the folder | Studio notes, AI job history, search index, editor history |
-| `~/.config/mdlearn/studio.json` | Studio settings: recent folders, Ollama and Claude models |
+| `~/.config/mdlearn/studio.json` | Studio settings: recent folders, Ollama, Claude and cloud AI models |
+| `~/.config/mdlearn/secrets.json` | the cloud AI's key, readable by you only |
 
 If your notes are in git, add `.mdlearn/` to their `.gitignore`.
 

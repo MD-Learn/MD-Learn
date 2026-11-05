@@ -89,11 +89,12 @@ describe('the cloud AI settings', () => {
     expect((await call('/api/ai/cloud', { clearKey: true })).json).toMatchObject({ hasKey: false, available: false })
     expect(JSON.parse(readFileSync(secretsFile, 'utf8')).cloudKey).toBeUndefined()
   })
-  it('a preset fills its own address; another service forgets the model', async () => {
+  it('a preset fills its own address; another service forgets the model and the key', async () => {
     const { call } = setup()
     await configure(call)
     const r = await call('/api/ai/cloud', { provider: 'openrouter' })
-    expect(r.json).toMatchObject({ provider: 'openrouter', baseUrl: 'https://openrouter.ai/api/v1', model: null, name: 'OpenRouter' })
+    expect(r.json).toMatchObject({ provider: 'openrouter', baseUrl: 'https://openrouter.ai/api/v1', model: null, name: 'OpenRouter', hasKey: false })
+    expect((await call('/api/ai/cloud', { model: 'some/model', key: KEY })).json).toMatchObject({ provider: 'openrouter', model: 'some/model', hasKey: true })
   })
   it('refuse an address that is not https, or that carries a password', async () => {
     const { call } = setup()

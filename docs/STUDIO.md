@@ -60,6 +60,7 @@ atomically, so the CLI, the MCP tutor and the Studio can study at the same time 
 |---|---|
 | Session | `GET /api/session` (client local/lan, capabilities) · `GET /api/engines` (local model, Claude Code) |
 | Local AI | `GET /api/ai/local` (Ollama, this computer, installed and recommended models, the download) · `POST /api/ai/local/pull` · `…/cancel` · `…/choose` · `…/delete` (`{ model }`) |
+| Cloud AI | `GET/POST /api/ai/cloud` (service, address, model, `key` or `clearKey`; answers `hasKey` and the last four characters, never the key) · `POST /api/ai/cloud/models` · `…/test`, all needing `ai` |
 | Folders | `GET /api/workspaces` · `POST /api/workspaces/open` · `GET /api/fs/browse` · `POST /api/workspaces/upload` · `POST /api/workspaces/tutorial` (copy the tutorial into the library and open it; `reset` starts over) |
 | Help | `GET/POST /api/onboarding` (welcome tour seen) · `GET /api/help` (the Help document) |
 | Companion | `GET/POST /api/companion` (growth on or off, its name) · `POST /api/w/:ws/companion/read` (a note read to the end) · `POST /api/w/:ws/companion/session` (a finished review) · growth arrives as `companion.grew` events |
@@ -90,10 +91,28 @@ streamed into the note), "explain", feedback on a free-text explanation against 
 block, the compiler checks it, the diagnostics go back to the model (≤ 3 attempts). Requests are queued one
 at a time (8 GB GPU), with `num_ctx` 8192.
 
+**Who answers a short question** (`server/ai/llm.ts`): Ask, Explain, Visualise, key ideas, Correct with AI and
+teach-back take `engine`: `local` (the model chosen in Settings → Local AI), `cloud` (below) or, where Claude answers,
+`claude`. The page picks the engine remembered on this device (`mdl-ask-engine`, `web/knowledge/AskEngine.tsx`) and,
+whenever the answer comes from outside this computer, says where the passages go. The cloud AI and Ollama's cloud
+models run on this computer's accounts, so they need the `ai` capability: a phone on the network uses the local model
+only, unless the server runs with `--lan-full`; `/api/engines` shows it neither.
+
+**Settings → Cloud AI** (`server/ai/cloud.ts`): any OpenAI-compatible service with your own key: OpenRouter,
+OpenAI, Google Gemini (its OpenAI-compatible address), Groq, Mistral, DeepSeek, or one you name (an `https` address,
+or `http` to this computer only, such as LM Studio or llama.cpp; no password or `?` in it). Answers stream from
+`/chat/completions`; a JSON answer asks for `response_format: json_object` and puts the shape in the instructions; a
+model that refuses temperature or JSON mode is asked once more without them; 120 s at most. The key goes in
+`~/.config/mdlearn/secrets.json` (written with mode 0600, apart from the settings) or comes from `MDLEARN_CLOUD_KEY`;
+it is sent only in the `Authorization` header to that address, no route returns it, every message from the service
+is shown without it (and without anything shaped like a key), and choosing another service forgets it. *Try it* asks
+one short question. Course jobs stay with Claude Code.
+
 **Settings → Local AI** (`server/ai/models.ts`) manages the models: without Ollama it shows how to install it
 for this system (`sudo pacman -S ollama-cuda` on Arch with an NVIDIA card, the official script on other
-Linux, `brew install ollama`, the Windows installer); with Ollama it lists the installed models (the cloud
-models Ollama only links to are left out), lets you choose the one Studio answers with (saved as
+Linux, `brew install ollama`, the Windows installer); with Ollama it lists the installed models, then
+Ollama's cloud models (they run on Ollama's servers under your Ollama account, so the passages they read go there; they
+need `ollama signin`, and a 401 says so), lets you choose the one Studio answers with (saved as
 `ollama.model` in the settings), and offers a short list of recommended models — `qwen3:0.6b` to
 `gpt-oss:20b`, each with its download size and whether this computer runs it **well** (fits on the NVIDIA
 card from `nvidia-smi`, or in Apple Silicon's shared memory), **slowly** (in memory only) or **not at all**.
@@ -589,6 +608,7 @@ choices; they live in `localStorage` and `public/theme.js` applies them before t
 | Malicious Markdown / uploads | the compiler keeps only allowlisted HTML tags and attributes (other blocks are sanitised by DOMPurify in the browser, scripts/styles/frames/forms/handlers removed, E107) and drops unsafe URLs; the page CSP forbids inline scripts and handlers; React renders text; KaTeX trust allowlist; Mermaid `strict`; uploads limited to Markdown/text/images, 2 MB each, sanitised relative paths |
 | Path traversal | every path goes through `realPath`-based `inRoot` (symlinks and dangling links resolved), hidden folders refused; job ids must be UUIDs; undo only restores files inside the folder |
 | Desktop app | the same server in a locked-down Electron window (no Node in the page, sandbox, Studio's pages only, other links in the browser, permissions refused) — see DESKTOP.md |
+| Cloud AI | setting it up and using it need the `ai` capability (as do Ollama's cloud models); the key is kept in `secrets.json` (0600) or the environment, never returned, logged or put in an error; the address is `https`, or `http` to loopback only, without credentials; changing the service forgets the key |
 | Local AI models | downloading, choosing and removing need the `ai` capability (this computer, or LAN devices under `--lan-full`); model names are checked against Ollama's name form before they reach it; the model in use and the search model (`embed` in the name, or a BERT family) are never removed, nor a search model chosen to answer; other devices see the models but not this computer's memory, graphics card, system or where Claude Code is |
 | AI jobs | scoped writes (folder or single file, `.md` only, `.git/.claude/.mdlearn` protected), folder-only reads, no shell, no network tools, snapshots + undo |
 | SciNet | only `http://` on `127.0.0.1`, `localhost` or `[::1]` is accepted as its address, without credentials; no redirects are followed; answers are limited in time and size (5 MB of JSON, 20 MB of text, 100 MB of PDF, which must start with `%PDF-`) and checked against a schema; paper ids are integers; the routes need `write`, so a phone on the network cannot read the library; imported text is rendered like any other document |

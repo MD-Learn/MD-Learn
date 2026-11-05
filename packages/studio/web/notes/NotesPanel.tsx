@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useQueryClient } from '@tanstack/react-query'
 import { StickyNote } from 'lucide-react'
 import { keys, notesApi, useNotes, useEngines } from '../api/queries'
+import { EnginePick, engineShown, quickOf, useAskEngine } from '../knowledge/AskEngine'
 import { useStream } from '../state/stream'
 import { locate, rangeFor, textOf } from '../lib/anchor'
 import { SEEK_EVENT } from '../visuals/VideoBlock'
@@ -22,7 +23,8 @@ const GAP = 8
 export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: string; article: HTMLElement | null; mtime: number }) {
   const notes = useNotes(ws, doc)
   const engines = useEngines()
-  const canAsk = !!engines.data?.local.available
+  const engine = useAskEngine({ claude: false })
+  const quick = quickOf(engine), canAsk = !!quick
   const { active, setActive, draft, setDraft } = useNotesUi()
   const qc = useQueryClient()
   const [version, setVersion] = useState(0)
@@ -40,7 +42,7 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
   useLayoutEffect(() => {
     const main = document.getElementById('main')
     if (box.current && main) setOffset(box.current.getBoundingClientRect().top - main.getBoundingClientRect().top)
-  }, [version, wide, chips])
+  }, [version, wide, chips, engineShown(engine)])
 
   // re-place notes when the article re-renders (math appears lazily, live reload) or the window resizes
   useEffect(() => {
@@ -112,7 +114,7 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
     save: async (body) => { await notesApi.update(ws, doc, n.id, { body }); await refresh() },
     recolor: async (color) => { await notesApi.update(ws, doc, n.id, { color }); await refresh() },
     remove: async () => { await notesApi.remove(ws, doc, n.id); setActive(null); await refresh() },
-    ask: async (question) => { await notesApi.ask(ws, { doc, anchor: n.anchor, question, mode: 'ask', noteId: n.id }); await refresh() },
+    ask: async (question) => { await notesApi.ask(ws, { doc, anchor: n.anchor, question, mode: 'ask', noteId: n.id, engine: quick ?? 'local' }); await refresh() },
     makeCard: () => setDraft({ anchor: n.anchor, mode: 'card' }),
     stop: (id) => { void notesApi.cancel(ws, id); useStream.getState().finish(id) },
   })
@@ -137,6 +139,7 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
         ))}
       </div>
     )}
+    {engineShown(engine) && <div className="shrink-0 border-b border-border px-3 py-1.5"><EnginePick ws={ws} engine={engine} compact /></div>}
     <div ref={box} className="relative min-h-0 flex-1 overflow-hidden">
       {isEmpty && (
         <div className="px-5 py-6 text-[13px] leading-relaxed text-muted">

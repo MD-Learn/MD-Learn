@@ -13,6 +13,7 @@ import { Appearance, Language } from './Appearance'
 import { Section } from './Section'
 import { Command, CopyButton } from './Command'
 import { LocalAi } from './LocalAi'
+import { CloudAi } from './CloudAi'
 import { ScinetSettings } from './ScinetSettings'
 
 export default function SettingsPage() {
@@ -25,6 +26,7 @@ export default function SettingsPage() {
       <Appearance />
       <Language />
       <LocalAi />
+      <CloudAi />
       <ScinetSettings />
       <OtherApps />
     </div>

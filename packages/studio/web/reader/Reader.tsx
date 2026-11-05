@@ -6,7 +6,7 @@ import { Link, useLocation, useSearch } from 'wouter'
 import { BookOpenCheck, Code2, Ellipsis, FileText, Pencil, Sparkles, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { api, qs } from '../api/client'
-import { inboxApi, keys, notesApi, useCompanion, useDoc, useEngines, useLinks, useNotes, useSectionMap, useSession, useTermHovers, useTree } from '../api/queries'
+import { inboxApi, keys, notesApi, useCompanion, useDoc, useLinks, useNotes, useSectionMap, useSession, useTermHovers, useTree } from '../api/queries'
 import { useFinishedReading } from './useFinishedReading'
 import { NotesPanel, useNoteHighlights } from '../notes/NotesPanel'
 import { SelectionToolbar, type SelectionKind } from '../notes/SelectionToolbar'
@@ -33,6 +33,7 @@ import { Button, Empty, ErrorNote, IconButton, Spinner } from '../ui/primitives'
 import { Menu, MenuItem } from '../ui/Menu'
 import { lastDocKey } from '../today/TodayPage'
 import { ReadingMenu } from './ReadingMenu'
+import { quickOf, useAskEngine } from '../knowledge/AskEngine'
 import { useReadingKeys } from '../lib/reading'
 import { duration } from '../lib/title'
 import type { Checked, WebAnswer } from '@mdlearn/core'
@@ -44,6 +45,7 @@ export default function Reader({ ws }: { ws: string }) {
   const section = params.get('section')
   const noteId = params.get('note')
   useReadingKeys()
+  const quick = quickOf(useAskEngine({ claude: false }))
   const doc = useDoc(ws, path)
   const tree = useTree(ws)
   const [, navigate] = useLocation()
@@ -54,7 +56,6 @@ export default function Reader({ ws }: { ws: string }) {
   const canAi = !!session.data?.caps.includes('ai')
   const canWrite = !!session.data?.caps.includes('write')
   const notes = useNotes(ws, path)
-  const engines = useEngines()
   const { setDraft, setActive } = useNotesUi()
   const qc = useQueryClient()
   const [askError, setAskError] = useState<string | null>(null)
@@ -82,7 +83,7 @@ export default function Reader({ ws }: { ws: string }) {
     setPanelTab('notes'); setAskError(null)
     if (kind !== 'explain') { setDraft({ anchor, mode: kind }); return } // note, ask and visual open a card beside the passage
     try {
-      const r = await notesApi.ask(ws, { doc: path, anchor, mode: 'explain' })
+      const r = await notesApi.ask(ws, { doc: path, anchor, mode: 'explain', engine: quick ?? 'local' })
       setActive(r.note.id)
       await qc.invalidateQueries({ queryKey: keys.notes(ws, path) })
     } catch (e) { setAskError((e as Error).message) }
@@ -167,7 +168,7 @@ export default function Reader({ ws }: { ws: string }) {
         </PanelSlot>
       )}
       {!source && path && <HighlightMenu ws={ws} doc={path} article={article} noteAt={noteAt} />}
-      {!source && <SelectionToolbar root={article} onAction={(k, a) => void onSelection(k, a)} canAsk={!!engines.data?.local.available} />}
+      {!source && <SelectionToolbar root={article} onAction={(k, a) => void onSelection(k, a)} canAsk={!!quick} />}
       {doc.isLoading && <div className="p-10"><Spinner label={t('Opening document')} /></div>}
       {doc.error && <ErrorNote error={doc.error} retry={() => doc.refetch()} />}
       {doc.data && env && (source ? <Source ws={ws} path={path} /> : (

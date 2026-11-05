@@ -1,5 +1,6 @@
 e2e/.root
 e2e/.ollama-port
 e2e/.scinet-port
+e2e/.cloud-port
 test-results/
 playwright-report/

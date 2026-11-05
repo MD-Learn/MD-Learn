@@ -156,7 +156,7 @@ while True:
 `)
 // A stand-in for Ollama (so nothing here needs a GPU): both models installed, embeddings are word-bag hashes,
 // answers cite the first passage they were given; a download takes a moment and then lists the model.
-let installed = [{ name: 'qwen3:8b', size: 5.2e9 }, { name: 'embeddinggemma:latest', size: 6.2e8 }]
+let installed = [{ name: 'qwen3:8b', size: 5.2e9 }, { name: 'embeddinggemma:latest', size: 6.2e8 }, { name: 'gpt-oss:120b-cloud', size: 384, remote_host: 'https://ollama.com:443' }]
 const bag = (text) => { const v = new Array(48).fill(0); for (const w of text.toLowerCase().match(/[a-z]{3,}/g) ?? []) { let h = 0; for (const ch of w) h = (h * 31 + ch.charCodeAt(0)) % 48; v[h] += 1 } return v }
 const ollama = createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/page') { res.setHeader('content-type', 'text/html'); res.end(`<html><head><title>Imported article</title></head><body><article><h1>An imported article</h1><p>${'Radar measures the delay and the Doppler shift of an echo to find range and speed. '.repeat(8)}</p><p>Energy and mass are related by <span class="katex"><annotation encoding="application/x-tex">E = mc^2</annotation></span> in every frame.</p></article></body></html>`); return }
@@ -190,6 +190,25 @@ const ollama = createServer((req, res) => {
 }).listen(0)
 await new Promise((r) => ollama.once('listening', r))
 writeFileSync(join(here, '.ollama-port'), String(ollama.address().port))
+// A stand-in for an OpenAI-compatible cloud AI (Settings → Cloud AI): it checks the key and streams its answers
+const CLOUD_KEY = 'sk-e2e-cloud-0123456789abcd'
+const cloud = createServer((req, res) => {
+  if (req.headers.authorization !== `Bearer ${CLOUD_KEY}`) { res.statusCode = 401; res.end(JSON.stringify({ error: { message: 'Invalid API key.' } })); return }
+  if (req.url === '/v1/models') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ data: [{ id: 'cloud-small' }, { id: 'cloud-large' }] })); return }
+  let body = ''
+  req.on('data', (d) => (body += d)).on('end', () => {
+    const j = JSON.parse(body || '{}')
+    const system = j.messages?.[0]?.content ?? ''
+    const reply = system.includes('teach-back') ? JSON.stringify({ ideas: [{ index: 1, verdict: 'covered', evidence: 'from the cloud' }, { index: 2, verdict: 'missing' }], misconceptions: [], followUp: 'What does the cloud say next?', feedback: 'Feedback from the cloud.' })
+      : j.response_format ? JSON.stringify({ ideas: ['A key idea from the cloud.', 'Another idea from the cloud.'] })
+      : j.messages?.at(-1)?.content?.includes('Passages:') ? 'From the cloud: backscatter is the power returned [1].' : 'From the cloud: the passage, step by step.'
+    res.setHeader('content-type', 'text/event-stream')
+    for (const piece of reply.match(/.{1,12}/g)) res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: piece } }] })}\n\n`)
+    res.end('data: [DONE]\n\n')
+  })
+}).listen(0, '127.0.0.1')
+await new Promise((r) => cloud.once('listening', r))
+writeFileSync(join(here, '.cloud-port'), String(cloud.address().port))
 // A stand-in for SciNet's API: two papers, one read from the PDF's text and one by Marker
 const PAPERS = [
   { id: 1, title: 'Statistical physics of adaptation', year: 2016, status: 'ready', authors: ['N. Perunov', 'J. England'], venue: 'Physical Review X', abstract: 'How driven matter comes to look adapted to its environment.', doi: null, arxiv_id: '1412.1875', page_count: 12, parse: { tier: 0, parser: 'pymupdf' } },

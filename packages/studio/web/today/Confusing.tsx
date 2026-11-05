@@ -2,7 +2,8 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { CircleHelp } from 'lucide-react'
-import { notesApi, useEngines } from '../api/queries'
+import { notesApi } from '../api/queries'
+import { quickOf, useAskEngine } from '../knowledge/AskEngine'
 import { docRoute } from '../lib/paths'
 import { Button, ErrorNote } from '../ui/primitives'
 import type { ConfusingPassage } from '../../shared/types'
@@ -11,14 +12,14 @@ import { t } from '../i18n'
 const route = (ws: string, p: ConfusingPassage) => `${docRoute(ws, p.doc)}&note=${encodeURIComponent(p.id)}`
 
 export function Confusing({ ws, passages }: { ws: string; passages: ConfusingPassage[] }) {
-  const engines = useEngines()
+  const quick = quickOf(useAskEngine({ claude: false }))
   const [, navigate] = useLocation()
   const [error, setError] = useState<unknown>(null)
-  const canAsk = !!engines.data?.local.available
+  const canAsk = !!quick
   if (!passages.length) return null
   const explain = async (p: ConfusingPassage) => {
     setError(null)
-    try { await notesApi.ask(ws, { doc: p.doc, anchor: p.anchor, question: t('Explain this passage simply.'), mode: 'ask', noteId: p.id }); navigate(route(ws, p)) }
+    try { await notesApi.ask(ws, { doc: p.doc, anchor: p.anchor, question: t('Explain this passage simply.'), mode: 'ask', noteId: p.id, engine: quick ?? 'local' }); navigate(route(ws, p)) }
     catch (e) { setError(e) }
   }
   return (

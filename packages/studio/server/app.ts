@@ -795,8 +795,9 @@ export function createApp(deps: Deps): Hono {
     const preset = providerOf(provider)
     const baseUrl = preset && preset.id !== 'other' ? preset.baseUrl : b.baseUrl !== undefined ? (b.baseUrl ? checkBaseUrl(b.baseUrl) : undefined) : now.baseUrl
     const model = b.model !== undefined ? b.model || undefined : b.provider && b.provider !== now.provider ? undefined : now.model // another service has other models
+    // a key belongs to its service: another one starts without it
     if (b.key) secrets.set('cloudKey', b.key)
-    else if (b.clearKey) secrets.set('cloudKey', undefined)
+    else if (b.clearKey || (b.provider && now.provider && b.provider !== now.provider)) secrets.set('cloudKey', undefined)
     deps.settings.update((s) => ({ ...s, cloud: { ...(provider ? { provider } : {}), ...(baseUrl ? { baseUrl } : {}), ...(model ? { model } : {}) } }))
     return c.json(cloudView())
   })
