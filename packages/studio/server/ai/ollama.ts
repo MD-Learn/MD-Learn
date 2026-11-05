@@ -30,7 +30,14 @@ export async function ollamaModels(cfg: OllamaConfig): Promise<InstalledModel[]>
 }
 /** Ollama's cloud models need its account on this computer. */
 export const SIGN_IN = 'Sign in to Ollama first: run `ollama signin` in a terminal, then try again.'
-const failed = async (res: Response) => (res.status === 401 ? new Error(SIGN_IN) : new Error(`Ollama answered ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`))
+/** Ollama's own words when it gives them (a retired cloud model says which to use instead). */
+const failed = async (res: Response) => {
+  if (res.status === 401) return new Error(SIGN_IN)
+  const raw = await res.text().catch(() => '')
+  let msg = raw
+  try { msg = (JSON.parse(raw) as { error?: string }).error ?? raw } catch { /* not JSON */ }
+  return new Error(`Ollama answered ${res.status}: ${msg.replace(/\s*\(ref: [^)]*\)/, '').slice(0, 300)}`)
+}
 
 export async function ollamaVersion(cfg: OllamaConfig): Promise<string | null> {
   try {
