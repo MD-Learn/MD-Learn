@@ -58,7 +58,7 @@ atomically, so the CLI, the MCP tutor and the Studio can study at the same time 
 
 | Area | Routes |
 |---|---|
-| Session | `GET /api/session` (client local/lan, capabilities) · `GET /api/engines` (local model, Claude Code) |
+| Session | `GET /api/session` (client local/lan, capabilities) · `GET /api/engines` (local model, Claude Code, cloud AI) · `GET/POST /api/updates` (a newer version on npm, once a day; `{ check }` turns it off, `ai` only) |
 | Local AI | `GET /api/ai/local` (Ollama, this computer, installed and recommended models, the download) · `POST /api/ai/local/pull` · `…/cancel` · `…/choose` · `…/delete` (`{ model }`) |
 | Cloud AI | `GET/POST /api/ai/cloud` (service, address, model, `key` or `clearKey`; answers `hasKey` and the last four characters, never the key) · `POST /api/ai/cloud/models` · `…/test`, all needing `ai` |
 | Folders | `GET /api/workspaces` · `POST /api/workspaces/open` · `GET /api/fs/browse` · `POST /api/workspaces/upload` · `POST /api/workspaces/tutorial` (copy the tutorial into the library and open it; `reset` starts over) |
@@ -596,6 +596,12 @@ choices; they live in `localStorage` and `public/theme.js` applies them before t
   interface language. `test/i18n.test.ts` collects every key from the source and fails on a missing
   translation, a lost `{placeholder}` or a missing plural form. The CLI, the MCP tutor and lesson content stay
   in their own language.
+- **About** (`web/settings/About.tsx`): the version in use and, for the npm install, whether a newer one is out.
+  `server/updates.ts` asks `registry.npmjs.org/mdlearn/latest` at most once a day (3 s, silent when offline) and
+  keeps the answer in `settings.json` (`updates: { check, checkedAt, latest }`); *Look for new versions* turns it
+  off (`POST /api/updates`, this computer only). A newer version shows here, once on the home page
+  (`web/library/UpdateNotice.tsx`, dismissed per version on this device) and as one line under `mdlearn studio`.
+  Inside the desktop app it does nothing (`MDLEARN_DESKTOP=1`): the app updates itself (docs/DESKTOP.md).
 
 ## 15. Security
 

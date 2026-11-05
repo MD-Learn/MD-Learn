@@ -1,6 +1,7 @@
 // The few words the desktop app says itself (its update dialogs and menu items), in the languages Studio speaks.
-type Key = 'check' | 'auto' | 'readyTitle' | 'readyDetail' | 'restart' | 'later' | 'availableTitle' | 'availableDetail' | 'download' | 'downloading' | 'latestTitle' | 'latestDetail' | 'failedTitle' | 'off'
+type Key = 'help' | 'check' | 'auto' | 'readyTitle' | 'readyDetail' | 'restart' | 'later' | 'availableTitle' | 'availableDetail' | 'download' | 'downloading' | 'latestTitle' | 'latestDetail' | 'failedTitle' | 'off'
 const EN: Record<Key, string> = {
+  help: 'Help',
   check: 'Check for updates…',
   auto: 'Check for updates automatically',
   readyTitle: 'MDlearn {v} is ready',
@@ -17,6 +18,7 @@ const EN: Record<Key, string> = {
   off: 'Updates are turned off on this computer.',
 }
 const IT: Record<Key, string> = {
+  help: 'Aiuto',
   check: 'Cerca aggiornamenti…', auto: 'Cerca aggiornamenti automaticamente', readyTitle: 'MDlearn {v} è pronto',
   readyDetail: 'Riavvia MDlearn per usarlo. I tuoi appunti e i tuoi progressi restano come sono.', restart: 'Riavvia ora', later: 'Più tardi',
   availableTitle: 'È disponibile MDlearn {v}', availableDetail: 'Scaricalo dalla pagina della versione e installalo sopra questo. I tuoi appunti e i tuoi progressi restano come sono.',
@@ -24,6 +26,7 @@ const IT: Record<Key, string> = {
   latestDetail: 'MDlearn {v}', failedTitle: 'Impossibile cercare aggiornamenti', off: 'Gli aggiornamenti sono disattivati su questo computer.',
 }
 const ES: Record<Key, string> = {
+  help: 'Ayuda',
   check: 'Buscar actualizaciones…', auto: 'Buscar actualizaciones automáticamente', readyTitle: 'MDlearn {v} está listo',
   readyDetail: 'Reinicia MDlearn para usarlo. Tus apuntes y tu progreso se quedan como están.', restart: 'Reiniciar ahora', later: 'Más tarde',
   availableTitle: 'Está disponible MDlearn {v}', availableDetail: 'Descárgalo de la página de la versión e instálalo encima de este. Tus apuntes y tu progreso se quedan como están.',
@@ -31,6 +34,7 @@ const ES: Record<Key, string> = {
   latestDetail: 'MDlearn {v}', failedTitle: 'No se pudieron buscar actualizaciones', off: 'Las actualizaciones están desactivadas en este ordenador.',
 }
 const FR: Record<Key, string> = {
+  help: 'Aide',
   check: 'Rechercher des mises à jour…', auto: 'Rechercher les mises à jour automatiquement', readyTitle: 'MDlearn {v} est prêt',
   readyDetail: 'Redémarrez MDlearn pour l’utiliser. Vos notes et vos progrès restent tels quels.', restart: 'Redémarrer maintenant', later: 'Plus tard',
   availableTitle: 'MDlearn {v} est disponible', availableDetail: 'Téléchargez-le depuis la page de la version et installez-le par-dessus celui-ci. Vos notes et vos progrès restent tels quels.',
@@ -38,6 +42,7 @@ const FR: Record<Key, string> = {
   latestDetail: 'MDlearn {v}', failedTitle: 'Impossible de rechercher des mises à jour', off: 'Les mises à jour sont désactivées sur cet ordinateur.',
 }
 const CA: Record<Key, string> = {
+  help: 'Ajuda',
   check: 'Cerca actualitzacions…', auto: 'Cerca actualitzacions automàticament', readyTitle: 'MDlearn {v} està a punt',
   readyDetail: 'Reinicia MDlearn per fer-lo servir. Els teus apunts i el teu progrés es queden com estan.', restart: 'Reinicia ara', later: 'Més tard',
   availableTitle: 'Hi ha disponible MDlearn {v}', availableDetail: 'Descarrega’l de la pàgina de la versió i instal·la’l a sobre d’aquest. Els teus apunts i el teu progrés es queden com estan.',

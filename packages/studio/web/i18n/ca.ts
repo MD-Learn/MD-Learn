@@ -1517,4 +1517,13 @@ export default {
   '{name} answers. The passages and titles it reads, and your study progress, go to {name}, under your key.': 'Respon {name}. Els fragments i títols que llegeix, i el teu progrés d’estudi, van a {name}, amb la teva clau.',
   '{n} model: start typing to pick it.|{n} models: start typing to pick one.': { one: '{n} model: comença a escriure per triar-lo.', other: '{n} models: comença a escriure per triar-ne un.' },
   'Answers, explanations and visuals about your notes come from a model on this computer, through Ollama. Your notes never leave it, unless you choose one of Ollama\'s cloud models.': 'Les respostes, explicacions i visuals sobre els teus apunts venen d’un model en aquest ordinador, a través d’Ollama. Els teus apunts no en surten mai, tret que triïs un dels models al núvol d’Ollama.',
+  'About': 'Quant a',
+  'Dismiss': 'Tanca',
+  'Look for new versions': 'Cerca versions noves',
+  'MDlearn {version} is out': 'Ha sortit MDlearn {version}',
+  'MDlearn {version}': 'MDlearn {version}',
+  'Once a day, MDlearn asks the npm registry for the number of its newest version. Nothing about you or your notes is sent.': 'Un cop al dia, MDlearn pregunta al registre d’npm el número de la seva versió més recent. No s’envia res sobre tu ni sobre els teus apunts.',
+  'The app updates itself: Help → Check for updates…': 'L’app s’actualitza sola: Ajuda → Cerca actualitzacions…',
+  'Then start it again. Settings → About can stop this check.': 'Després torna’l a iniciar. Configuració → Quant a pot aturar aquesta comprovació.',
+  'Update it with one of these, then start it again:': 'Actualitza’l amb una d’aquestes ordres i torna’l a iniciar:',
 } satisfies Dict

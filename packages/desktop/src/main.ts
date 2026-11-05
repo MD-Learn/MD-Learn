@@ -97,7 +97,7 @@ function menu(origin: string, updates: Updates): Menu {
       { type: 'separator' }, { role: 'togglefullscreen' },
     ] },
     { role: 'windowMenu' },
-    { role: 'help', submenu: updates.menu() },
+    { role: 'help', label: updates.title, submenu: updates.menu() },
   ]
   return Menu.buildFromTemplate(template)
 }

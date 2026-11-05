@@ -27,7 +27,26 @@ The builds are not signed with a paid certificate yet, so the system asks once:
 
 Signing later needs an Apple Developer ID (notarization) and a Windows code-signing certificate; electron-builder
 reads them from `CSC_LINK`/`CSC_KEY_PASSWORD` (and `APPLE_ID`… for notarization) in the workflow's secrets.
-There is no automatic update yet: the repository is private, so the app could not fetch new versions from it.
+
+## Updates
+
+The app looks for a new version 30 seconds after it starts and every 6 hours (`src/updates.ts`). It contacts
+github.com only, and reads the release's feed (`latest.yml`, `latest-mac.yml` or `latest-linux.yml`). *Help → Check
+for updates automatically* turns that off; *Help → Check for updates…* looks at once. `MDLEARN_NO_UPDATES=1` turns
+both off.
+
+| Installed as | What happens |
+|---|---|
+| Windows installer (`.exe`) | the new version downloads in the background (only the changed blocks, from the `.blockmap`), then MDlearn asks to restart; *Later* installs it when you quit |
+| Linux AppImage | the same: the AppImage file is replaced and the new one starts |
+| macOS, `.deb`, the zips | MDlearn says a new version is out and opens its release page; install it over this one (an unsigned Mac app cannot replace itself, and a `.deb` is installed with `apt`) |
+
+An automatic check offers a version once; *Check for updates…* always says what it found. Before it installs, the
+app stops its server and lets go of the one-window lock, so the new version can start at once. The download is
+checked against the SHA-512 in the feed, which comes over HTTPS from GitHub; the builds are not signed, so nothing
+checks who made them. Your notes, progress and settings are outside the app and stay as they are.
+`MDLEARN_UPDATE_TEST_URL` (http://127.0.0.1 only) points the app at a feed on this computer, for trying an update
+before a release. The server inside the app does not look on npm for versions (`MDLEARN_DESKTOP=1`).
 
 ## How it works
 

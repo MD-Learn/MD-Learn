@@ -14,7 +14,8 @@ const RELEASES = 'https://github.com/teo-clerk/MDlearn/releases'
 const FIRST_CHECK_MS = 30_000
 const FEED_TIMEOUT_MS = 15_000
 
-export interface Updates { menu(): MenuItemConstructorOptions[] }
+/** `title`: the Help menu's name in the system language (Electron names it in English outside macOS). */
+export interface Updates { title: string; menu(): MenuItemConstructorOptions[] }
 /** `beforeInstall`: stop the server and let go of the single-instance lock, so the new version can start. */
 export function startUpdates(o: { window(): BrowserWindow | null; beforeInstall(): Promise<void> }): Updates {
   const kind = installKind({ platform: process.platform, packaged: app.isPackaged, appImage: process.env.APPIMAGE, exe: process.execPath,
@@ -79,6 +80,7 @@ export function startUpdates(o: { window(): BrowserWindow | null; beforeInstall(
     setInterval(auto, UPDATE_EVERY_MS)
   }
   return {
+    title: s('help'),
     menu: () => off
       ? [{ label: s('check'), enabled: false }, ...(kind === 'dev' ? [] : [{ label: s('off'), enabled: false }])]
       : [

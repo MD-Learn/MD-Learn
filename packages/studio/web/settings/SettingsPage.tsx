@@ -15,6 +15,7 @@ import { Command, CopyButton } from './Command'
 import { LocalAi } from './LocalAi'
 import { CloudAi } from './CloudAi'
 import { ScinetSettings } from './ScinetSettings'
+import { About } from './About'
 
 export default function SettingsPage() {
   useEffect(() => { document.title = t('Settings · MDlearn Studio') }, [])
@@ -29,6 +30,7 @@ export default function SettingsPage() {
       <CloudAi />
       <ScinetSettings />
       <OtherApps />
+      <About />
     </div>
   )
 }

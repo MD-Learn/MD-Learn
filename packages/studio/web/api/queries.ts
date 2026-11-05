@@ -19,6 +19,7 @@ export const keys = {
   engines: ['engines'] as const,
   localAi: ['local-ai'] as const,
   cloudAi: ['cloud-ai'] as const,
+  updates: ['updates'] as const,
   scinet: ['scinet'] as const,
   today: (ws: string) => ['today', ws] as const,
   inbox: (ws: string) => ['inbox', ws] as const,
@@ -103,6 +104,10 @@ export const cloudAiApi = {
   models: () => api.post<{ models: string[] }>('/api/ai/cloud/models', {}),
   test: () => api.post<{ ok: true; label: string; reply: string }>('/api/ai/cloud/test', {}),
 }
+/** A new version on npm (asked by the server at most once a day; nothing in the desktop app, which updates itself). */
+export interface UpdateInfo { current: string; latest: string | null; newer: boolean; desktop: boolean; check: boolean }
+export const updatesApi = { set: (check: boolean) => api.post<UpdateInfo>('/api/updates', { check }) }
+export const useUpdates = () => useQuery({ queryKey: keys.updates, queryFn: () => api.get<UpdateInfo>('/api/updates'), staleTime: 60 * 60_000 })
 /** The engine for a short question (Claude answers only some). */
 export type QuickEngine = 'local' | 'cloud'
 

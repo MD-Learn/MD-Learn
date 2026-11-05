@@ -135,6 +135,8 @@ async function studio(): Promise<void> {
     out(dim('Anyone with this link on your network can read and study these notes. Plain HTTP: use it on networks you trust.'))
   }
   out(dim('Press Ctrl+C to stop.'))
+  // at most once a day, and only the version number (Settings → About turns it off)
+  void s.newerVersion().then((v) => { if (v) out(`${bold(`MDlearn ${v} is out`)}: npm i -g mdlearn@latest`) }).catch(() => {})
   const stop = async () => { await s.close(); process.exit(0) }
   process.on('SIGINT', stop); process.on('SIGTERM', stop)
   await new Promise(() => {}) // keep running until stopped

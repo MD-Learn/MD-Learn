@@ -83,7 +83,9 @@ MDlearn has no account, no analytics and no server of its own. Lessons, notes an
 computer, and your notes are never changed unless you ask.
 
 It only goes online when you do something that needs it: importing a web page, allowing a site's pictures, playing
-an embedded video, downloading a local AI model, or running code that needs a Python package.
+an embedded video, downloading a local AI model, or running code that needs a Python package. The one exception is
+the version check: once a day `mdlearn studio` asks the npm registry for the number of the newest version, and the
+desktop app asks github.com every 6 hours (Settings → About and the app's Help menu turn them off).
 
 When an AI writes your lessons, the files you give it go to that AI, under its own terms. When Claude answers a
 question, the passages and titles it reads go to Anthropic the same way, along with your study progress if you asked

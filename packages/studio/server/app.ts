@@ -29,6 +29,7 @@ import { ollamaStatus, ollamaBusy, ollamaDelete, ollamaModels } from './ai/ollam
 import { CLOUD_KEY_ENV, cloudKey, cloudStatus, cloudTarget, quickChat, type QuickEngine } from './ai/llm.js'
 import { PROVIDERS, checkBaseUrl, cloudModels, providerOf } from './ai/cloud.js'
 import { secretsStore, type SecretsStore } from './secrets.js'
+import { updateInfo } from './updates.js'
 import { MODEL_NAME, ModelDownloads, hardware, installedName, isEmbedding, localAi } from './ai/models.js'
 import { teachBack, type OneShot } from './ai/teachback.js'
 import { award, awardSession, companionView, MIN_READ_WORDS } from './companion.js'
@@ -94,6 +95,9 @@ export interface Deps {
   claudeOnce?: OneShot
   /** Where the cloud AI's key is kept (default: secrets.json beside the settings file). */
   secrets?: SecretsStore
+  /** The npm registry for "a new version is out" (tests pass a stand-in; e2e a local address). */
+  updatesFetch?: typeof fetch
+  updatesUrl?: string
   latex?: Latex
 }
 const IMAGE_TYPES: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' }
@@ -127,6 +131,14 @@ export function createApp(deps: Deps): Hono {
   ])
 
   // ---- session & workspaces
+  // ---- a new version on npm (once a day; off in Settings → About, and in the desktop app, which updates itself)
+  const updates = () => updateInfo({ settings: deps.settings, version: deps.version, ...(deps.updatesFetch ? { fetch: deps.updatesFetch } : {}), ...(deps.updatesUrl ? { url: deps.updatesUrl } : {}) })
+  app.get('/api/updates', need('read', o), async (c) => c.json(await updates()))
+  app.post('/api/updates', need('ai', o), async (c) => {
+    const { check } = z.object({ check: z.boolean() }).parse(await c.req.json())
+    deps.settings.update((s) => ({ ...s, updates: { ...s.updates, check } }))
+    return c.json(await updates())
+  })
   app.get('/api/session', (c) => c.json<SessionInfo>({ version: deps.version, client: clientOf(c), caps: capsOf(c, o), lan: { enabled: o.lan, ...(deps.lanUrl && clientOf(c) === 'local' ? { url: deps.lanUrl } : {}) } }))
   app.get('/api/workspaces', need('read', o), (c) => c.json(clientOf(c) === 'local' || o.lanFull ? deps.workspaces.list() : deps.workspaces.list().map(({ root: _r, ...w }) => ({ ...w, root: '' }))))
   app.post('/api/workspaces/open', need('fs', o), async (c) => {

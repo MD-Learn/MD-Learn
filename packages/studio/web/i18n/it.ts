@@ -1517,4 +1517,13 @@ export default {
   '{name} answers. The passages and titles it reads, and your study progress, go to {name}, under your key.': 'Risponde {name}. I passaggi e i titoli che legge, e i tuoi progressi di studio, vanno a {name}, con la tua chiave.',
   '{n} model: start typing to pick it.|{n} models: start typing to pick one.': { one: '{n} modello: inizia a scrivere per sceglierlo.', other: '{n} modelli: inizia a scrivere per sceglierne uno.' },
   'Answers, explanations and visuals about your notes come from a model on this computer, through Ollama. Your notes never leave it, unless you choose one of Ollama\'s cloud models.': 'Risposte, spiegazioni e visualizzazioni sui tuoi appunti vengono da un modello su questo computer, tramite Ollama. I tuoi appunti non ne escono mai, a meno che tu non scelga uno dei modelli cloud di Ollama.',
+  'About': 'Informazioni',
+  'Dismiss': 'Chiudi',
+  'Look for new versions': 'Cerca nuove versioni',
+  'MDlearn {version} is out': 'È uscito MDlearn {version}',
+  'MDlearn {version}': 'MDlearn {version}',
+  'Once a day, MDlearn asks the npm registry for the number of its newest version. Nothing about you or your notes is sent.': 'Una volta al giorno, MDlearn chiede al registro npm il numero della sua versione più recente. Non viene inviato nulla su di te o sui tuoi appunti.',
+  'The app updates itself: Help → Check for updates…': 'L’app si aggiorna da sola: Aiuto → Cerca aggiornamenti…',
+  'Then start it again. Settings → About can stop this check.': 'Poi riavvialo. Impostazioni → Informazioni può fermare questo controllo.',
+  'Update it with one of these, then start it again:': 'Aggiornalo con uno di questi, poi riavvialo:',
 } satisfies Dict

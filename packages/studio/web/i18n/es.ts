@@ -1517,4 +1517,13 @@ export default {
   '{name} answers. The passages and titles it reads, and your study progress, go to {name}, under your key.': 'Responde {name}. Los pasajes y títulos que lee, y tu progreso de estudio, van a {name}, con tu clave.',
   '{n} model: start typing to pick it.|{n} models: start typing to pick one.': { one: '{n} modelo: empieza a escribir para elegirlo.', other: '{n} modelos: empieza a escribir para elegir uno.' },
   'Answers, explanations and visuals about your notes come from a model on this computer, through Ollama. Your notes never leave it, unless you choose one of Ollama\'s cloud models.': 'Las respuestas, explicaciones y visuales sobre tus apuntes vienen de un modelo en este ordenador, a través de Ollama. Tus apuntes nunca salen de él, salvo que elijas uno de los modelos en la nube de Ollama.',
+  'About': 'Acerca de',
+  'Dismiss': 'Cerrar',
+  'Look for new versions': 'Buscar versiones nuevas',
+  'MDlearn {version} is out': 'Ha salido MDlearn {version}',
+  'MDlearn {version}': 'MDlearn {version}',
+  'Once a day, MDlearn asks the npm registry for the number of its newest version. Nothing about you or your notes is sent.': 'Una vez al día, MDlearn pregunta al registro de npm el número de su versión más reciente. No se envía nada sobre ti ni sobre tus apuntes.',
+  'The app updates itself: Help → Check for updates…': 'La app se actualiza sola: Ayuda → Buscar actualizaciones…',
+  'Then start it again. Settings → About can stop this check.': 'Después vuelve a iniciarlo. Ajustes → Acerca de puede desactivar esta comprobación.',
+  'Update it with one of these, then start it again:': 'Actualízalo con uno de estos y vuelve a iniciarlo:',
 } satisfies Dict

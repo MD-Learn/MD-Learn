@@ -162,6 +162,8 @@ const ollama = createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/page') { res.setHeader('content-type', 'text/html'); res.end(`<html><head><title>Imported article</title></head><body><article><h1>An imported article</h1><p>${'Radar measures the delay and the Doppler shift of an echo to find range and speed. '.repeat(8)}</p><p>Energy and mass are related by <span class="katex"><annotation encoding="application/x-tex">E = mc^2</annotation></span> in every frame.</p></article></body></html>`); return }
   if (req.url === '/api/tags') { res.end(JSON.stringify({ models: installed })); return }
   if (req.url === '/api/version') { res.end(JSON.stringify({ version: '0.17.4' })); return }
+  // a stand-in for the npm registry ("a new version is out"); the check is off until a test turns it on
+  if (req.url === '/registry/mdlearn/latest') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ name: 'mdlearn', version: '9.9.9' })); return }
   let body = ''
   req.on('data', (d) => (body += d)).on('end', () => {
     const j = JSON.parse(body || '{}')
@@ -232,9 +234,9 @@ const settingsFile = join(cfgDir, 's.json')
 // the welcome tour is tested on its own (onboarding.spec), and so is the companion's growth (companion.spec), whose
 // notices would land in other tests; the library (tutorial, uploads) stays in the temp folder
 writeFileSync(settingsFile, JSON.stringify({ ollama: { url: `http://127.0.0.1:${ollama.address().port}`, model: 'qwen3:8b', embedModel: 'embeddinggemma' },
-  scinet: { url: `http://127.0.0.1:${scinet.address().port}` }, libraryDir: join(cfgDir, 'library'), onboarding: { tourDone: true }, companion: { growth: false } }))
+  scinet: { url: `http://127.0.0.1:${scinet.address().port}` }, libraryDir: join(cfgDir, 'library'), onboarding: { tourDone: true }, companion: { growth: false }, updates: { check: false } }))
 // the network behind web pictures: every test address is public, and gone.png is gone
 const PICTURE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
 const pictureFetch = { resolve: async () => ['93.184.216.34'], fetch: async (url) => (String(url).endsWith('/gone.png') ? new Response('gone', { status: 404 }) : new Response(PICTURE)) }
-const s = await startStudio({ root, port: 4799, fakeAi: true, fakeTex: true, settingsFile, pictureFetch })
+const s = await startStudio({ root, port: 4799, fakeAi: true, fakeTex: true, settingsFile, pictureFetch, updatesUrl: `http://127.0.0.1:${ollama.address().port}/registry/mdlearn/latest` })
 console.log(`e2e studio on ${s.url} (folder ${root})`)

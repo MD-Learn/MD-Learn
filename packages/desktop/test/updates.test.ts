@@ -57,7 +57,7 @@ describe('the update dialogs', () => {
     expect(strings('it-IT')('readyTitle', '1.9.1')).toBe('MDlearn 1.9.1 è pronto')
     expect(strings('ca')('restart')).toBe('Reinicia ara')
     expect(strings('de-DE')('later')).toBe('Later')
-    for (const lang of ['en', 'it', 'es', 'fr', 'ca']) for (const key of ['check', 'auto', 'readyTitle', 'readyDetail', 'restart', 'later', 'availableTitle', 'availableDetail', 'download', 'downloading', 'latestTitle', 'latestDetail', 'failedTitle', 'off'] as const)
+    for (const lang of ['en', 'it', 'es', 'fr', 'ca']) for (const key of ['help', 'check', 'auto', 'readyTitle', 'readyDetail', 'restart', 'later', 'availableTitle', 'availableDetail', 'download', 'downloading', 'latestTitle', 'latestDetail', 'failedTitle', 'off'] as const)
       expect(strings(lang)(key, '1').length, `${lang} ${key}`).toBeGreaterThan(0)
   })
 })
