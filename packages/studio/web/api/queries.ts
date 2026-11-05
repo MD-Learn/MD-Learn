@@ -170,7 +170,8 @@ export const useNotes = (ws: string, doc: string | undefined) => useQuery({
 export const useEngines = () => useQuery({ queryKey: keys.engines, queryFn: () => api.get<EnginesInfo>('/api/engines'), staleTime: 30_000, refetchInterval: 60_000 })
 export const notesApi = {
   create: (ws: string, doc: string, anchor: NoteAnchor, body: string, color?: NoteColor) => api.post<Note>(`/api/w/${ws}/notes`, { doc, anchor, body, color }),
-  update: (ws: string, doc: string, id: string, body: string) => api.post<Note>(`/api/w/${ws}/notes/${id}/update`, { doc, body }),
+  /** `color: null` takes a highlight's colour off and keeps the note. */
+  update: (ws: string, doc: string, id: string, change: { body?: string; color?: NoteColor | null }) => api.post<Note>(`/api/w/${ws}/notes/${id}/update`, { doc, ...change }),
   remove: (ws: string, doc: string, id: string) => api.post<{ ok: true }>(`/api/w/${ws}/notes/${id}/delete`, { doc }),
   ask: (ws: string, body: { doc: string; anchor: NoteAnchor; question?: string; mode: 'ask' | 'explain'; noteId?: string }) => api.post<{ note: Note; messageId: string }>(`/api/w/${ws}/ai/ask`, body),
   cancel: (ws: string, messageId: string) => api.post<{ stopped: boolean }>(`/api/w/${ws}/ai/cancel`, { messageId }),

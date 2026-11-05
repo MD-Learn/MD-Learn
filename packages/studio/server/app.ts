@@ -688,9 +688,14 @@ export function createApp(deps: Deps): Hono {
   })
   app.post('/api/w/:ws/notes/:id/update', need('notes', o), async (c) => {
     const h = ws(c)
-    const body = z.object({ doc: z.string().min(1).max(1024), body: z.string().max(20_000) }).parse(await c.req.json())
+    // `color: null` takes the colour off and keeps the note
+    const body = z.object({ doc: z.string().min(1).max(1024), body: z.string().max(20_000).optional(), color: NoteColorSchema.nullable().optional() })
+      .refine((b) => b.body !== undefined || b.color !== undefined, { message: 'Nothing to change.' }).parse(await c.req.json())
     deps.workspaces.resolve(h, body.doc)
-    const note = await notesStore.update(h, body.doc, c.req.param('id'), (n) => ({ ...n, body: body.body }))
+    const note = await notesStore.update(h, body.doc, c.req.param('id'), ({ color, ...n }) => ({
+      ...n, ...(body.body !== undefined ? { body: body.body } : {}),
+      ...(body.color === null ? {} : body.color ? { color: body.color } : color ? { color } : {}),
+    }))
     deps.bus.publish({ type: 'notes.changed', ws: h.id, doc: body.doc })
     return c.json(note)
   })

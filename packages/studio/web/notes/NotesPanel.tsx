@@ -12,8 +12,8 @@ import { NoteCard, type NoteActions } from './NoteCard'
 import { DraftCard } from './DraftCard'
 import { VisualDraftCard } from './VisualDraftCard'
 import { CardDraft } from './CardDraft'
-import { NOTE_MARKS } from './marks'
-import type { Note } from '../../shared/types'
+import { NOTE_COLORS, NOTE_MARKS, markLabel } from './marks'
+import type { Note, NoteColor } from '../../shared/types'
 import { t } from '../i18n'
 
 interface Placed { note: Note; range: Range | null; y: number }
@@ -32,10 +32,15 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
   const box = useRef<HTMLDivElement>(null)
   // the panel's notes area starts lower than the page (the tab row): positions are shifted by that offset
   const [offset, setOffset] = useState(0)
+  // show one kind at a time: notes without a colour, or one colour
+  const [filter, setFilter] = useState<Group>('all')
+  const groups = useMemo(() => { const has = new Set((notes.data ?? []).map(groupOf)); return (['plain', ...NOTE_COLORS] as const).filter((g) => has.has(g)) }, [notes.data])
+  const showing: Group = groups.includes(filter as never) ? filter : 'all'
+  const chips = groups.length > 1
   useLayoutEffect(() => {
     const main = document.getElementById('main')
     if (box.current && main) setOffset(box.current.getBoundingClientRect().top - main.getBoundingClientRect().top)
-  }, [version, wide])
+  }, [version, wide, chips])
 
   // re-place notes when the article re-renders (math appears lazily, live reload) or the window resizes
   useEffect(() => {
@@ -65,6 +70,7 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
       return { note, range, y: range ? range.getBoundingClientRect().top - top0 : -1 }
     }).sort((a, b) => (a.y < 0 ? -1 : b.y < 0 ? 1 : a.y - b.y))
   }, [article, notes.data, version]) // eslint-disable-line react-hooks/exhaustive-deps
+  const visible = useMemo(() => (showing === 'all' ? placed : placed.filter((p) => groupOf(p.note) === showing)), [placed, showing])
 
   const draftY = useMemo(() => {
     const main = document.getElementById('main')
@@ -79,7 +85,7 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
   // stack cards at their passage without overlapping; the card being worked on keeps its place and the
   // others move aside (up for those above it, down for those below)
   const tops = useMemo(() => {
-    const items = [...placed.filter((p) => p.y >= 0).map((p) => ({ id: p.note.id, y: p.y })), ...(draft ? [{ id: 'draft', y: draftY }] : [])].sort((a, b) => a.y - b.y)
+    const items = [...visible.filter((p) => p.y >= 0).map((p) => ({ id: p.note.id, y: p.y })), ...(draft ? [{ id: 'draft', y: draftY }] : [])].sort((a, b) => a.y - b.y)
     const h = (id: string) => heights[id] ?? 80
     const focus = items.findIndex((it) => it.id === (draft ? 'draft' : active))
     const out: Record<string, number> = {}
@@ -91,7 +97,7 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
     let ceiling = items[pivot].y
     for (const it of items.slice(0, pivot).reverse()) { const top = Math.min(it.y, ceiling - GAP - h(it.id)); out[it.id] = top; ceiling = top }
     return out
-  }, [placed, draft, draftY, heights, active])
+  }, [visible, draft, draftY, heights, active])
 
   const measure = useCallback((id: string) => (el: HTMLElement | null) => {
     if (!el) return
@@ -103,7 +109,8 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
   const draftCard = () => (draft?.mode === 'visual' ? <VisualDraftCard ws={ws} doc={doc} mtime={mtime} /> : draft?.mode === 'card' ? <CardDraft ws={ws} doc={doc} /> : <DraftCard ws={ws} doc={doc} canAsk={canAsk} onDone={refresh} />)
   const actionsFor = (n: Note): NoteActions => ({
     canAsk,
-    save: async (body) => { await notesApi.update(ws, doc, n.id, body); await refresh() },
+    save: async (body) => { await notesApi.update(ws, doc, n.id, { body }); await refresh() },
+    recolor: async (color) => { await notesApi.update(ws, doc, n.id, { color }); await refresh() },
     remove: async () => { await notesApi.remove(ws, doc, n.id); setActive(null); await refresh() },
     ask: async (question) => { await notesApi.ask(ws, { doc, anchor: n.anchor, question, mode: 'ask', noteId: n.id }); await refresh() },
     makeCard: () => setDraft({ anchor: n.anchor, mode: 'card' }),
@@ -116,9 +123,20 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
   }
   const focus = (n: Placed) => { setActive(n.note.id); if (!wide && n.range) n.range.startContainer.parentElement?.scrollIntoView({ block: 'center', behavior: 'smooth' }) }
 
-  const detached = placed.filter((p) => p.y < 0)
+  const detached = visible.filter((p) => p.y < 0)
   const isEmpty = !notes.data?.length && !draft
   return (
+    <>
+    {chips && (
+      <div role="radiogroup" aria-label={t('Show')} className="flex shrink-0 flex-wrap items-center gap-1 border-b border-border px-3 py-1.5">
+        {(['all', ...groups] as Group[]).map((g) => (
+          <button key={g} type="button" role="radio" aria-checked={showing === g} onClick={() => setFilter(g)} title={groupLabel(g)} aria-label={groupLabel(g)}
+            className={`inline-flex h-6 items-center gap-1 rounded-full border px-2 text-[12px] cursor-pointer ${showing === g ? 'border-accent bg-accent-soft font-medium' : 'border-border hover:bg-hover'}`}>
+            <GroupSign g={g} />
+          </button>
+        ))}
+      </div>
+    )}
     <div ref={box} className="relative min-h-0 flex-1 overflow-hidden">
       {isEmpty && (
         <div className="px-5 py-6 text-[13px] leading-relaxed text-muted">
@@ -130,7 +148,7 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
       {wide ? (
         <div className="absolute inset-x-0 top-0 px-3" style={{ transform: `translateY(${-scroll - offset}px)` }}>
           {draft && <div ref={measure('draft')} className="absolute inset-x-3 z-10" style={{ top: tops.draft ?? draftY }}>{draftCard()}</div>}
-          {placed.filter((p) => p.y >= 0).map((p) => (
+          {visible.filter((p) => p.y >= 0).map((p) => (
             <div key={p.note.id} ref={measure(p.note.id)} className="absolute inset-x-3 transition-[top] duration-150" style={{ top: tops[p.note.id] ?? p.y }}>
               <NoteCard note={p.note} active={active === p.note.id} onFocus={() => focus(p)} actions={actionsFor(p.note)} quoteFound onSeek={seekFor(p)} />
             </div>
@@ -139,7 +157,7 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
       ) : (
         <div className="flex h-full flex-col gap-2 overflow-y-auto p-3">
           {draft && draftCard()}
-          {placed.filter((p) => p.y >= 0).map((p) => <NoteCard key={p.note.id} note={p.note} active={active === p.note.id} onFocus={() => focus(p)} actions={actionsFor(p.note)} quoteFound onSeek={seekFor(p)} />)}
+          {visible.filter((p) => p.y >= 0).map((p) => <NoteCard key={p.note.id} note={p.note} active={active === p.note.id} onFocus={() => focus(p)} actions={actionsFor(p.note)} quoteFound onSeek={seekFor(p)} />)}
         </div>
       )}
       {detached.length > 0 && (
@@ -149,7 +167,17 @@ export function NotesPanel({ ws, doc, article, mtime }: { ws: string; doc: strin
         </div>
       )}
     </div>
+    </>
   )
+}
+
+type Group = 'all' | 'plain' | NoteColor
+const groupOf = (n: Note): Group => n.color ?? 'plain'
+const groupLabel = (g: Group) => (g === 'all' ? t('All') : g === 'plain' ? t('Notes') : markLabel(g))
+function GroupSign({ g }: { g: Group }) {
+  if (g === 'all' || g === 'plain') return <>{groupLabel(g)}</>
+  const mark = NOTE_MARKS.find((m) => m.color === g)
+  return mark ? <mark.icon className={`size-3.5 tone-${g}`} strokeWidth={1.8} aria-hidden /> : <span className={`hl-dot hl-${g}`} aria-hidden />
 }
 
 function useWide() {
@@ -170,9 +198,14 @@ function useHighlights(placed: Placed[], active: string | null, draft: Range | n
   }, [placed, active, draft])
 }
 
+/** The highlight under a point of the page, if any (the shortest, when they overlap). */
+export type NoteAt = (x: number, y: number) => Note | null
+const covers = (range: Range, x: number, y: number) => Array.from(range.getClientRects()).some((r) => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom)
+
 /** Every noted passage stays highlighted while the document is open, whichever tab the panel shows. */
-export function useNoteHighlights(ws: string, doc: string | undefined, article: HTMLElement | null) {
+export function useNoteHighlights(ws: string, doc: string | undefined, article: HTMLElement | null): NoteAt {
   const notes = useNotes(ws, doc)
+  const drawn = useRef<{ note: Note; range: Range }[]>([])
   const [version, setVersion] = useState(0)
   useEffect(() => {
     if (!article) return
@@ -186,9 +219,14 @@ export function useNoteHighlights(ws: string, doc: string | undefined, article: 
     const H = (window as unknown as { Highlight?: new (...r: Range[]) => unknown }).Highlight
     if (!reg || !H || !article || !notes.data) return
     const text = textOf(article)
-    const rangesOf = (list: Note[]) => list.map((n) => { const at = locate(text, n.anchor); return at ? rangeFor(article, at.start, at.end) : null }).filter((r): r is Range => !!r)
-    reg.set('mdl-note', new H(...rangesOf(notes.data.filter((n) => !n.color))))
-    for (const { color } of NOTE_MARKS) reg.set(`mdl-mark-${color}`, new H(...rangesOf(notes.data.filter((n) => n.color === color))))
-    return () => { reg.delete('mdl-note'); for (const { color } of NOTE_MARKS) reg.delete(`mdl-mark-${color}`) }
+    drawn.current = notes.data.flatMap((note) => { const at = locate(text, note.anchor); const range = at && rangeFor(article, at.start, at.end); return range ? [{ note, range }] : [] })
+    const rangesOf = (keep: (n: Note) => boolean) => drawn.current.filter((d) => keep(d.note)).map((d) => d.range)
+    reg.set('mdl-note', new H(...rangesOf((n) => !n.color)))
+    for (const color of NOTE_COLORS) reg.set(`mdl-mark-${color}`, new H(...rangesOf((n) => n.color === color)))
+    return () => { drawn.current = []; reg.delete('mdl-note'); for (const color of NOTE_COLORS) reg.delete(`mdl-mark-${color}`) }
   }, [notes.data, article, version])
+  return useCallback((x, y) => {
+    const hits = drawn.current.filter((d) => covers(d.range, x, y))
+    return hits.sort((a, b) => a.range.toString().length - b.range.toString().length)[0]?.note ?? null
+  }, [])
 }

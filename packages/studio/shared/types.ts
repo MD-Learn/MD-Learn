@@ -116,7 +116,9 @@ export interface ApiError { error: { code: string; message: string } }
 /** `t`: a note on a moment of a video (seconds); the quote is then the video's label. */
 export interface NoteAnchor { section: string | null; quote: { exact: string; prefix: string; suffix: string }; t?: number }
 export interface NoteMessage { id: string; role: 'user' | 'ai'; text: string; engine?: string; at: number; error?: string; done: boolean }
-export type NoteColor = 'important' | 'confusing' | 'exam'
+/** A highlight: a mark with a purpose (important, confusing, for the exam) or a plain colour. */
+export type NoteColor = 'important' | 'confusing' | 'exam' | HighlightColor
+export type HighlightColor = 'yellow' | 'green' | 'blue' | 'pink' | 'purple' | 'orange'
 export interface Note { id: string; doc: string; anchor: NoteAnchor; body: string; thread: NoteMessage[]; created: number; updated: number; color?: NoteColor }
 export interface EnginesInfo { local: { available: boolean; model: string; models: string[]; error?: string; busy: number }; claude: { available: boolean; version?: string; path?: string; error?: string } }
 

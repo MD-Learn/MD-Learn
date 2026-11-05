@@ -20,7 +20,9 @@ import { DocBlocks, type BlockEnv } from './DocBlocks'
 import { MarkLegend } from '../prose/MarkLegend'
 import { Outline } from './Outline'
 import { CoursePanel } from './CoursePanel'
-import { markLabel } from '../notes/marks'
+import { isNoteColor, markLabel } from '../notes/marks'
+import { HighlightMenu } from '../notes/HighlightMenu'
+import { PenButton } from '../notes/PenButton'
 import { RelatedPanel } from './RelatedPanel'
 import { LinksPanel } from '../knowledge/LinksPanel'
 import { PreviewLink } from '../knowledge/PreviewLink'
@@ -58,7 +60,7 @@ export default function Reader({ ws }: { ws: string }) {
   const [askError, setAskError] = useState<string | null>(null)
   useEffect(() => { setDraft(null) }, [path, setDraft])
   useEffect(() => { if (noteId) { setPanelTab('notes'); setActive(noteId) } }, [noteId, setPanelTab, setActive])
-  useNoteHighlights(ws, path, source ? null : article)
+  const noteAt = useNoteHighlights(ws, path, source ? null : article)
   const onSelection = async (kind: SelectionKind, anchor: NoteAnchor) => {
     if (!path) return
     if (kind === 'inbox') {
@@ -69,7 +71,7 @@ export default function Reader({ ws }: { ws: string }) {
       } catch (e) { notify((e as Error).message) }
       return
     }
-    if (kind === 'important' || kind === 'confusing' || kind === 'exam') {
+    if (isNoteColor(kind)) {
       try {
         await notesApi.create(ws, path, anchor, '', kind)
         await qc.invalidateQueries({ queryKey: keys.notes(ws, path) })
@@ -129,6 +131,7 @@ export default function Reader({ ws }: { ws: string }) {
       <TopActions>
         {studied && <Button size="sm" variant="ghost" icon={BookOpenCheck} collapse onClick={() => navigate(`/w/${ws}/study?doc=${encodeURIComponent(path)}`)}>{t('Study')}</Button>}
         {canAi && entry && !studied && <Button size="sm" variant="ghost" icon={Sparkles} collapse onClick={() => navigate(`/w/${ws}/studio?kind=course&doc=${encodeURIComponent(path)}`)}>{t('Make a course')}</Button>}
+        {!source && <PenButton />}
         {!source && <ReadingMenu />}
         {canWrite && <Link href={`/w/${ws}/edit?path=${encodeURIComponent(path)}`} aria-label={t('Edit this file')} title={t('Edit this file')} className="inline-flex size-7 items-center justify-center rounded-[6px] text-muted hover:bg-hover hover:text-text"><Pencil className="size-4" strokeWidth={1.8} aria-hidden /></Link>}
         <Menu iconOnly label={t('More')} icon={Ellipsis}>
@@ -163,6 +166,7 @@ export default function Reader({ ws }: { ws: string }) {
             : <NotesPanel ws={ws} doc={path} article={source ? null : article} mtime={doc.data.mtime} />}
         </PanelSlot>
       )}
+      {!source && path && <HighlightMenu ws={ws} doc={path} article={article} noteAt={noteAt} />}
       {!source && <SelectionToolbar root={article} onAction={(k, a) => void onSelection(k, a)} canAsk={!!engines.data?.local.available} />}
       {doc.isLoading && <div className="p-10"><Spinner label={t('Opening document')} /></div>}
       {doc.error && <ErrorNote error={doc.error} retry={() => doc.refetch()} />}

@@ -494,6 +494,17 @@ marks too much, and *Improve a lesson → Mark key terms* adds them to an existi
 *Make a card*. *Settings → Appearance → Colour in notes* turns every hue grey per device (`data-colour="off"`, set before the first paint by
 `public/theme.js`). Icons, underlines and labels carry the same meaning, so nothing depends on seeing colour.
 
+**Highlights.** Besides the three marks with a purpose, a highlight can be one of six plain colours (`Note.color`: `yellow`, `green`,
+`blue`, `pink`, `purple`, `orange`) that are just colour: they feed nothing on Today. Like every note they live in
+`.mdlearn/notes/<doc>.json`, never in the file. Selecting text opens a toolbar whose first row is the colours and the marks (one
+click; keys 1–6, or H for the last colour used); a phone's long-press selection opens it too, once the selection settles. The
+**highlighter** in the reader's top bar highlights every selection made with a mouse or a pen at once, in the colour chosen beside
+it, until it or Esc turns it off (remembered per device, `mdl-highlighter`). Clicking a highlight opens a small menu to change its
+colour, write a note on it, or remove it; removing the colour of a highlight that has a note or a conversation keeps them
+(`POST notes/:id/update` takes `color`, or `color: null`). The click is matched against the drawn passages' rectangles, so nothing is
+added to the page. An open highlight in the notes panel has the same colours (the keyboard way), and the panel can show one colour
+at a time. With *Colour in notes* off, every plain colour is the same grey and the name says which it is.
+
 **Reading font and size.** *Settings → Appearance → Reading*, or the **Aa** button on a note or lesson page (`web/settings/ReadingControls.tsx`):
 the font (the serif, Times New Roman when the computer has it, sans, *Easy to read* in Atkinson Hyperlegible Next, *For dyslexia* in
 OpenDyslexic, or monospace) and the text size, 14 to 28 px. Per device, in localStorage (`web/lib/reading.ts`), and applied before the
