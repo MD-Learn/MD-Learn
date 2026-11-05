@@ -11,6 +11,7 @@ import { applyColour, colourOn } from '../lib/colour'
 import { forgetSites, useSitesAnywhere } from '../prose/webPictures'
 import { LANGS, currentLang, setLang, t, tp } from '../i18n'
 import { Section } from './Section'
+import { ReadingControls } from './ReadingControls'
 
 const ACCENT_NAMES: Record<AccentId, () => string> = {
   graphite: () => t('Graphite'), blue: () => t('Blue'), green: () => t('Green'), violet: () => t('Violet'), amber: () => t('Amber'), rose: () => t('Rose'),
@@ -40,6 +41,10 @@ export function Appearance() {
             </button>
           ))}
         </div>
+      </div>
+      <div>
+        <p className="text-[13.5px] font-medium">{t('Reading')}</p>
+        <div className="mt-2"><ReadingControls /></div>
       </div>
       <label className="flex items-start gap-2 text-[13.5px]">
         <input type="checkbox" checked={colour} onChange={(e) => { setColour(e.target.checked); applyColour(e.target.checked) }} className="mt-0.5" />

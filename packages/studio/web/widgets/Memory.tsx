@@ -66,7 +66,7 @@ export function Memory({ widget, draft, setDraft, result, probe, onSubmit }: Wid
                 <span className="flip-face flip-front" aria-hidden>
                   <span className={`size-2.5 rounded-full ${tile.side === 'l' ? 'bg-text/55' : 'border-[1.5px] border-text/55'}`} />
                 </span>
-                <span className="flip-face flip-back read text-[14.5px] leading-snug" aria-hidden={!up}><span className="line-clamp-4"><Inline nodes={content} /></span></span>
+                <span className="flip-face flip-back read text-[calc(14.5px*var(--read-scale,1))] leading-snug" aria-hidden={!up}><span className="line-clamp-4"><Inline nodes={content} /></span></span>
               </span>
             </button>
           )

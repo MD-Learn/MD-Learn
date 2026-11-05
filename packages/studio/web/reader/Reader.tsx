@@ -30,6 +30,8 @@ import { PanelSlot, TopActions, TopLeft } from '../layout/Shell'
 import { Button, Empty, ErrorNote, IconButton, Spinner } from '../ui/primitives'
 import { Menu, MenuItem } from '../ui/Menu'
 import { lastDocKey } from '../today/TodayPage'
+import { ReadingMenu } from './ReadingMenu'
+import { useReadingKeys } from '../lib/reading'
 import { duration } from '../lib/title'
 import type { Checked, WebAnswer } from '@mdlearn/core'
 import { t, tp } from '../i18n'
@@ -39,6 +41,7 @@ export default function Reader({ ws }: { ws: string }) {
   const path = params.get('path') ?? undefined
   const section = params.get('section')
   const noteId = params.get('note')
+  useReadingKeys()
   const doc = useDoc(ws, path)
   const tree = useTree(ws)
   const [, navigate] = useLocation()
@@ -126,6 +129,7 @@ export default function Reader({ ws }: { ws: string }) {
       <TopActions>
         {studied && <Button size="sm" variant="ghost" icon={BookOpenCheck} collapse onClick={() => navigate(`/w/${ws}/study?doc=${encodeURIComponent(path)}`)}>{t('Study')}</Button>}
         {canAi && entry && !studied && <Button size="sm" variant="ghost" icon={Sparkles} collapse onClick={() => navigate(`/w/${ws}/studio?kind=course&doc=${encodeURIComponent(path)}`)}>{t('Make a course')}</Button>}
+        {!source && <ReadingMenu />}
         {canWrite && <Link href={`/w/${ws}/edit?path=${encodeURIComponent(path)}`} aria-label={t('Edit this file')} title={t('Edit this file')} className="inline-flex size-7 items-center justify-center rounded-[6px] text-muted hover:bg-hover hover:text-text"><Pencil className="size-4" strokeWidth={1.8} aria-hidden /></Link>}
         <Menu iconOnly label={t('More')} icon={Ellipsis}>
           {(close) => (
@@ -163,9 +167,9 @@ export default function Reader({ ws }: { ws: string }) {
       {doc.isLoading && <div className="p-10"><Spinner label={t('Opening document')} /></div>}
       {doc.error && <ErrorNote error={doc.error} retry={() => doc.refetch()} />}
       {doc.data && env && (source ? <Source ws={ws} path={path} /> : (
-        <article className="mx-auto max-w-[760px] px-6 pb-[30vh] pt-4 sm:px-12" lang={typeof doc.data.frontmatter?.lang === 'string' ? doc.data.frontmatter.lang : undefined}>
+        <article className="mx-auto max-w-[calc(760px*var(--read-scale,1))] px-6 pb-[30vh] pt-4 sm:px-12" lang={typeof doc.data.frontmatter?.lang === 'string' ? doc.data.frontmatter.lang : undefined}>
           <header className="mb-8">
-            <h1 className="font-ui text-[32px] font-bold leading-[1.2] tracking-[-0.022em] text-balance">{doc.data.title}</h1>
+            <h1 className="font-ui text-[calc(32px*var(--read-scale,1))] font-bold leading-[1.2] tracking-[-0.022em] text-balance">{doc.data.title}</h1>
             <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 tabular text-[13px] text-muted">
               {doc.data.outline.timeMin && <span>{duration(doc.data.outline.timeMin)}</span>}
               {doc.data.outline.level && <span className="capitalize">{doc.data.outline.level}</span>}

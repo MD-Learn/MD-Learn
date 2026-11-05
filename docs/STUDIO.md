@@ -494,6 +494,14 @@ marks too much, and *Improve a lesson → Mark key terms* adds them to an existi
 *Make a card*. *Settings → Appearance → Colour in notes* turns every hue grey per device (`data-colour="off"`, set before the first paint by
 `public/theme.js`). Icons, underlines and labels carry the same meaning, so nothing depends on seeing colour.
 
+**Reading font and size.** *Settings → Appearance → Reading*, or the **Aa** button on a note or lesson page (`web/settings/ReadingControls.tsx`):
+the font (the serif, Times New Roman when the computer has it, sans, *Easy to read* in Atkinson Hyperlegible Next, *For dyslexia* in
+OpenDyslexic, or monospace) and the text size, 14 to 28 px. Per device, in localStorage (`web/lib/reading.ts`), and applied before the
+first paint by `public/theme.js`. The size is the note's zoom: everything inside `.read` is sized in em or scaled by `--read-scale`
+(headings, formulas, code, tables, the title and the column's width), so line length stays the same. On a note, Ctrl/Cmd with + or −
+sizes it and 0 resets it; in the desktop app the window's own zoom moved to Ctrl/Cmd+Shift. The two bundled fonts (OFL) download
+only when chosen.
+
 **Companion.** *Settings → Appearance → Companion*: a 12×12 one-colour pixel creature by default (`web/companion/sprites.ts`, plain data), an orb
 (`thinking-orbs`, loaded only for someone who picks it), or off, which is remembered. It sits at the foot of the sidebar and shows what is really happening,
 from `useActivity.ts`: a job, an answer on its way, a teach-back, the end of a session, or five minutes without input. Clicking it opens a

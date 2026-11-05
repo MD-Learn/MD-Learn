@@ -116,7 +116,7 @@ function Card({ ws, s }: { ws: string; s: ReturnType<typeof useStudySession> }) 
         probe={async (a) => (await studyApi.check(ws, { widgetId: item.widget.id, answer: a, practice: true })).checked} />
       {st.hints.length > 0 && (
         <div className="mt-4 flex flex-col gap-1.5">
-          {st.hints.map((h, i) => <p key={i} className="flex gap-2 text-[14.5px]"><Lightbulb className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden /><span className="read text-[15.5px]"><Inline nodes={h} /></span></p>)}
+          {st.hints.map((h, i) => <p key={i} className="flex gap-2 text-[14.5px]"><Lightbulb className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden /><span className="read text-[calc(15.5px*var(--read-scale,1))]"><Inline nodes={h} /></span></p>)}
         </div>
       )}
 
@@ -159,7 +159,7 @@ function Card({ ws, s }: { ws: string; s: ReturnType<typeof useStudySession> }) 
           {item.exposition.length > 0 && !st.checked.correct && (
             <details className="mt-5 rounded-[8px] border border-border px-4 py-2.5">
               <summary className="cursor-pointer text-[13.5px] font-medium">{t('Reread the card')}</summary>
-              <div className="read mt-2 text-[16.5px]"><Prose nodes={item.exposition} /></div>
+              <div className="read mt-2 text-[calc(16.5px*var(--read-scale,1))]"><Prose nodes={item.exposition} /></div>
             </details>
           )}
           <div className="mt-6 flex items-center gap-2">

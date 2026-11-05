@@ -44,7 +44,7 @@ export function Sort({ widget, draft, setDraft, result }: WidgetProps<Extract<Dr
       <li key={i} data-flip={i}>
         <button type="button" disabled={locked} aria-pressed={chosen} onClick={() => setSel(chosen ? null : i)}
           className={`game-item inline-flex max-w-full items-baseline gap-1.5 rounded-[7px] border px-2.5 py-1.5 text-left transition-colors ${tone} ${locked ? 'cursor-default' : 'cursor-pointer'}`}>
-          <span className="read min-w-0 text-[15.5px] leading-[1.45]"><Inline nodes={widget.items[i]} /></span>
+          <span className="read min-w-0 text-[calc(15.5px*var(--read-scale,1))] leading-[1.45]"><Inline nodes={widget.items[i]} /></span>
           {p?.ok === false && p.expected !== undefined && <span className="shrink-0 font-ui text-[12px] text-muted">→ <Inline nodes={widget.groups[p.expected]} /></span>}
         </button>
       </li>

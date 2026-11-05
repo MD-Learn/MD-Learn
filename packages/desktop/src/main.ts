@@ -91,7 +91,8 @@ function menu(origin: string): Menu {
     { role: 'editMenu' },
     { label: 'View', submenu: [
       { role: 'reload' }, ...(app.isPackaged ? [] : [{ role: 'toggleDevTools' as const }]),
-      { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' },
+      // the whole window's zoom; Ctrl/Cmd with + or − alone sizes the text of a note (Studio's reading size)
+      { type: 'separator' }, { role: 'resetZoom', accelerator: 'CmdOrCtrl+Shift+0' }, { role: 'zoomIn', accelerator: 'CmdOrCtrl+Shift+=' }, { role: 'zoomOut', accelerator: 'CmdOrCtrl+Shift+-' },
       { type: 'separator' }, { role: 'togglefullscreen' },
     ] },
     { role: 'windowMenu' },

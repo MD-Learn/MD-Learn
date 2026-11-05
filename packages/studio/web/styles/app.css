@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @import "@fontsource-variable/source-serif-4/opsz.css";
 @import "@fontsource-variable/source-serif-4/opsz-italic.css";
+/* reading fonts someone can choose (Settings → Appearance → Reading); a file downloads only when its font is used */
+@import "@fontsource/atkinson-hyperlegible-next/400.css";
+@import "@fontsource/atkinson-hyperlegible-next/400-italic.css";
+@import "@fontsource/atkinson-hyperlegible-next/700.css";
+@import "@fontsource/opendyslexic/400.css";
+@import "@fontsource/opendyslexic/400-italic.css";
+@import "@fontsource/opendyslexic/700.css";
 @import "katex/dist/katex.min.css";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
@@ -116,14 +123,22 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
 /* ---------------------------------------------------------------- reading */
-.read { font-family: var(--font-read); font-size: 18px; line-height: 1.68; font-optical-sizing: auto; color: var(--text); }
+/* The reading font and size are chosen per device (web/lib/reading.ts, public/theme.js). Sizes inside a note are in em,
+   or scaled by --read-scale, so the size control zooms the whole note. */
+:root { --font-times: "Times New Roman", Times, "Liberation Serif", Tinos, serif; --font-easy: "Atkinson Hyperlegible Next", var(--font-ui); --font-dyslexia: "OpenDyslexic", var(--font-ui); }
+:root[data-read-font=times] { --read-font: var(--font-times); }
+:root[data-read-font=sans] { --read-font: var(--font-ui); }
+:root[data-read-font=easy] { --read-font: var(--font-easy); }
+:root[data-read-font=dyslexia] { --read-font: var(--font-dyslexia); }
+:root[data-read-font=mono] { --read-font: var(--font-mono); }
+.read { font-family: var(--read-font, var(--font-read)); font-size: var(--read-size, 18px); line-height: 1.68; font-optical-sizing: auto; color: var(--text); }
 .read > * + * { margin-top: 0.85em; }
 .read p { margin: 0; }
 .read p + p, .read .callout + p { margin-top: 0.85em; }
 .read h1, .read h2, .read h3, .read h4 { font-family: var(--font-ui); color: var(--text); line-height: 1.3; letter-spacing: -0.01em; scroll-margin-top: 72px; text-wrap: balance; }
-.read h2 { font-size: 1.42rem; font-weight: 650; margin-top: 2.1em; margin-bottom: 0.2em; }
-.read h3 { font-size: 1.16rem; font-weight: 640; margin-top: 1.7em; margin-bottom: 0.1em; }
-.read h4, .read h5, .read h6 { font-size: 1rem; font-weight: 640; margin-top: 1.4em; }
+.read h2 { font-size: 1.262em; font-weight: 650; margin-top: 2.1em; margin-bottom: 0.2em; }
+.read h3 { font-size: 1.031em; font-weight: 640; margin-top: 1.7em; margin-bottom: 0.1em; }
+.read h4, .read h5, .read h6 { font-size: 0.889em; font-weight: 640; margin-top: 1.4em; }
 .read a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent-ink) 55%, transparent); text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .read a:hover { text-decoration-color: var(--accent-ink); }
 [data-colour="off"] .read a { text-decoration-color: var(--border-strong); }
@@ -146,14 +161,14 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--
 .picture-zoom img { display: block; max-width: 100%; max-height: calc(100vh - 96px); margin: 0 auto; border-radius: 6px; object-fit: contain; }
 .picture-zoom p { margin-top: 12px; font-family: var(--font-ui); font-size: 14px; color: #e7e6e2; }
 .table-wrap { overflow-x: auto; margin: 1.1em 0; border: 1px solid var(--border); border-radius: 6px; }
-.read table { border-collapse: collapse; width: 100%; font-family: var(--font-ui); font-size: 14px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.read table { border-collapse: collapse; width: 100%; font-family: var(--font-ui); font-size: calc(14px * var(--read-scale, 1)); line-height: 1.5; font-variant-numeric: tabular-nums; }
 .read th { text-align: left; font-weight: 600; background: var(--panel); color: var(--text); }
 .read th, .read td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .read tr:last-child td { border-bottom: 0; }
 .read td .tex-display { margin: 0.2em 0; }
 .code-block { margin: 1.1em 0; border: 1px solid var(--border); border-radius: 6px; background: var(--code-bg); overflow: hidden; }
-.code-block figcaption { font-family: var(--font-ui); font-size: 11.5px; color: var(--muted); padding: 5px 12px; border-bottom: 1px solid var(--border); }
-.code-block .code, pre.code { font-family: var(--font-mono); font-size: 13px; line-height: 1.6; padding: 12px 14px; overflow-x: auto; margin: 0; background: transparent; }
+.code-block figcaption { font-family: var(--font-ui); font-size: calc(11.5px * var(--read-scale, 1)); color: var(--muted); padding: 5px 12px; border-bottom: 1px solid var(--border); }
+.code-block .code, pre.code { font-family: var(--font-mono); font-size: calc(13px * var(--read-scale, 1)); line-height: 1.6; padding: 12px 14px; overflow-x: auto; margin: 0; background: transparent; }
 .code-block .code pre { margin: 0; background: transparent !important; }
 .code-block .code code, pre.code code { background: none; border: 0; padding: 0; font-size: inherit; }
 .shiki span { color: var(--shiki-light); }

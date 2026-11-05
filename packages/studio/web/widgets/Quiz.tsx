@@ -38,11 +38,11 @@ export function Quiz({ widget, draft, setDraft, result, autoFocus }: WidgetProps
                   state === 'correct' ? 'border-good bg-good text-bg' : state === 'wrong' ? 'border-bad bg-bad text-bg' : picked ? 'border-accent bg-accent text-on-accent' : 'border-border-strong text-muted'}`} aria-hidden>
                   {state === 'correct' ? <Check className="size-3.5" strokeWidth={2.8} /> : state === 'wrong' ? <X className="size-3.5" strokeWidth={2.8} /> : LETTERS[i]}
                 </span>
-                <span className="read min-w-0 flex-1 text-[16.5px] leading-[1.55]"><Inline nodes={o.content} /></span>
+                <span className="read min-w-0 flex-1 text-[calc(16.5px*var(--read-scale,1))] leading-[1.55]"><Inline nodes={o.content} /></span>
                 {state && <span className="sr-only">{state === 'correct' ? t('(correct answer)') : t('(your choice, not correct)')}</span>}
               </button>
               {p?.feedback && (p.picked || p.correct) && (
-                <div className="read ml-[46px] mt-1 text-[15px] text-muted"><Prose nodes={p.feedback} /></div>
+                <div className="read ml-[46px] mt-1 text-[calc(15px*var(--read-scale,1))] text-muted"><Prose nodes={p.feedback} /></div>
               )}
             </div>
           )
