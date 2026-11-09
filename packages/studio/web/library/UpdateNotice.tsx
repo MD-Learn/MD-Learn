@@ -1,7 +1,8 @@
-// The home page says once that a newer version is out, until it is dismissed (per device, per version).
+// The home page says once that a newer version is out, until it is dismissed (per device, per version). Only on
+// this computer: a phone on the network cannot update the server.
 import { useState } from 'react'
 import { X } from 'lucide-react'
-import { useUpdates } from '../api/queries'
+import { useSession, useUpdates } from '../api/queries'
 import { Command } from '../settings/Command'
 import { IconButton } from '../ui/primitives'
 import { t } from '../i18n'
@@ -11,8 +12,9 @@ const dismissedVersion = () => { try { return localStorage.getItem(KEY) } catch 
 
 export function UpdateNotice() {
   const u = useUpdates()
+  const session = useSession()
   const [dismissed, setDismissed] = useState(dismissedVersion)
-  const latest = u.data?.newer ? u.data.latest : null
+  const latest = u.data?.newer && session.data?.caps.includes('ai') ? u.data.latest : null
   if (!latest || dismissed === latest) return null
   const dismiss = () => { try { localStorage.setItem(KEY, latest) } catch { /* this visit only */ } setDismissed(latest) }
   return (
