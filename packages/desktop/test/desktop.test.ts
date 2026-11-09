@@ -81,7 +81,7 @@ describe('the server stops when the app is gone', () => {
     s.child.kill('SIGTERM')
     expect(await within(s.exited, 2000)).toBe('stopped')
   })
-  it.skipIf(process.platform === 'win32')('stops when the app dies without closing its stdin (crash, force quit)', async () => {
+  it('stops when the app dies without closing its stdin (crash, force quit)', async () => {
     // the app runs the server with this test's pipe as its stdin, so only the server's parent changes
     const app = spawn(process.execPath, ['-e', `const c = require('node:child_process').spawn(process.execPath, [${JSON.stringify(join(here, 'fake-tied.mjs'))}], { stdio: ['inherit', 'pipe', 'inherit'] }); c.stdout.on('data', (b) => process.stdout.write(b))`], { stdio: ['pipe', 'pipe', 'inherit'] })
     const pid = await new Promise<number>((r) => app.stdout.on('data', (b: Buffer) => { const m = /ready (\d+)/.exec(b.toString()); if (m) r(Number(m[1])) }))

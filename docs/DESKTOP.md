@@ -65,7 +65,7 @@ before a release. The server inside the app does not look on npm for versions (`
 - **Stopping.** Quitting closes the server's stdin; it closes its watchers and connections and exits. After 4 s the
   app kills its whole process group (on Windows, the process), and it kills it at once if it exits any other way.
   SIGTERM to the app does the same. The server also stops by itself (`server/lifecycle.mjs`): on SIGTERM, SIGINT or
-  SIGHUP, when its parent changes (the app crashed or was force-quit), at once when its own files disappear (it ran
+  SIGHUP, when its parent changes or no longer exists (the app crashed or was force-quit), at once when its own files disappear (it ran
   from a disk image that was then ejected), and when its pipe to the app breaks. Stopping never takes more than 3 s,
   and a second signal ends it at once.
 - **One app at a time.** A second start hands over to the running app, which comes to the front.

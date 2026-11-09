@@ -1,5 +1,5 @@
 import { test, expect, _electron as electron, type ElectronApplication } from '@playwright/test'
-import { spawn } from 'node:child_process'
+import { execSync, spawn } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -124,5 +124,12 @@ test('when the app is killed outright, its server stops too', async () => {
   await expect(win.getByRole('heading', { name: 'MDlearn Studio' })).toBeVisible({ timeout: 30_000 })
   expect(await portOpen(4757)).toBe(true)
   app.process().kill('SIGKILL') // a crash or a force quit: the app runs none of its quitting steps
-  await expect.poll(() => portOpen(4757), { timeout: 10_000 }).toBe(false)
+  try {
+    await expect.poll(() => portOpen(4757), { timeout: 10_000 }).toBe(false)
+  } catch (e) {
+    // who still holds the port, for the log
+    const show = (cmd: string) => { try { return execSync(cmd, { encoding: 'utf8' }) } catch (x) { return String(x) } }
+    console.log(process.platform === 'win32' ? show('netstat -ano | findstr :4757') + show('tasklist /V /FO CSV | findstr /I mdlearn') : show('ps -eo pid,ppid,stat,args | grep -i [m]dlearn'))
+    throw e
+  }
 })
