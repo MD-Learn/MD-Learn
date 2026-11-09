@@ -3,7 +3,7 @@
 // the learner previews the block and decides where it goes.
 import { findSection, sectionText, compile, type Diagnostic, type Visual } from '@mdlearn/core'
 import { loadDoc, checkJs } from '@mdlearn/core/node'
-import { ollamaChat, type OllamaConfig, type ChatMessage } from './ollama.js'
+import type { ChatMessage, ChatOptions } from './ollama.js'
 import type { Handle, Workspaces } from '../workspaces.js'
 import type { Anchor } from '../notes.js'
 
@@ -47,7 +47,7 @@ function check(markdown: string): { block: Visual | null; diagnostics: Diagnosti
   // lines refer to the stub: shift them back to the block (the stub adds 5 lines)
   return { block, diagnostics: r.diagnostics.filter((d) => /^[EW]/.test(d.code)).map((d) => ({ ...d, line: Math.max(1, d.line - 5) })) }
 }
-export async function visualise(h: Handle, workspaces: Workspaces, cfg: OllamaConfig, doc: string, anchor: Anchor, kind: 'auto' | 'plot' | 'formula' | 'animate', signal?: AbortSignal): Promise<VisualDraft> {
+export async function visualise(h: Handle, workspaces: Workspaces, chat: (o: ChatOptions) => Promise<string>, doc: string, anchor: Anchor, kind: 'auto' | 'plot' | 'formula' | 'animate', signal?: AbortSignal): Promise<VisualDraft> {
   const abs = workspaces.resolve(h, doc)
   const { outline, md } = loadDoc(abs, h.root)
   const section = anchor.section ? findSection(outline, anchor.section) : null
@@ -59,7 +59,7 @@ export async function visualise(h: Handle, workspaces: Workspaces, cfg: OllamaCo
   ]
   let best: VisualDraft = { markdown: '', block: null, diagnostics: [], attempts: 0, kind }
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const text = await ollamaChat(cfg, { messages, signal, temperature: attempt === 1 ? 0.3 : 0.2, numCtx: 8192 })
+    const text = await chat({ messages, signal, temperature: attempt === 1 ? 0.3 : 0.2, numCtx: 8192 })
     const block = extract(text)
     if (!block) {
       messages.push({ role: 'assistant', content: text }, { role: 'user', content: 'Answer with only the :::plot, :::formula or :::animate block, starting with ::: and ending with a line containing only :::.' })

@@ -10,6 +10,10 @@ const SettingsSchema = z.object({
   ollama: z.object({ url: z.string().default('http://127.0.0.1:11434'), model: z.string().default('qwen3:8b'), embedModel: z.string().default('embeddinggemma') }).default({ url: 'http://127.0.0.1:11434', model: 'qwen3:8b', embedModel: 'embeddinggemma' }),
   claude: z.object({ path: z.string().optional(), model: z.string().default('sonnet') }).default({ model: 'sonnet' }),
   scinet: z.object({ url: z.string().default('http://127.0.0.1:8000') }).default({ url: 'http://127.0.0.1:8000' }),
+  /** A cloud AI with your own key, for short questions (server/ai/cloud.ts). The key itself is in secrets.json. */
+  cloud: z.object({ provider: z.string().max(40).optional(), baseUrl: z.string().max(500).optional(), model: z.string().max(200).optional() }).default({}),
+  /** Looking for a new version on npm (server/updates.ts): on unless turned off; the last answer, once a day. */
+  updates: z.object({ check: z.boolean().default(true), checkedAt: z.number().optional(), latest: z.string().max(64).optional() }).default({ check: true }),
   /** First-run help: the welcome tour is shown until it is finished or skipped once. */
   onboarding: z.object({ tourDone: z.boolean().default(false) }).default({ tourDone: false }),
   /** The companion's growth (companion.ts): points never lost, what was already counted (hashed), the last few things. */

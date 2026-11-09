@@ -17,7 +17,7 @@ export function Verdict({ result, skipped }: { result: Checked; skipped?: boolea
   return (
     <div className="mt-5" role="status">
       <p className="flex items-center gap-1.5 text-[15px] font-semibold"><Icon className={`size-[18px] ${color}`} strokeWidth={2.4} aria-hidden />{v.word}</p>
-      {result.parts?.reveal && <div className="read mt-2 text-[16.5px]"><Prose nodes={result.parts.reveal} /></div>}
+      {result.parts?.reveal && <div className="read mt-2 text-[calc(16.5px*var(--read-scale,1))]"><Prose nodes={result.parts.reveal} /></div>}
     </div>
   )
 }

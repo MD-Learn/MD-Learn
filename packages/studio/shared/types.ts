@@ -116,15 +116,23 @@ export interface ApiError { error: { code: string; message: string } }
 /** `t`: a note on a moment of a video (seconds); the quote is then the video's label. */
 export interface NoteAnchor { section: string | null; quote: { exact: string; prefix: string; suffix: string }; t?: number }
 export interface NoteMessage { id: string; role: 'user' | 'ai'; text: string; engine?: string; at: number; error?: string; done: boolean }
-export type NoteColor = 'important' | 'confusing' | 'exam'
+/** A highlight: a mark with a purpose (important, confusing, for the exam) or a plain colour. */
+export type NoteColor = 'important' | 'confusing' | 'exam' | HighlightColor
+export type HighlightColor = 'yellow' | 'green' | 'blue' | 'pink' | 'purple' | 'orange'
 export interface Note { id: string; doc: string; anchor: NoteAnchor; body: string; thread: NoteMessage[]; created: number; updated: number; color?: NoteColor }
-export interface EnginesInfo { local: { available: boolean; model: string; models: string[]; error?: string; busy: number }; claude: { available: boolean; version?: string; path?: string; error?: string } }
+/** `local.cloud`: the model chosen is one of Ollama's cloud models. `cloud`: the cloud AI with your own key (shown only to the computer running MDlearn). */
+export interface EnginesInfo {
+  local: { available: boolean; model: string; models: string[]; cloudModels: string[]; cloud: boolean; error?: string; busy: number }
+  claude: { available: boolean; version?: string; path?: string; error?: string }
+  cloud: { available: boolean; provider: string | null; name: string | null; model: string | null; error?: string }
+}
 
 // ---- local AI models (Ollama)
 export type ModelFit = 'good' | 'slow' | 'too-big'
 export type ModelPurpose = 'tiny' | 'light' | 'newer-light' | 'default' | 'newer' | 'languages' | 'strong' | 'large'
 export interface Hardware { memoryGb: number; gpu: { name: string; memoryGb: number } | null; unified: boolean }
-export interface LocalModel { name: string; sizeGb: number; parameters?: string; embedding: boolean; fit: ModelFit }
+/** `cloud`: one of Ollama's cloud models (it runs on Ollama's servers, under your Ollama account). */
+export interface LocalModel { name: string; sizeGb: number; parameters?: string; embedding: boolean; fit: ModelFit; cloud?: boolean }
 export interface CatalogModel { name: string; sizeGb: number; memoryGb: number; purpose: ModelPurpose; installed: boolean; fit: ModelFit }
 export interface ModelDownload { model: string; status: string; completed?: number; total?: number; error?: string; done: boolean }
 export interface LocalAiInfo {

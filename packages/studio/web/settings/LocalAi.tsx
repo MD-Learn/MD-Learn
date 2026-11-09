@@ -50,7 +50,7 @@ export function LocalAi() {
   const d = info.data
   return (
     <Section id="local-ai" title={t('Local AI')}
-      intro={t('Answers, explanations and visuals about your notes come from a model on this computer, through Ollama. Your notes never leave it.')}>
+      intro={t('Answers, explanations and visuals about your notes come from a model on this computer, through Ollama. Your notes never leave it, unless you choose one of Ollama\'s cloud models.')}>
       {info.isLoading && <Spinner />}
       {info.error && <ErrorNote error={info.error} retry={() => void info.refetch()} />}
       {d && !d.ollama.running && <OllamaSetup info={d} checking={info.isFetching} onCheck={() => void info.refetch()} />}
@@ -141,7 +141,9 @@ function DownloadBar({ download, canChange, onCancel, onRetry }: { download: Mod
 }
 
 function InUse({ info, canChange, busy, onChoose, onRemove }: { info: LocalAiInfo; canChange: boolean; busy: boolean; onChoose(m: string): void; onRemove(m: string): void }) {
-  const chat = info.models.filter((m) => !m.embedding)
+  // models on this computer first, then Ollama's cloud models
+  const chat = [...info.models.filter((m) => !m.embedding && !m.cloud), ...info.models.filter((m) => m.cloud)]
+  const firstCloud = chat.find((m) => m.cloud)?.name
   return (
     <div>
       <h3 className="text-[14px] font-semibold">{t('The model Studio answers with')}</h3>
@@ -150,15 +152,18 @@ function InUse({ info, canChange, busy, onChoose, onRemove }: { info: LocalAiInf
           {chat.map((m) => {
             const chosen = m.name === info.chosen
             return (
-              <div key={m.name} className="flex items-center gap-3 px-3 py-2">
+              <div key={m.name}>
+              {m.name === firstCloud && <p className="bg-panel px-3 py-1.5 text-[12px] text-muted">{t('Cloud models, through Ollama: they run on Ollama\'s servers, under your Ollama account, so the passages they read go there. Sign in with `ollama signin` first.')}</p>}
+              <div className="flex items-center gap-3 px-3 py-2">
                 <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-2.5">
                   <input type="radio" name="local-model" checked={chosen} disabled={!canChange || busy} onChange={() => onChoose(m.name)} className="mt-[3px] accent-[var(--accent)]" />
                   <span className="min-w-0">
                     <span className="block break-all font-mono text-[13px]">{m.name}</span>
-                    <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 text-[12px] text-muted"><span className="whitespace-nowrap">{gb(m.sizeGb)} GB</span><FitLabel fit={m.fit} /></span>
+                    <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 text-[12px] text-muted">{m.cloud ? <span>{t('On Ollama\'s servers')}</span> : <><span className="whitespace-nowrap">{gb(m.sizeGb)} GB</span><FitLabel fit={m.fit} /></>}</span>
                   </span>
                 </label>
                 {canChange && !chosen && <IconButton icon={Trash2} label={t('Remove {model}', { model: m.name })} disabled={busy} onClick={() => onRemove(m.name)} />}
+              </div>
               </div>
             )
           })}
@@ -203,7 +208,7 @@ function OtherModel({ disabled, onDownload }: { disabled: boolean; onDownload(m:
   return (
     <form className="flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); if (name.trim()) { onDownload(name.trim()); setName('') } }}>
       <label className="flex min-w-0 flex-1 basis-[240px] flex-col gap-1 text-[12.5px] text-muted">
-        <span>{t('Another model, by its name on')} <a href="https://ollama.com/library" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-text">ollama.com/library</a></span>
+        <span>{t('Another model, by its name on')} <a href="https://ollama.com/library" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-text">ollama.com/library</a><span className="block">{t('A name ending in -cloud runs on Ollama\'s servers.')}</span></span>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="mistral:7b" spellCheck={false}
           className="h-8 rounded-[6px] border border-border-strong bg-bg px-2.5 font-mono text-[13px] text-text outline-none focus:border-focus" />
       </label>

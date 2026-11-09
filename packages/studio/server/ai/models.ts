@@ -134,7 +134,8 @@ export async function localAi(cfg: OllamaConfig, downloads: ModelDownloads, hw: 
     hardware: hw,
     chosen: cfg.model,
     embedModel: cfg.embedModel ?? 'embeddinggemma',
-    models: (models ?? []).map((m) => ({ name: m.name, sizeGb: round1(m.size / GB), ...(m.parameters ? { parameters: m.parameters } : {}), embedding: isEmbedding(m), fit: fit(memoryFor(m.size), hw) })),
+    // an Ollama cloud model runs on Ollama's servers: it needs no memory here
+    models: (models ?? []).map((m) => ({ name: m.name, sizeGb: round1(m.size / GB), ...(m.parameters ? { parameters: m.parameters } : {}), embedding: isEmbedding(m), fit: m.cloud ? 'good' as const : fit(memoryFor(m.size), hw), ...(m.cloud ? { cloud: true } : {}) })),
     catalog: CATALOG.map((c) => ({ ...c, installed: hasModel(names, c.name), fit: fit(c.memoryGb, hw) })),
     download,
   }

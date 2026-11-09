@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { useSearch } from 'wouter'
 import { useQueryClient } from '@tanstack/react-query'
 import { ListChecks, Printer, Sparkles } from 'lucide-react'
-import { sheetApi, useEngines, useSheet } from '../api/queries'
+import { sheetApi, useSheet } from '../api/queries'
+import { EnginePick, quickOf, useAskEngine } from './AskEngine'
 import { prettyTitle, duration, levelName } from '../lib/title'
 import { Tex } from '../prose/Tex'
 import { MiniMarkdown } from '../prose/MiniMarkdown'
@@ -15,7 +16,8 @@ import { t, tp } from '../i18n'
 export default function SheetPage({ ws }: { ws: string }) {
   const path = new URLSearchParams(useSearch()).get('path') ?? undefined
   const res = useSheet(ws, path)
-  const engines = useEngines()
+  const engine = useAskEngine({ claude: false })
+  const quick = quickOf(engine)
   const qc = useQueryClient()
   const [error, setError] = useState<string | null>(null)
   const [columns, setColumns] = useState<1 | 2>(1)
@@ -25,10 +27,10 @@ export default function SheetPage({ ws }: { ws: string }) {
   if (res.error || !res.data) return <ErrorNote error={res.error} retry={() => res.refetch()} />
   const s = res.data
   const running = s.ideas.state === 'running'
-  const canIdeas = !!engines.data?.local.available
+  const canIdeas = !!quick
   const generate = async (regenerate: boolean) => {
     setError(null)
-    try { await sheetApi.ideas(ws, path, regenerate); await qc.invalidateQueries({ queryKey: ['sheet', ws, path] }) } catch (e) { setError((e as Error).message) }
+    try { await sheetApi.ideas(ws, path, quick ?? 'local', regenerate); await qc.invalidateQueries({ queryKey: ['sheet', ws, path] }) } catch (e) { setError((e as Error).message) }
   }
   const meta = [s.level && levelName(s.level), s.timeMin ? duration(s.timeMin) : null, tp(s.formulaCount, '{n} formula', '{n} formulas'), tp(s.termCount, '{n} term', '{n} terms')].filter(Boolean).join(' · ')
   return (
@@ -47,6 +49,7 @@ export default function SheetPage({ ws }: { ws: string }) {
           <h1 className="font-ui text-[26px] font-bold leading-tight tracking-[-0.02em] print:text-[16pt]">{prettyTitle(s.title)}</h1>
           <p className="mt-1 tabular text-[13px] text-muted">{meta}</p>
           {running && <p role="status" className="no-print mt-2 text-[12.5px] text-muted tabular">{t('Writing key ideas…')} {t('{done} of {total}', { done: s.ideas.done, total: s.ideas.total })}</p>}
+          {canIdeas && <div className="no-print"><EnginePick ws={ws} engine={engine} /></div>}
           {(error || s.ideas.error) && <p role="alert" className="no-print mt-2 text-[13px] text-bad">{error ?? s.ideas.error}</p>}
         </header>
         {s.objectives.length > 0 && (

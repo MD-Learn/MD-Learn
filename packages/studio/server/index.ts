@@ -18,6 +18,7 @@ import { ClaudeEngine, claudeStatus, claudeOnce } from './ai/claude.js'
 import { Latex, fakeEngines, fakeRunner } from './latex.js'
 import { FakeEngine, fakeOnce } from './ai/fake.js'
 
+import { updateInfo } from './updates.js'
 export { installMcp, mcpCommands, prepareFolder, READ_THE_SKILL } from './agents.js'
 
 export interface StudioOptions {
@@ -35,8 +36,11 @@ export interface StudioOptions {
   fakeTex?: boolean
   /** A stand-in for the network behind web pictures (tests). */
   pictureFetch?: PictureFetch
+  /** Where to ask for the newest version instead of the npm registry (tests). */
+  updatesUrl?: string
 }
-export interface Studio { url: string; lanUrl?: string; qr?: string; port: number; close(): Promise<void> }
+/** `newerVersion`: the newest version on npm when it is newer than this one (asked at most once a day, unless turned off). */
+export interface Studio { url: string; lanUrl?: string; qr?: string; port: number; close(): Promise<void>; newerVersion(): Promise<string | null> }
 
 /** The package folder, from source (server/) or from the build (dist/server/). */
 const PKG = ((): string => {
@@ -63,7 +67,7 @@ export async function startStudio(opts: StudioOptions = {}): Promise<Studio> {
   const deps = { version: VERSION, security, settings, workspaces, bus, serverId: randomUUID(), jobs, engine,
     claudeStatus: (fresh?: boolean) => (opts.fakeAi ? Promise.resolve({ available: true, version: 'demo' }) : claudeStatus(settings.get().claude, fresh)),
     claudeOnce: opts.fakeAi ? fakeOnce : (req: { system: string; prompt: string; signal?: AbortSignal }) => claudeOnce(settings.get().claude, req),
-    latex: new Latex(opts.fakeTex ? { runner: fakeRunner, engines: fakeEngines } : {}), pictureFetch: opts.pictureFetch }
+    latex: new Latex(opts.fakeTex ? { runner: fakeRunner, engines: fakeEngines } : {}), pictureFetch: opts.pictureFetch, ...(opts.updatesUrl ? { updatesUrl: opts.updatesUrl } : {}) }
   const app = createApp(deps)
   const api = getRequestListener(app.fetch)
 
@@ -108,10 +112,15 @@ export async function startStudio(opts: StudioOptions = {}): Promise<Studio> {
   if (opts.open) openBrowser(url)
   return {
     url, lanUrl, port, ...(qr ? { qr } : {}),
+    async newerVersion() {
+      const u = await updateInfo({ settings, version: VERSION, ...(opts.updatesUrl ? { url: opts.updatesUrl } : {}) })
+      return u.newer ? u.latest : null
+    },
     async close() {
       for (const w of watchers.values()) await w.close()
       await vite?.close()
-      await new Promise<void>((r) => server.close(() => r()))
+      // pages still listening for changes (a tab left open, a phone) would keep it waiting forever
+      await new Promise<void>((r) => { server.close(() => r()); server.closeAllConnections() })
     },
   }
 }

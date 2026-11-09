@@ -72,7 +72,7 @@ export function stage(): { packages: number; bytes: number } {
       else if (pkg.dependencies?.[name]) throw new Error(`${pkg.name} needs ${name}, which is not installed`)
     }
   }
-  cpSync(join(ROOT, 'packages/desktop/server/start.mjs'), join(OUT, 'start.mjs'))
+  for (const f of ['start.mjs', 'lifecycle.mjs']) cpSync(join(ROOT, 'packages/desktop/server', f), join(OUT, f))
   cpSync(join(ROOT, 'LICENSE'), join(OUT, 'LICENSE'))
   writeFileSync(join(OUT, 'package.json'), JSON.stringify({ name: 'mdlearn-desktop-server', private: true, type: 'module' }, null, 2) + '\n')
   return { packages: seen.size, bytes: size(OUT) }

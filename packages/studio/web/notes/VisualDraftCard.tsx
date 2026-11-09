@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Check, ClipboardCopy, Loader2, RotateCcw, TriangleAlert } from 'lucide-react'
 import { notesApi, type VisualDraft } from '../api/queries'
+import { quickOf, useAskEngine } from '../knowledge/AskEngine'
 import { useNotesUi } from './store'
 import { VisualBlock } from '../visuals/VisualBlock'
 import { Button } from '../ui/primitives'
@@ -10,6 +11,7 @@ import { t, tp } from '../i18n'
 
 type Kind = 'auto' | 'plot' | 'formula' | 'animate'
 export function VisualDraftCard({ ws, doc, mtime }: { ws: string; doc: string; mtime: number }) {
+  const quick = quickOf(useAskEngine({ claude: false })) ?? 'local'
   const { draft, setDraft } = useNotesUi()
   const [kind, setKind] = useState<Kind>('auto')
   const [r, setR] = useState<VisualDraft | null>(null)
@@ -21,7 +23,7 @@ export function VisualDraftCard({ ws, doc, mtime }: { ws: string; doc: string; m
     if (!draft) return
     let live = true
     setBusy(true); setError(null); setR(null)
-    notesApi.visualise(ws, doc, draft.anchor, kind).then((x) => { if (live) setR(x) }).catch((e: Error) => { if (live) setError(e.message) }).finally(() => { if (live) setBusy(false) })
+    notesApi.visualise(ws, doc, draft.anchor, kind, quick).then((x) => { if (live) setR(x) }).catch((e: Error) => { if (live) setError(e.message) }).finally(() => { if (live) setBusy(false) })
     return () => { live = false }
   }, [draft, kind, ws, doc, nonce])
   if (!draft) return null

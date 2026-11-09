@@ -58,8 +58,9 @@ atomically, so the CLI, the MCP tutor and the Studio can study at the same time 
 
 | Area | Routes |
 |---|---|
-| Session | `GET /api/session` (client local/lan, capabilities) · `GET /api/engines` (local model, Claude Code) |
+| Session | `GET /api/session` (client local/lan, capabilities) · `GET /api/engines` (local model, Claude Code, cloud AI) · `GET/POST /api/updates` (a newer version on npm, once a day; `{ check }` turns it off, `ai` only) |
 | Local AI | `GET /api/ai/local` (Ollama, this computer, installed and recommended models, the download) · `POST /api/ai/local/pull` · `…/cancel` · `…/choose` · `…/delete` (`{ model }`) |
+| Cloud AI | `GET/POST /api/ai/cloud` (service, address, model, `key` or `clearKey`; answers `hasKey` and the last four characters, never the key) · `POST /api/ai/cloud/models` · `…/test`, all needing `ai` |
 | Folders | `GET /api/workspaces` · `POST /api/workspaces/open` · `GET /api/fs/browse` · `POST /api/workspaces/upload` · `POST /api/workspaces/tutorial` (copy the tutorial into the library and open it; `reset` starts over) |
 | Help | `GET/POST /api/onboarding` (welcome tour seen) · `GET /api/help` (the Help document) |
 | Companion | `GET/POST /api/companion` (growth on or off, its name) · `POST /api/w/:ws/companion/read` (a note read to the end) · `POST /api/w/:ws/companion/session` (a finished review) · growth arrives as `companion.grew` events |
@@ -90,10 +91,28 @@ streamed into the note), "explain", feedback on a free-text explanation against 
 block, the compiler checks it, the diagnostics go back to the model (≤ 3 attempts). Requests are queued one
 at a time (8 GB GPU), with `num_ctx` 8192.
 
+**Who answers a short question** (`server/ai/llm.ts`): Ask, Explain, Visualise, key ideas, Correct with AI and
+teach-back take `engine`: `local` (the model chosen in Settings → Local AI), `cloud` (below) or, where Claude answers,
+`claude`. The page picks the engine remembered on this device (`mdl-ask-engine`, `web/knowledge/AskEngine.tsx`) and,
+whenever the answer comes from outside this computer, says where the passages go. The cloud AI and Ollama's cloud
+models run on this computer's accounts, so they need the `ai` capability: a phone on the network uses the local model
+only, unless the server runs with `--lan-full`; `/api/engines` shows it neither.
+
+**Settings → Cloud AI** (`server/ai/cloud.ts`): any OpenAI-compatible service with your own key: OpenRouter,
+OpenAI, Google Gemini (its OpenAI-compatible address), Groq, Mistral, DeepSeek, or one you name (an `https` address,
+or `http` to this computer only, such as LM Studio or llama.cpp; no password or `?` in it). Answers stream from
+`/chat/completions`; a JSON answer asks for `response_format: json_object` and puts the shape in the instructions; a
+model that refuses temperature or JSON mode is asked once more without them; 120 s at most. The key goes in
+`~/.config/mdlearn/secrets.json` (written with mode 0600, apart from the settings) or comes from `MDLEARN_CLOUD_KEY`;
+it is sent only in the `Authorization` header to that address, no route returns it, every message from the service
+is shown without it (and without anything shaped like a key), and choosing another service forgets it. *Try it* asks
+one short question. Course jobs stay with Claude Code.
+
 **Settings → Local AI** (`server/ai/models.ts`) manages the models: without Ollama it shows how to install it
 for this system (`sudo pacman -S ollama-cuda` on Arch with an NVIDIA card, the official script on other
-Linux, `brew install ollama`, the Windows installer); with Ollama it lists the installed models (the cloud
-models Ollama only links to are left out), lets you choose the one Studio answers with (saved as
+Linux, `brew install ollama`, the Windows installer); with Ollama it lists the installed models, then
+Ollama's cloud models (they run on Ollama's servers under your Ollama account, so the passages they read go there; they
+need `ollama signin`, and a 401 says so), lets you choose the one Studio answers with (saved as
 `ollama.model` in the settings), and offers a short list of recommended models — `qwen3:0.6b` to
 `gpt-oss:20b`, each with its download size and whether this computer runs it **well** (fits on the NVIDIA
 card from `nvidia-smi`, or in Apple Silicon's shared memory), **slowly** (in memory only) or **not at all**.
@@ -494,6 +513,25 @@ marks too much, and *Improve a lesson → Mark key terms* adds them to an existi
 *Make a card*. *Settings → Appearance → Colour in notes* turns every hue grey per device (`data-colour="off"`, set before the first paint by
 `public/theme.js`). Icons, underlines and labels carry the same meaning, so nothing depends on seeing colour.
 
+**Highlights.** Besides the three marks with a purpose, a highlight can be one of six plain colours (`Note.color`: `yellow`, `green`,
+`blue`, `pink`, `purple`, `orange`) that are just colour: they feed nothing on Today. Like every note they live in
+`.mdlearn/notes/<doc>.json`, never in the file. Selecting text opens a toolbar whose first row is the colours and the marks (one
+click; keys 1–6, or H for the last colour used); a phone's long-press selection opens it too, once the selection settles. The
+**highlighter** in the reader's top bar highlights every selection made with a mouse or a pen at once, in the colour chosen beside
+it, until it or Esc turns it off (remembered per device, `mdl-highlighter`). Clicking a highlight opens a small menu to change its
+colour, write a note on it, or remove it; removing the colour of a highlight that has a note or a conversation keeps them
+(`POST notes/:id/update` takes `color`, or `color: null`). The click is matched against the drawn passages' rectangles, so nothing is
+added to the page. An open highlight in the notes panel has the same colours (the keyboard way), and the panel can show one colour
+at a time. With *Colour in notes* off, every plain colour is the same grey and the name says which it is.
+
+**Reading font and size.** *Settings → Appearance → Reading*, or the **Aa** button on a note or lesson page (`web/settings/ReadingControls.tsx`):
+the font (the serif, Times New Roman when the computer has it, sans, *Easy to read* in Atkinson Hyperlegible Next, *For dyslexia* in
+OpenDyslexic, or monospace) and the text size, 14 to 28 px. Per device, in localStorage (`web/lib/reading.ts`), and applied before the
+first paint by `public/theme.js`. The size is the note's zoom: everything inside `.read` is sized in em or scaled by `--read-scale`
+(headings, formulas, code, tables, the title and the column's width), so line length stays the same. On a note, Ctrl/Cmd with + or −
+sizes it and 0 resets it; in the desktop app the window's own zoom moved to Ctrl/Cmd+Shift. The two bundled fonts (OFL) download
+only when chosen.
+
 **Companion.** *Settings → Appearance → Companion*: a 12×12 one-colour pixel creature by default (`web/companion/sprites.ts`, plain data), an orb
 (`thinking-orbs`, loaded only for someone who picks it), or off, which is remembered. It sits at the foot of the sidebar and shows what is really happening,
 from `useActivity.ts`: a job, an answer on its way, a teach-back, the end of a session, or five minutes without input. Clicking it opens a
@@ -558,6 +596,12 @@ choices; they live in `localStorage` and `public/theme.js` applies them before t
   interface language. `test/i18n.test.ts` collects every key from the source and fails on a missing
   translation, a lost `{placeholder}` or a missing plural form. The CLI, the MCP tutor and lesson content stay
   in their own language.
+- **About** (`web/settings/About.tsx`): the version in use and, for the npm install, whether a newer one is out.
+  `server/updates.ts` asks `registry.npmjs.org/mdlearn/latest` at most once a day (3 s, silent when offline) and
+  keeps the answer in `settings.json` (`updates: { check, checkedAt, latest }`); *Look for new versions* turns it
+  off (`POST /api/updates`, this computer only). A newer version shows here, once on the home page
+  (`web/library/UpdateNotice.tsx`, dismissed per version on this device) and as one line under `mdlearn studio`.
+  Inside the desktop app it does nothing (`MDLEARN_DESKTOP=1`): the app updates itself (docs/DESKTOP.md).
 
 ## 15. Security
 
@@ -570,6 +614,7 @@ choices; they live in `localStorage` and `public/theme.js` applies them before t
 | Malicious Markdown / uploads | the compiler keeps only allowlisted HTML tags and attributes (other blocks are sanitised by DOMPurify in the browser, scripts/styles/frames/forms/handlers removed, E107) and drops unsafe URLs; the page CSP forbids inline scripts and handlers; React renders text; KaTeX trust allowlist; Mermaid `strict`; uploads limited to Markdown/text/images, 2 MB each, sanitised relative paths |
 | Path traversal | every path goes through `realPath`-based `inRoot` (symlinks and dangling links resolved), hidden folders refused; job ids must be UUIDs; undo only restores files inside the folder |
 | Desktop app | the same server in a locked-down Electron window (no Node in the page, sandbox, Studio's pages only, other links in the browser, permissions refused) — see DESKTOP.md |
+| Cloud AI | setting it up and using it need the `ai` capability (as do Ollama's cloud models); the key is kept in `secrets.json` (0600) or the environment, never returned, logged or put in an error; the address is `https`, or `http` to loopback only, without credentials; changing the service forgets the key |
 | Local AI models | downloading, choosing and removing need the `ai` capability (this computer, or LAN devices under `--lan-full`); model names are checked against Ollama's name form before they reach it; the model in use and the search model (`embed` in the name, or a BERT family) are never removed, nor a search model chosen to answer; other devices see the models but not this computer's memory, graphics card, system or where Claude Code is |
 | AI jobs | scoped writes (folder or single file, `.md` only, `.git/.claude/.mdlearn` protected), folder-only reads, no shell, no network tools, snapshots + undo |
 | SciNet | only `http://` on `127.0.0.1`, `localhost` or `[::1]` is accepted as its address, without credentials; no redirects are followed; answers are limited in time and size (5 MB of JSON, 20 MB of text, 100 MB of PDF, which must start with `%PDF-`) and checked against a schema; paper ids are integers; the routes need `write`, so a phone on the network cannot read the library; imported text is rendered like any other document |

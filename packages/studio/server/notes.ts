@@ -9,7 +9,7 @@ import type { Handle } from './workspaces.js'
 import { UserError } from './workspaces.js'
 
 const MAX_NOTES_FILE = 5 * 1024 * 1024
-export const NoteColorSchema = z.enum(['important', 'confusing', 'exam'])
+export const NoteColorSchema = z.enum(['important', 'confusing', 'exam', 'yellow', 'green', 'blue', 'pink', 'purple', 'orange'])
 export const AnchorSchema = z.object({
   section: z.string().max(200).nullable(),
   quote: z.object({ exact: z.string().min(1).max(2000), prefix: z.string().max(64), suffix: z.string().max(64) }),
@@ -19,7 +19,7 @@ export const AnchorSchema = z.object({
 const MessageSchema = z.object({ id: z.string(), role: z.enum(['user', 'ai']), text: z.string().max(40_000), engine: z.string().optional(), at: z.number(), error: z.string().optional(), done: z.boolean().default(true) })
 export const NoteSchema = z.object({
   id: z.string(), doc: z.string(), anchor: AnchorSchema, body: z.string().max(20_000), thread: z.array(MessageSchema), created: z.number(), updated: z.number(),
-  /** A highlight with a purpose: it needs no text. */
+  /** A highlight, with a purpose or just a colour: it needs no text. */
   color: NoteColorSchema.optional(),
 })
 const FileSchema = z.object({ version: z.literal(1), notes: z.array(NoteSchema) })

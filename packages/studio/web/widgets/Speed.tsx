@@ -84,7 +84,7 @@ export function Speed({ widget, draft, setDraft, result, probe, onSubmit }: Widg
             return (
               <li key={i} className={`flex items-start gap-2.5 rounded-[7px] border px-3 py-2 ${p?.ok ? 'border-good/50 bg-good-soft' : 'border-bad/40 bg-bad-soft'}`}>
                 {p?.ok ? <Check className="mt-1 size-4 shrink-0 text-good" strokeWidth={2.6} aria-label={t('right')} /> : <X className="mt-1 size-4 shrink-0 text-bad" strokeWidth={2.6} aria-label={draft.answers[i] === null ? t('not answered') : t('wrong')} />}
-                <div className="read min-w-0 flex-1 text-[15.5px] leading-[1.5]">
+                <div className="read min-w-0 flex-1 text-[calc(15.5px*var(--read-scale,1))] leading-[1.5]">
                   <Inline nodes={s} /> <span className="font-ui text-[12.5px] font-semibold text-muted">{p?.truth ? t('True') : t('False')}</span>
                   {!p?.ok && p?.feedback && <div className="mt-0.5 text-[14.5px] text-muted [&_p]:!m-0"><Prose nodes={p.feedback} /></div>}
                 </div>
@@ -120,9 +120,9 @@ export function Speed({ widget, draft, setDraft, result, probe, onSubmit }: Widg
       </div>
       {statement && (
         <div key={shownAt} className={`game-card mt-3 rounded-[10px] border px-4 py-5 ${flash ? (flash.ok ? 'game-right border-good/60 bg-good-soft' : 'game-wrong border-bad/50 bg-bad-soft') : 'border-border-strong'}`} aria-live="polite">
-          <div className="read text-[18px] leading-[1.5]"><Inline nodes={statement} /></div>
+          <div className="read text-[calc(18px*var(--read-scale,1))] leading-[1.5]"><Inline nodes={statement} /></div>
           {flash && <p className="mt-2 flex items-center gap-1.5 font-ui text-[13.5px] font-semibold">{flash.ok ? <><Check className="size-4 text-good" strokeWidth={2.6} aria-hidden />{t('Right')}</> : <><X className="size-4 text-bad" strokeWidth={2.6} aria-hidden />{t('Not quite')}</>}</p>}
-          {flash?.feedback && <div className="read mt-1 text-[15px] text-muted [&_p]:!m-0"><Prose nodes={flash.feedback} /></div>}
+          {flash?.feedback && <div className="read mt-1 text-[calc(15px*var(--read-scale,1))] text-muted [&_p]:!m-0"><Prose nodes={flash.feedback} /></div>}
         </div>
       )}
       <div className="mt-3 grid grid-cols-2 gap-2 font-ui">

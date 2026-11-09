@@ -3,12 +3,15 @@ import { formatTime } from '@mdlearn/core'
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { notesApi } from '../api/queries'
+import { EnginePick, quickOf, useAskEngine } from '../knowledge/AskEngine'
 import { useNotesUi } from './store'
 import { Button } from '../ui/primitives'
 import { t } from '../i18n'
 
 export function DraftCard({ ws, doc, canAsk, onDone }: { ws: string; doc: string; canAsk: boolean; onDone(): void }) {
   const { draft, setDraft, setActive } = useNotesUi()
+  const engine = useAskEngine({ claude: false })
+  const quick = quickOf(engine)
   const [text, setText] = useState('')
   const [busy, setBusy] = useState<false | 'note' | 'ask'>(false)
   const [error, setError] = useState<string | null>(null)
@@ -17,7 +20,8 @@ export function DraftCard({ ws, doc, canAsk, onDone }: { ws: string; doc: string
   const run = async (kind: 'note' | 'ask') => {
     setBusy(kind); setError(null)
     try {
-      const note = kind === 'note' ? await notesApi.create(ws, doc, draft.anchor, text.trim()) : (await notesApi.ask(ws, { doc, anchor: draft.anchor, question: text.trim(), mode: 'ask' })).note
+      if (kind === 'ask' && !quick) throw new Error(t('The local model is not available.'))
+      const note = kind === 'note' ? await notesApi.create(ws, doc, draft.anchor, text.trim()) : (await notesApi.ask(ws, { doc, anchor: draft.anchor, question: text.trim(), mode: 'ask', engine: quick! })).note
       setDraft(null); setActive(note.id); onDone()
     } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
   }
@@ -28,6 +32,7 @@ export function DraftCard({ ws, doc, canAsk, onDone }: { ws: string; doc: string
         placeholder={ask ? t('What would you like to know about this passage?') : t('Write a note…')}
         onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) e.currentTarget.form?.requestSubmit(); if (e.key === 'Escape') setDraft(null) }}
         className="mt-2 w-full resize-y rounded-[6px] border border-border-strong bg-bg px-2 py-1.5 outline-none focus:border-accent" />
+      {ask && <EnginePick ws={ws} engine={engine} />}
       {error && <p className="mt-1 text-[12px] text-bad" role="alert">{error}</p>}
       <div className="mt-2 flex items-center gap-1.5">
         <Button type="submit" size="sm" variant="primary" disabled={!text.trim() || !!busy}>

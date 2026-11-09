@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.9.0 — 2026-11-09
+
+**Read in the font and size you like.** The **Aa** button on a note or lesson page, or *Settings → Appearance →
+Reading*, picks the font: serif (the default), Times New Roman, sans, easy to read (Atkinson Hyperlegible), for dyslexia
+(OpenDyslexic) or monospace. It also sets the text size, from 14 to 28 px; while you read, Ctrl or Cmd with + and − does
+the same, and 0 goes back to normal. Headings, formulas, code and tables grow with the text, and the column widens so
+lines keep their length. Each device remembers its own choice.
+
+**Highlight in six colours.** Select text and click a colour: yellow, green, blue, pink, purple or orange, beside the
+three marks with a meaning (important, confusing, exam). Keys 1 to 6 pick a colour and H repeats the last one. With the
+highlighter on, a selection made with the mouse is coloured at once. Click a highlight to change its colour, add a note
+or remove it, and the notes panel can show one colour at a time. Highlights are kept beside the file, never written into
+it, so they work on any document, your own notes included.
+
+**Cloud models for the short questions.** Ask, Explain, Correct with AI, teach-back, key ideas and visuals can now be
+answered by one of Ollama's cloud models (a name ending in `-cloud`, after `ollama signin`; *Settings → Local AI*), or by
+a service with your own key: OpenRouter, OpenAI, Google Gemini, Groq, Mistral, DeepSeek or any OpenAI-compatible address,
+such as LM Studio (*Settings → Cloud AI*). Where you ask, *Answers from* chooses who answers and says what leaves the
+computer. The key stays on this computer, in a file only you can read, and is never shown again. Only this computer can
+use these, not a phone on the network (unless Studio was started with `--lan-full`). Courses are still written by Claude.
+
+**Updates.** The desktop app looks for a new version 30 seconds after it starts and every 6 hours. The Windows installer
+and the AppImage download it in the background and ask to restart; *Later* installs it when you quit. On macOS, and with
+the `.deb` or a zip, it says a new version is out and opens its page. *Help → Check for updates…* looks at once, and the
+Help menu can turn the automatic check off. Installed with npm, Studio asks the npm registry once a day for the newest
+version number: a newer one shows in the new *Settings → About*, once on the home page and under `mdlearn studio`.
+About can turn that off.
+
+**The desktop app's server stops with it.** On a Mac, the server inside the app could keep running for days after the
+app had quit, using two processor cores and ignoring requests to stop: when a page still had Studio open, or when the
+app had run from its disk image and the image was then ejected. Now the server stops within 3 seconds when the app
+quits, crashes or is force-quit, and at once when its own files disappear. Opened from the disk image, MDlearn offers to
+move itself to Applications. `mdlearn studio` also stops at once on Ctrl+C with a page still open.
+
+**Ollama's own words.** When Ollama refuses a model, for example a retired cloud model, MDlearn shows Ollama's message,
+which often says what to use instead.
+
 ## 1.8.0 — 2026-11-03
 
 **Correct an explanation with AI.** After *Check* on an "explain in your own words" question, in a note, a lesson page

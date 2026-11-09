@@ -11,7 +11,7 @@ test('teach a lesson back: the AI says which ideas you covered, what to correct 
   await expect(page.getByRole('heading', { name: 'Teach it back' })).toBeVisible()
   const box = page.getByRole('textbox', { name: 'Your explanation' })
   await box.fill(EXPLANATION)
-  await page.getByRole('radiogroup', { name: 'Feedback from' }).getByRole('radio', { name: 'Local AI' }).click()
+  await page.getByRole('radiogroup', { name: 'Answers from' }).getByRole('radio', { name: 'Local AI' }).click()
   await page.getByRole('button', { name: 'Get feedback' }).click()
   const heading = page.getByRole('heading', { name: '1 of 1 key ideas covered' })
   await expect(heading).toBeFocused()

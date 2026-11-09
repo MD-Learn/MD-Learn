@@ -67,6 +67,22 @@ describe('notes', () => {
     expect(n.anchor.t).toBe(255)
     expect((await post('/notes', { doc: DOC, anchor: { ...moment, t: -1 }, body: 'x' })).status).toBe(400)
   })
+  it('can be a highlight in any of six colours, recoloured without losing the note, and refuse other colours', async () => {
+    const { post, get } = setup()
+    const green = await (await post('/notes', { doc: DOC, anchor, body: '', color: 'green' })).json() as Note
+    expect(green.color).toBe('green')
+    expect((await post('/notes', { doc: DOC, anchor, body: '', color: 'teal' })).status).toBe(400)
+    const noted = await (await post('/notes', { doc: DOC, anchor, body: 'Why squared?', color: 'yellow' })).json() as Note
+    await post(`/notes/${green.id}/update`, { doc: DOC, color: 'pink' })
+    await post(`/notes/${noted.id}/update`, { doc: DOC, color: 'confusing' })
+    await post(`/notes/${noted.id}/update`, { doc: DOC, body: 'Why to the fourth?' })
+    const list = await (await get(`/notes?path=${encodeURIComponent(DOC)}`)).json() as Note[]
+    expect(list.map((x) => [x.body, x.color])).toEqual([['', 'pink'], ['Why to the fourth?', 'confusing']])
+    expect((await post(`/notes/${green.id}/update`, { doc: DOC })).status).toBe(400) // nothing to change
+    // removing the colour of a highlight with text keeps the note
+    const plain = await (await post(`/notes/${noted.id}/update`, { doc: DOC, color: null })).json() as Note
+    expect([plain.body, plain.color]).toEqual(['Why to the fourth?', undefined])
+  })
   it('refuse documents outside the folder', async () => {
     const { post } = setup()
     expect((await post('/notes', { doc: '../x.md', anchor, body: 'x' })).status).toBe(403)

@@ -6,7 +6,7 @@ import { Link, useLocation, useSearch } from 'wouter'
 import { BookOpenCheck, Code2, Ellipsis, FileText, Pencil, Sparkles, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { api, qs } from '../api/client'
-import { inboxApi, keys, notesApi, useCompanion, useDoc, useEngines, useLinks, useNotes, useSectionMap, useSession, useTermHovers, useTree } from '../api/queries'
+import { inboxApi, keys, notesApi, useCompanion, useDoc, useLinks, useNotes, useSectionMap, useSession, useTermHovers, useTree } from '../api/queries'
 import { useFinishedReading } from './useFinishedReading'
 import { NotesPanel, useNoteHighlights } from '../notes/NotesPanel'
 import { SelectionToolbar, type SelectionKind } from '../notes/SelectionToolbar'
@@ -20,7 +20,9 @@ import { DocBlocks, type BlockEnv } from './DocBlocks'
 import { MarkLegend } from '../prose/MarkLegend'
 import { Outline } from './Outline'
 import { CoursePanel } from './CoursePanel'
-import { markLabel } from '../notes/marks'
+import { isNoteColor, markLabel } from '../notes/marks'
+import { HighlightMenu } from '../notes/HighlightMenu'
+import { PenButton } from '../notes/PenButton'
 import { RelatedPanel } from './RelatedPanel'
 import { LinksPanel } from '../knowledge/LinksPanel'
 import { PreviewLink } from '../knowledge/PreviewLink'
@@ -30,6 +32,9 @@ import { PanelSlot, TopActions, TopLeft } from '../layout/Shell'
 import { Button, Empty, ErrorNote, IconButton, Spinner } from '../ui/primitives'
 import { Menu, MenuItem } from '../ui/Menu'
 import { lastDocKey } from '../today/TodayPage'
+import { ReadingMenu } from './ReadingMenu'
+import { quickOf, useAskEngine } from '../knowledge/AskEngine'
+import { useReadingKeys } from '../lib/reading'
 import { duration } from '../lib/title'
 import type { Checked, WebAnswer } from '@mdlearn/core'
 import { t, tp } from '../i18n'
@@ -39,6 +44,8 @@ export default function Reader({ ws }: { ws: string }) {
   const path = params.get('path') ?? undefined
   const section = params.get('section')
   const noteId = params.get('note')
+  useReadingKeys()
+  const quick = quickOf(useAskEngine({ claude: false }))
   const doc = useDoc(ws, path)
   const tree = useTree(ws)
   const [, navigate] = useLocation()
@@ -49,13 +56,12 @@ export default function Reader({ ws }: { ws: string }) {
   const canAi = !!session.data?.caps.includes('ai')
   const canWrite = !!session.data?.caps.includes('write')
   const notes = useNotes(ws, path)
-  const engines = useEngines()
   const { setDraft, setActive } = useNotesUi()
   const qc = useQueryClient()
   const [askError, setAskError] = useState<string | null>(null)
   useEffect(() => { setDraft(null) }, [path, setDraft])
   useEffect(() => { if (noteId) { setPanelTab('notes'); setActive(noteId) } }, [noteId, setPanelTab, setActive])
-  useNoteHighlights(ws, path, source ? null : article)
+  const noteAt = useNoteHighlights(ws, path, source ? null : article)
   const onSelection = async (kind: SelectionKind, anchor: NoteAnchor) => {
     if (!path) return
     if (kind === 'inbox') {
@@ -66,7 +72,7 @@ export default function Reader({ ws }: { ws: string }) {
       } catch (e) { notify((e as Error).message) }
       return
     }
-    if (kind === 'important' || kind === 'confusing' || kind === 'exam') {
+    if (isNoteColor(kind)) {
       try {
         await notesApi.create(ws, path, anchor, '', kind)
         await qc.invalidateQueries({ queryKey: keys.notes(ws, path) })
@@ -77,7 +83,7 @@ export default function Reader({ ws }: { ws: string }) {
     setPanelTab('notes'); setAskError(null)
     if (kind !== 'explain') { setDraft({ anchor, mode: kind }); return } // note, ask and visual open a card beside the passage
     try {
-      const r = await notesApi.ask(ws, { doc: path, anchor, mode: 'explain' })
+      const r = await notesApi.ask(ws, { doc: path, anchor, mode: 'explain', engine: quick ?? 'local' })
       setActive(r.note.id)
       await qc.invalidateQueries({ queryKey: keys.notes(ws, path) })
     } catch (e) { setAskError((e as Error).message) }
@@ -126,6 +132,8 @@ export default function Reader({ ws }: { ws: string }) {
       <TopActions>
         {studied && <Button size="sm" variant="ghost" icon={BookOpenCheck} collapse onClick={() => navigate(`/w/${ws}/study?doc=${encodeURIComponent(path)}`)}>{t('Study')}</Button>}
         {canAi && entry && !studied && <Button size="sm" variant="ghost" icon={Sparkles} collapse onClick={() => navigate(`/w/${ws}/studio?kind=course&doc=${encodeURIComponent(path)}`)}>{t('Make a course')}</Button>}
+        {!source && <PenButton />}
+        {!source && <ReadingMenu />}
         {canWrite && <Link href={`/w/${ws}/edit?path=${encodeURIComponent(path)}`} aria-label={t('Edit this file')} title={t('Edit this file')} className="inline-flex size-7 items-center justify-center rounded-[6px] text-muted hover:bg-hover hover:text-text"><Pencil className="size-4" strokeWidth={1.8} aria-hidden /></Link>}
         <Menu iconOnly label={t('More')} icon={Ellipsis}>
           {(close) => (
@@ -159,13 +167,14 @@ export default function Reader({ ws }: { ws: string }) {
             : <NotesPanel ws={ws} doc={path} article={source ? null : article} mtime={doc.data.mtime} />}
         </PanelSlot>
       )}
-      {!source && <SelectionToolbar root={article} onAction={(k, a) => void onSelection(k, a)} canAsk={!!engines.data?.local.available} />}
+      {!source && path && <HighlightMenu ws={ws} doc={path} article={article} noteAt={noteAt} />}
+      {!source && <SelectionToolbar root={article} onAction={(k, a) => void onSelection(k, a)} canAsk={!!quick} />}
       {doc.isLoading && <div className="p-10"><Spinner label={t('Opening document')} /></div>}
       {doc.error && <ErrorNote error={doc.error} retry={() => doc.refetch()} />}
       {doc.data && env && (source ? <Source ws={ws} path={path} /> : (
-        <article className="mx-auto max-w-[760px] px-6 pb-[30vh] pt-4 sm:px-12" lang={typeof doc.data.frontmatter?.lang === 'string' ? doc.data.frontmatter.lang : undefined}>
+        <article className="mx-auto max-w-[calc(760px*var(--read-scale,1))] px-6 pb-[30vh] pt-4 sm:px-12" lang={typeof doc.data.frontmatter?.lang === 'string' ? doc.data.frontmatter.lang : undefined}>
           <header className="mb-8">
-            <h1 className="font-ui text-[32px] font-bold leading-[1.2] tracking-[-0.022em] text-balance">{doc.data.title}</h1>
+            <h1 className="font-ui text-[calc(32px*var(--read-scale,1))] font-bold leading-[1.2] tracking-[-0.022em] text-balance">{doc.data.title}</h1>
             <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 tabular text-[13px] text-muted">
               {doc.data.outline.timeMin && <span>{duration(doc.data.outline.timeMin)}</span>}
               {doc.data.outline.level && <span className="capitalize">{doc.data.outline.level}</span>}

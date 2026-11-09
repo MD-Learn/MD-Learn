@@ -12,10 +12,13 @@ import { LessonArticle } from './LessonArticle'
 import { PanelSlot, TopActions, TopLeft } from '../layout/Shell'
 import { Button, Empty, ErrorNote, Spinner } from '../ui/primitives'
 import { t } from '../i18n'
+import { useReadingKeys } from '../lib/reading'
+import { ReadingMenu } from '../reader/ReadingMenu'
 
 export default function LessonView({ ws }: { ws: string }) {
   const path = new URLSearchParams(useSearch()).get('path') ?? undefined
   const lesson = useLesson(ws, path)
+  useReadingKeys()
   const tree = useTree(ws)
   const [, navigate] = useLocation()
   const session = useSession()
@@ -37,6 +40,7 @@ export default function LessonView({ ws }: { ws: string }) {
     <>
       <TopLeft><span className="truncate px-1 text-[13px] text-muted">{l?.title ?? path}</span></TopLeft>
       <TopActions>
+        <ReadingMenu />
         {session.data?.caps.includes('write') && path && <Button size="sm" variant="ghost" icon={Pencil} collapse onClick={() => navigate(`/w/${ws}/edit?path=${encodeURIComponent(path)}`)}>{t('Edit')}</Button>}
         {session.data?.caps.includes('ai') && path && <Button size="sm" variant="ghost" icon={Sparkles} collapse onClick={() => navigate(`/w/${ws}/studio?kind=improve&lesson=${encodeURIComponent(path)}`)}>{t('Improve with AI')}</Button>}
         {l && path && <Button size="sm" variant="ghost" icon={Presentation} collapse onClick={() => navigate(`/w/${ws}/teach?lesson=${encodeURIComponent(path)}`)}>{t('Teach it back')}</Button>}

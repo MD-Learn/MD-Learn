@@ -135,7 +135,17 @@ async function studio(): Promise<void> {
     out(dim('Anyone with this link on your network can read and study these notes. Plain HTTP: use it on networks you trust.'))
   }
   out(dim('Press Ctrl+C to stop.'))
-  const stop = async () => { await s.close(); process.exit(0) }
+  // at most once a day, and only the version number (Settings → About turns it off)
+  void s.newerVersion().then((v) => { if (v) out(`${bold(`MDlearn ${v} is out`)}: npm i -g mdlearn@latest`) }).catch(() => {})
+  // never waits more than 3 s to stop, and a second Ctrl+C stops at once
+  let stopping = false
+  const stop = async () => {
+    if (stopping) process.exit(0)
+    stopping = true
+    setTimeout(() => process.exit(0), 3000).unref()
+    await s.close().catch(() => {})
+    process.exit(0)
+  }
   process.on('SIGINT', stop); process.on('SIGTERM', stop)
   await new Promise(() => {}) // keep running until stopped
 }

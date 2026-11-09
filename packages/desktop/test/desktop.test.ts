@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { spawn } from 'node:child_process'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { boundsFrom, onScreen, openingFor, readyUrl } from '../src/rules'
@@ -51,5 +52,54 @@ describe('the server beside the window', () => {
   it('says so when the server stops or never answers', async () => {
     await expect(startSidecar({ entry: join(__dirname, 'missing.mjs'), port: 4802, logFile: logFile() })).rejects.toThrow(/stopped while starting/)
     await expect(startSidecar({ entry: join(__dirname, 'fake-silent.mjs'), port: 4803, logFile: logFile(), timeoutMs: 400 })).rejects.toThrow(/did not start within/)
+  })
+})
+
+describe('the server stops when the app is gone', () => {
+  const here = __dirname
+  const start = (env: Record<string, string> = {}, file = join(here, 'fake-tied.mjs')) => {
+    const child = spawn(process.execPath, [file], { env: { ...process.env, ...env }, stdio: ['pipe', 'pipe', 'inherit'] })
+    const ready = new Promise<void>((r) => child.stdout.on('data', (b: Buffer) => { if (b.toString().includes('ready')) r() }))
+    const exited = new Promise<number | null>((r) => child.on('exit', (c) => r(c)))
+    return { child, ready, exited }
+  }
+  const within = <T>(p: Promise<T>, ms: number) => Promise.race([p.then(() => 'stopped'), new Promise((r) => setTimeout(() => r('still running'), ms))])
+  const alive = (pid: number) => { try { process.kill(pid, 0); return true } catch { return false } }
+
+  it('stops when the app closes its stdin, even if closing hangs', async () => {
+    const s = start({ FAKE_HANG: '1' })
+    await s.ready
+    s.child.stdin.end()
+    expect(await within(s.exited, 3000)).toBe('stopped')
+  })
+  it('a second SIGTERM ends it at once', async () => {
+    const s = start({ FAKE_HANG: '1', FAKE_GRACE: '60000' })
+    await s.ready
+    s.child.kill('SIGTERM')
+    await new Promise((r) => setTimeout(r, 200))
+    expect(s.child.exitCode).toBeNull()
+    s.child.kill('SIGTERM')
+    expect(await within(s.exited, 2000)).toBe('stopped')
+  })
+  it('stops when the app dies without closing its stdin (crash, force quit)', async () => {
+    // the app runs the server with this test's pipe as its stdin, so only the server's parent changes
+    const app = spawn(process.execPath, ['-e', `const c = require('node:child_process').spawn(process.execPath, [${JSON.stringify(join(here, 'fake-tied.mjs'))}], { stdio: ['inherit', 'pipe', 'inherit'] }); c.stdout.on('data', (b) => process.stdout.write(b))`], { stdio: ['pipe', 'pipe', 'inherit'] })
+    const pid = await new Promise<number>((r) => app.stdout.on('data', (b: Buffer) => { const m = /ready (\d+)/.exec(b.toString()); if (m) r(Number(m[1])) }))
+    app.kill('SIGKILL')
+    for (let i = 0; i < 30 && alive(pid); i++) await new Promise((r) => setTimeout(r, 100))
+    const left = alive(pid)
+    if (left) process.kill(pid, 'SIGKILL')
+    app.stdin.end()
+    expect(left).toBe(false)
+  })
+  it('stops at once when its own files disappear (it ran from a disk image that was ejected)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'mdl-tied-'))
+    mkdirSync(join(dir, 'server')); mkdirSync(join(dir, 'test'))
+    copyFileSync(join(here, '..', 'server', 'lifecycle.mjs'), join(dir, 'server', 'lifecycle.mjs'))
+    copyFileSync(join(here, 'fake-tied.mjs'), join(dir, 'test', 'fake-tied.mjs'))
+    const s = start({ FAKE_HANG: '1', FAKE_GRACE: '60000' }, join(dir, 'test', 'fake-tied.mjs'))
+    await s.ready
+    rmSync(dir, { recursive: true, force: true })
+    expect(await within(s.exited, 2000)).toBe('stopped')
   })
 })

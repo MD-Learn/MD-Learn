@@ -1,10 +1,11 @@
-// "Ask about this passage": a short answer from the local model, grounded in the section the passage
+// "Ask about this passage": a short answer from the local model or the cloud AI, grounded in the section the passage
 // belongs to, streamed into the note's thread beside the text.
 import { randomUUID } from 'node:crypto'
 import { findSection, sectionText } from '@mdlearn/core'
 import { loadDoc } from '@mdlearn/core/node'
 import { notesStore, type Anchor, type Note } from '../notes.js'
-import { ollamaChat, type OllamaConfig, type ChatMessage } from './ollama.js'
+import type { ChatMessage } from './ollama.js'
+import type { QuickChat } from './llm.js'
 import type { EventBus } from '../bus.js'
 import type { Handle, Workspaces } from '../workspaces.js'
 
@@ -24,13 +25,13 @@ export function cancelAsk(messageId: string): boolean {
 }
 
 export interface AskInput { doc: string; anchor: Anchor; question: string; noteId?: string }
-export async function ask(h: Handle, workspaces: Workspaces, bus: EventBus, cfg: OllamaConfig, input: AskInput): Promise<{ note: Note; messageId: string }> {
+export async function ask(h: Handle, workspaces: Workspaces, bus: EventBus, llm: QuickChat, input: AskInput): Promise<{ note: Note; messageId: string }> {
   const abs = workspaces.resolve(h, input.doc)
   const { outline, md } = loadDoc(abs, h.root)
   const section = input.anchor.section ? findSection(outline, input.anchor.section) : null
   const context = section ? sectionText(md, outline, section.num ?? section.anchor, 1200)?.text ?? '' : ''
   const user = { id: randomUUID(), role: 'user' as const, text: input.question, at: Date.now(), done: true }
-  const ai = { id: randomUUID(), role: 'ai' as const, text: '', engine: `local · ${cfg.model}`, at: Date.now(), done: false }
+  const ai = { id: randomUUID(), role: 'ai' as const, text: '', engine: llm.label, at: Date.now(), done: false }
   const note = input.noteId
     ? await notesStore.update(h, input.doc, input.noteId, (n) => ({ ...n, thread: [...n.thread, user, ai] }))
     : await notesStore.create(h, input.doc, input.anchor, '').then((n) => notesStore.update(h, input.doc, n.id, (x) => ({ ...x, thread: [user, ai] })))
@@ -49,7 +50,7 @@ export async function ask(h: Handle, workspaces: Workspaces, bus: EventBus, cfg:
   let pending = '', timer: NodeJS.Timeout | undefined
   const flush = () => { timer = undefined; if (pending) { bus.publish({ type: 'ai.delta', ws: h.id, doc: input.doc, noteId: note.id, messageId: ai.id, text: pending }); pending = '' } }
   // generation continues in the background; the browser follows it through ai.delta events
-  void ollamaChat(cfg, { messages, signal: ctl.signal, onDelta: (t) => { pending += t; timer ??= setTimeout(flush, 50) } })
+  void llm.chat({ messages, signal: ctl.signal, onDelta: (t) => { pending += t; timer ??= setTimeout(flush, 50) } })
     .then((text) => finish(text))
     .catch((e: Error) => finish(null, ctl.signal.aborted ? 'Stopped.' : e.message))
   async function finish(text: string | null, error?: string) {

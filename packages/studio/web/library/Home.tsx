@@ -7,6 +7,7 @@ import { useUi } from '../state/ui'
 import { ANY, fromDrop, fromInput, nameFor, toForm, type Picked } from '../lib/upload'
 import { Button, Spinner, ErrorNote } from '../ui/primitives'
 import { OpenFolderDialog } from './OpenFolderDialog'
+import { UpdateNotice } from './UpdateNotice'
 import { t, tp, locale } from '../i18n'
 
 const ago = (when: number) => {
@@ -77,6 +78,7 @@ export function Home() {
           <h1 className="text-[22px] font-semibold tracking-[-0.015em]">{t('MDlearn Studio')}</h1>
         </div>
         <p className="mt-2 max-w-[52ch] text-[14.5px] leading-relaxed text-muted">{t('Turn your files, or just a topic, into better notes, and study them a few minutes a day.')}</p>
+        <UpdateNotice />
 
         {canFs && isNew && (
           <ol className="mt-6 flex flex-col gap-2 text-[13.5px] sm:flex-row sm:gap-6">

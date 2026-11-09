@@ -6,7 +6,7 @@
 import { z } from 'zod'
 import { findSection, sectionText, toMarkdown, askable, locate, type Lesson, type Block, type Card, type MdNode } from '@mdlearn/core'
 import { loadDoc } from '@mdlearn/core/node'
-import { ollamaChat, type OllamaConfig } from './ollama.js'
+import type { QuickChat } from './llm.js'
 import { course, lessonsOfDoc } from '../study.js'
 import { findDocWidget } from '../redact.js'
 import type { Handle, Workspaces } from '../workspaces.js'
@@ -18,7 +18,7 @@ export type OneShot = (req: { system: string; prompt: string; signal?: AbortSign
 const MAX_RUNNING = 2, CLAUDE_TIMEOUT = 120_000
 let running = 0
 /** A lesson, a section of a document, or one "explain" question (`widget`: in `doc`, or else in any lesson). */
-export interface TeachInput { lesson?: string; doc?: string; section?: string; widget?: string; text: string; lang: string; engine: 'local' | 'claude' }
+export interface TeachInput { lesson?: string; doc?: string; section?: string; widget?: string; text: string; lang: string; engine: 'local' | 'cloud' | 'claude' }
 const MAX_SOURCE = 9000
 const MAX_IDEAS = 10
 export const LANGS: Record<string, string> = { en: 'English', it: 'Italian', es: 'Spanish', fr: 'French', ca: 'Catalan' }
@@ -97,13 +97,14 @@ function material(h: Handle, workspaces: Workspaces, i: TeachInput): Material {
   return { title: `${s.num ? `§${s.num} ` : ''}${s.title}`, ideas: reading.flatMap((c) => ideasOf(c.blocks)).slice(0, MAX_IDEAS), source: text.text.slice(0, MAX_SOURCE) }
 }
 
-export async function teachBack(h: Handle, workspaces: Workspaces, engines: { local: OllamaConfig; claude?: OneShot }, i: TeachInput): Promise<TeachResult> {
+/** `quick`: the local model or the cloud AI, already checked (for any engine but Claude). */
+export async function teachBack(h: Handle, workspaces: Workspaces, engines: { quick?: QuickChat; claude?: OneShot }, i: TeachInput): Promise<TeachResult> {
   if (running >= MAX_RUNNING) throw new UserError('busy', 'The AI is still giving feedback on another explanation. Try again in a moment.')
   running++
   try { return await judgeExplanation(h, workspaces, engines, i) } finally { running-- }
 }
 
-async function judgeExplanation(h: Handle, workspaces: Workspaces, engines: { local: OllamaConfig; claude?: OneShot }, i: TeachInput): Promise<TeachResult> {
+async function judgeExplanation(h: Handle, workspaces: Workspaces, engines: { quick?: QuickChat; claude?: OneShot }, i: TeachInput): Promise<TeachResult> {
   const m = material(h, workspaces, i)
   const ideas = m.ideas.length ? `Key ideas:\n${m.ideas.map((x, k) => `${k + 1}. ${x}`).join('\n')}` : 'Key ideas: none given. First list the 3 to 6 key ideas of the source text (as "idea", no index), then judge each.'
   const about = m.question ? `Question: ${m.question}` : `Topic: ${m.title}`
@@ -117,7 +118,8 @@ async function judgeExplanation(h: Handle, workspaces: Workspaces, engines: { lo
       throw e
     }
   } else {
-    raw = await ollamaChat(engines.local, { format: SCHEMA, temperature: 0.1, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }] })
+    if (!engines.quick) throw new UserError('engine', 'The local model is not available.')
+    raw = await engines.quick.chat({ format: SCHEMA, temperature: 0.1, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }] })
   }
   const parsed = Reply.safeParse(parseJson(raw))
   if (!parsed.success) throw new UserError('engine', 'The AI gave an answer that could not be read. Try again.')

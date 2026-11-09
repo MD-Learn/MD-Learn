@@ -18,6 +18,8 @@ export const keys = {
   notes: (ws: string, doc: string) => ['notes', ws, doc] as const,
   engines: ['engines'] as const,
   localAi: ['local-ai'] as const,
+  cloudAi: ['cloud-ai'] as const,
+  updates: ['updates'] as const,
   scinet: ['scinet'] as const,
   today: (ws: string) => ['today', ws] as const,
   inbox: (ws: string) => ['inbox', ws] as const,
@@ -69,7 +71,7 @@ export const useAskStatus = (ws: string) => useQuery({
 })
 export const useAskHistory = (ws: string) => useQuery({ queryKey: ['ask-history', ws], queryFn: () => api.get<AskEntry[]>(`/api/w/${ws}/ask/history`) })
 export const askApi = {
-  ask: (ws: string, question: string, options: { engine: 'local' | 'claude'; lang: string; companion?: boolean; doc?: string; thread?: string[] }) => api.post<{ id: string; entry: AskEntry }>(`/api/w/${ws}/ask`, { question, ...options }),
+  ask: (ws: string, question: string, options: { engine: 'local' | 'cloud' | 'claude'; lang: string; companion?: boolean; doc?: string; thread?: string[] }) => api.post<{ id: string; entry: AskEntry }>(`/api/w/${ws}/ask`, { question, ...options }),
   setup: (ws: string) => api.post<AskStatus>(`/api/w/${ws}/ask/setup`, {}),
   remove: (ws: string, id: string | null) => api.post<{ ok: true }>(`/api/w/${ws}/ask/delete`, { id }),
   saveNote: (ws: string, id: string, n: number) => api.post<{ doc: string }>(`/api/w/${ws}/ask/note`, { id, n }),
@@ -81,7 +83,7 @@ export const useSheet = (ws: string, path: string | undefined) => useQuery({
   queryKey: ['sheet', ws, path], enabled: !!path, queryFn: () => api.get<SheetResponse>(`/api/w/${ws}/sheet?${qs({ path })}`),
   refetchInterval: (q) => (q.state.data?.ideas.state === 'running' ? 1500 : false),
 })
-export const sheetApi = { ideas: (ws: string, path: string, regenerate = false) => api.post<SheetResponse['ideas']>(`/api/w/${ws}/sheet/ideas`, { path, regenerate }) }
+export const sheetApi = { ideas: (ws: string, path: string, engine: QuickEngine, regenerate = false) => api.post<SheetResponse['ideas']>(`/api/w/${ws}/sheet/ideas`, { path, regenerate, engine }) }
 
 // ---- editor
 export const localAiApi = {
@@ -91,6 +93,23 @@ export const localAiApi = {
   choose: (model: string) => api.post<{ chosen: string }>('/api/ai/local/choose', { model }),
   remove: (model: string) => api.post<{ ok: true }>('/api/ai/local/delete', { model }),
 }
+/** Settings → Cloud AI. The key is sent once and never comes back: only whether there is one and its last four characters. */
+export interface CloudAiInfo {
+  provider: string | null; baseUrl: string | null; model: string | null; hasKey: boolean; keyEnd: string | null; fromEnv: boolean
+  providers: { id: string; name: string; baseUrl: string; keys?: string }[]; available: boolean; name: string | null; error?: string
+}
+export const cloudAiApi = {
+  info: () => api.get<CloudAiInfo>('/api/ai/cloud'),
+  save: (change: { provider?: string; baseUrl?: string; model?: string; key?: string; clearKey?: boolean }) => api.post<CloudAiInfo>('/api/ai/cloud', change),
+  models: () => api.post<{ models: string[] }>('/api/ai/cloud/models', {}),
+  test: () => api.post<{ ok: true; label: string; reply: string }>('/api/ai/cloud/test', {}),
+}
+/** A new version on npm (asked by the server at most once a day; nothing in the desktop app, which updates itself). */
+export interface UpdateInfo { current: string; latest: string | null; newer: boolean; desktop: boolean; check: boolean }
+export const updatesApi = { set: (check: boolean) => api.post<UpdateInfo>('/api/updates', { check }) }
+export const useUpdates = () => useQuery({ queryKey: keys.updates, queryFn: () => api.get<UpdateInfo>('/api/updates'), staleTime: 60 * 60_000 })
+/** The engine for a short question (Claude answers only some). */
+export type QuickEngine = 'local' | 'cloud'
 
 export const scinetApi = {
   status: () => api.get<ScinetStatus>('/api/scinet/status'),
@@ -170,13 +189,14 @@ export const useNotes = (ws: string, doc: string | undefined) => useQuery({
 export const useEngines = () => useQuery({ queryKey: keys.engines, queryFn: () => api.get<EnginesInfo>('/api/engines'), staleTime: 30_000, refetchInterval: 60_000 })
 export const notesApi = {
   create: (ws: string, doc: string, anchor: NoteAnchor, body: string, color?: NoteColor) => api.post<Note>(`/api/w/${ws}/notes`, { doc, anchor, body, color }),
-  update: (ws: string, doc: string, id: string, body: string) => api.post<Note>(`/api/w/${ws}/notes/${id}/update`, { doc, body }),
+  /** `color: null` takes a highlight's colour off and keeps the note. */
+  update: (ws: string, doc: string, id: string, change: { body?: string; color?: NoteColor | null }) => api.post<Note>(`/api/w/${ws}/notes/${id}/update`, { doc, ...change }),
   remove: (ws: string, doc: string, id: string) => api.post<{ ok: true }>(`/api/w/${ws}/notes/${id}/delete`, { doc }),
-  ask: (ws: string, body: { doc: string; anchor: NoteAnchor; question?: string; mode: 'ask' | 'explain'; noteId?: string }) => api.post<{ note: Note; messageId: string }>(`/api/w/${ws}/ai/ask`, body),
+  ask: (ws: string, body: { doc: string; anchor: NoteAnchor; question?: string; mode: 'ask' | 'explain'; noteId?: string; engine: QuickEngine }) => api.post<{ note: Note; messageId: string }>(`/api/w/${ws}/ai/ask`, body),
   cancel: (ws: string, messageId: string) => api.post<{ stopped: boolean }>(`/api/w/${ws}/ai/cancel`, { messageId }),
   passage: (ws: string, doc: string, quote: string) => api.get<Passage>(`/api/w/${ws}/doc/passage?${qs({ path: doc, quote })}`),
   addCard: (ws: string, body: { doc: string; section: { num: string | null; anchor: string } | null; card: CardInput }) => api.post<{ path: string; cardKey: string; created: boolean }>(`/api/w/${ws}/cards`, body),
-  visualise: (ws: string, doc: string, anchor: NoteAnchor, kind: 'auto' | 'plot' | 'formula' | 'animate') => api.post<VisualDraft>(`/api/w/${ws}/ai/visualise`, { doc, anchor, kind }),
+  visualise: (ws: string, doc: string, anchor: NoteAnchor, kind: 'auto' | 'plot' | 'formula' | 'animate', engine: QuickEngine) => api.post<VisualDraft>(`/api/w/${ws}/ai/visualise`, { doc, anchor, kind, engine }),
   insert: (ws: string, path: string, quote: string, text: string, baseMtime: number) => api.post<{ line: number }>(`/api/w/${ws}/files/insert`, { path, quote, text, baseMtime }),
 }
 export interface VisualDraft { markdown: string; block: import('@mdlearn/core').Visual | null; diagnostics: import('@mdlearn/core').Diagnostic[]; attempts: number; kind: string }

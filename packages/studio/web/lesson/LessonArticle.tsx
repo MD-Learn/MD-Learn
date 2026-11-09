@@ -14,9 +14,9 @@ import { t, tp } from '../i18n'
 type L = NonNullable<LessonResponse['lesson']>
 export function LessonArticle({ ws, lesson: l, source, env, compact }: { ws: string; lesson: L; source?: { path: string; title: string }; env: BlockEnv; compact?: boolean }) {
   return (
-    <article className={`mx-auto max-w-[760px] ${compact ? 'px-5 pb-16 pt-2' : 'px-6 pb-[30vh] pt-4 sm:px-12'}`}>
+    <article className={`mx-auto max-w-[calc(760px*var(--read-scale,1))] ${compact ? 'px-5 pb-16 pt-2' : 'px-6 pb-[30vh] pt-4 sm:px-12'}`}>
     <header className="mb-8">
-      <h1 className="font-ui text-[30px] font-bold leading-[1.2] tracking-[-0.02em] text-balance">{prettyTitle(l.title)}</h1>
+      <h1 className="font-ui text-[calc(30px*var(--read-scale,1))] font-bold leading-[1.2] tracking-[-0.02em] text-balance">{prettyTitle(l.title)}</h1>
       <p className="mt-2 flex flex-wrap gap-x-3 tabular text-[13px] text-muted">
         <span>{tp(l.cards.length, '{n} card', '{n} cards')}</span><span>{t('about {n} min', { n: l.time ?? l.timeEstimate })}</span>{l.level && <span>{levelName(l.level)}</span>}
         {source && <Link href={docRoute(ws, source.path)} className="inline-flex items-center gap-1 underline decoration-border-strong underline-offset-2 hover:text-text"><FileText className="size-3.5" aria-hidden />{source.title || source.path}</Link>}

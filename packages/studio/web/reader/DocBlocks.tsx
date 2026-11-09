@@ -63,7 +63,7 @@ function Block({ b, env, checkpoints }: { b: DocBlock; env: BlockEnv; checkpoint
     return (
       <details className="doc-details group/d" data-line={b.line}>
         <summary><ChevronRight className="size-4 text-muted transition-transform group-open/d:rotate-90" aria-hidden /><Inline nodes={b.summary} cx={env.cx} /></summary>
-        <div className="read text-[17px]"><DocBlocks blocks={b.children} env={env} /></div>
+        <div className="read text-[calc(17px*var(--read-scale,1))]"><DocBlocks blocks={b.children} env={env} /></div>
       </details>
     )
   }
@@ -76,7 +76,7 @@ function Block({ b, env, checkpoints }: { b: DocBlock; env: BlockEnv; checkpoint
         <p className="flex items-center gap-1.5 text-muted"><TriangleAlert className="size-4 text-warn" aria-hidden />
           {b.codes.includes('E103') ? <>{t('Unknown block')} <code className="font-mono">:::{b.kind}</code>{t('; its content is shown as text.')}</> : <>{t('This {kind} could not be shown ({codes}). Lint the file for details.', { kind: b.kind, codes: b.codes.join(', ') })}</>}
         </p>
-        {b.fallback && <div className="read mt-2 text-[16.5px]"><Prose nodes={b.fallback} cx={env.cx} /></div>}
+        {b.fallback && <div className="read mt-2 text-[calc(16.5px*var(--read-scale,1))]"><Prose nodes={b.fallback} cx={env.cx} /></div>}
       </div>
     )
   }

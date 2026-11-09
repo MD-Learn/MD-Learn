@@ -1,5 +1,5 @@
 import { test, expect, _electron as electron, type ElectronApplication } from '@playwright/test'
-import { spawn } from 'node:child_process'
+import { execSync, spawn } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -12,7 +12,7 @@ for (const dir of [join(home, 'config', 'mdlearn'), join(home, '.config', 'mdlea
   mkdirSync(dir, { recursive: true })
   writeFileSync(join(dir, 'studio.json'), JSON.stringify({ libraryDir: join(home, 'library') }))
 }
-const env = { ...process.env, XDG_CONFIG_HOME: join(home, 'config'), HOME: process.platform === 'linux' ? process.env.HOME! : home, MDLEARN_TEST: '1' }
+const env = { ...process.env, XDG_CONFIG_HOME: join(home, 'config'), HOME: process.platform === 'linux' ? process.env.HOME! : home, MDLEARN_TEST: '1', MDLEARN_NO_UPDATES: '1' }
 const exe = process.env.MDLEARN_DESKTOP_EXE
 const launch = () => electron.launch(exe ? { executablePath: resolve(exe), args: [], env } : { args: [resolve(__dirname, '..')], env })
 const portOpen = (port: number) => new Promise<boolean>((done) => { const s = createConnection(port, '127.0.0.1'); s.on('connect', () => { s.end(); done(true) }); s.on('error', () => done(false)) })
@@ -108,4 +108,32 @@ test('a second start shows the first window, and quitting stops the server', asy
   expect(await portOpen(4757)).toBe(true)
   await app.close()
   await expect.poll(() => portOpen(4757), { timeout: 10_000 }).toBe(false)
+})
+
+test('Help has the update items; with updates turned off they are greyed out', async () => {
+  app = await launch()
+  const win = await app.firstWindow()
+  await expect(win.getByRole('heading', { name: 'MDlearn Studio' })).toBeVisible({ timeout: 30_000 })
+  const help = await app.evaluate(({ Menu }) => Menu.getApplicationMenu()!.items.find((i) => i.role === 'help')!.submenu!.items.map((i) => [i.label, i.enabled]))
+  expect(help[0]).toEqual(['Check for updates…', false])
+})
+
+test('when the app is killed outright, its server stops too', async () => {
+  app = await launch()
+  const win = await app.firstWindow()
+  await expect(win.getByRole('heading', { name: 'MDlearn Studio' })).toBeVisible({ timeout: 30_000 })
+  expect(await portOpen(4757)).toBe(true)
+  // a crash or a force quit: the app runs none of its quitting steps (its own number: on Windows the process Playwright
+  // started is not the app's main process)
+  const main = await app.evaluate(() => process.pid)
+  process.kill(main, 'SIGKILL')
+  try {
+    await expect.poll(() => portOpen(4757), { timeout: 10_000 }).toBe(false)
+  } catch (e) {
+    // who still holds the port, for the log
+    const show = (cmd: string) => { try { return execSync(cmd, { encoding: 'utf8' }) } catch (x) { return String(x) } }
+    console.log(`app ${main}, launched ${app.process().pid}`)
+    console.log(process.platform === 'win32' ? show('netstat -ano | findstr :4757') + show('tasklist /V /FO CSV | findstr /I mdlearn') : show('ps -eo pid,ppid,stat,args | grep -i [m]dlearn'))
+    throw e
+  }
 })

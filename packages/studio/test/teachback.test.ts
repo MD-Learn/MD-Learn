@@ -18,6 +18,7 @@ let last: { messages: { role: string; content: string }[]; format?: unknown } | 
 let ollama: Server, url = ''
 beforeAll(async () => {
   ollama = createServer((req, res) => {
+    if (req.url === '/api/tags') { res.end(JSON.stringify({ models: [{ name: 'qwen3:8b' }] })); return }
     let body = ''
     req.on('data', (d) => (body += d)).on('end', () => {
       last = JSON.parse(body || '{}')

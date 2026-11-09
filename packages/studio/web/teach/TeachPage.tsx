@@ -5,7 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearch } from 'wouter'
 import { ChevronDown, Presentation } from 'lucide-react'
 import { api } from '../api/client'
-import { useDoc, useEngines, useLesson, useSession } from '../api/queries'
+import { useDoc, useLesson } from '../api/queries'
+import { EnginePick, useAskEngine } from '../knowledge/AskEngine'
 import { Button, Empty, ErrorNote, Spinner } from '../ui/primitives'
 import { TopLeft } from '../layout/Shell'
 import { docRoute, lessonRoute } from '../lib/paths'
@@ -26,14 +27,12 @@ export default function TeachPage({ ws }: { ws: string }) {
   const docPath = lessonPath ? undefined : params.get('doc') ?? undefined
   const lesson = useLesson(ws, lessonPath)
   const doc = useDoc(ws, docPath)
-  const engines = useEngines()
-  const session = useSession()
   const sections = useMemo(() => (doc.data?.outline.sections ?? []).filter((s) => s.words >= 30), [doc.data])
   const [section, setSection] = useState(params.get('section') ?? '')
   const chosen = docPath ? sections.find((s) => s.num === section || s.anchor === section) ?? sections[0] : undefined
   const target = lessonPath ?? (chosen ? `${docPath}#${chosen.anchor}` : '')
   const [text, setText] = useState('')
-  const [engine, setEngine] = useState<'local' | 'claude' | null>(null)
+  const engine = useAskEngine()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const [result, setResult] = useState<TeachResult | null>(null)
@@ -42,9 +41,7 @@ export default function TeachPage({ ws }: { ws: string }) {
   useEffect(() => { if (!target) return; try { setText(localStorage.getItem(draftKey(ws, target)) ?? '') } catch { setText('') } setResult(null) }, [ws, target])
   const save = (v: string) => { setText(v); try { localStorage.setItem(draftKey(ws, target), v) } catch { /* private mode */ } }
 
-  const local = !!engines.data?.local.available
-  const claude = !!engines.data?.claude.available && !!session.data?.caps.includes('ai')
-  const using = engine ?? (local ? 'local' : claude ? 'claude' : null)
+  const using = engine.using
   const title = lessonPath ? prettyTitle(lesson.data?.lesson?.title ?? '') : chosen ? `${chosen.num ? `§${chosen.num} ` : ''}${chosen.title}` : ''
   const back = lessonPath ? lessonRoute(ws, lessonPath) : docPath && chosen ? `${docRoute(ws, docPath)}&section=${encodeURIComponent(chosen.num ?? chosen.anchor)}` : null
 
@@ -88,17 +85,9 @@ export default function TeachPage({ ws }: { ws: string }) {
           className="read mt-4 block w-full resize-y rounded-[8px] border border-border-strong bg-bg px-3.5 py-3 text-[16px] leading-relaxed outline-none focus:border-accent" />
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
           <Button variant="primary" icon={Presentation} busy={busy} disabled={!using || text.trim().length < MIN_CHARS} onClick={() => void send()}>{result ? t('Get feedback again') : t('Get feedback')}</Button>
-          {local && claude && (
-            <span role="radiogroup" aria-label={t('Feedback from')} className="inline-flex gap-1 text-[12.5px]">
-              {(['local', 'claude'] as const).map((e) => (
-                <button key={e} type="button" role="radio" aria-checked={using === e} onClick={() => setEngine(e)}
-                  className={`h-7 rounded-[6px] border px-2 cursor-pointer ${using === e ? 'border-accent bg-accent-soft font-medium' : 'border-border text-muted hover:bg-hover'}`}>{e === 'local' ? t('Local AI') : 'Claude'}</button>
-              ))}
-            </span>
-          )}
           <span className="ml-auto tabular text-[12px] text-muted">{tp(words(text), '{n} word', '{n} words')}</span>
         </div>
-        {!using && engines.data && <p className="mt-3 text-[13px] text-muted">{t('Feedback needs the local AI (Ollama) or Claude.')} <Link href={`/w/${ws}/settings#local-ai`} className="underline underline-offset-2 hover:text-text">{t('Set one up in Settings')}</Link></p>}
+        {using ? <EnginePick ws={ws} engine={engine} /> : engine.known && <p className="mt-3 text-[13px] text-muted">{t('Feedback needs the local AI (Ollama), a cloud AI or Claude.')} <Link href={`/w/${ws}/settings#local-ai`} className="underline underline-offset-2 hover:text-text">{t('Set one up in Settings')}</Link></p>}
         {busy && <p className="mt-3 text-[13px] text-muted" role="status">{using === 'local' ? t('Reading your explanation. The local AI can take a minute.') : t('Reading your explanation…')}</p>}
         {error ? <div className="mt-4"><ErrorNote error={error} retry={() => void send()} /></div> : null}
       </section>

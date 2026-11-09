@@ -1,16 +1,21 @@
 // One note: the quoted passage, your text, and the conversation with the AI about it.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowUp, Loader2, Play, Square, Trash2 } from 'lucide-react'
 import { formatTime } from '@mdlearn/core'
 import type { Note, NoteMessage } from '../../shared/types'
 import { MiniMarkdown } from '../prose/MiniMarkdown'
-import { NOTE_MARKS, markLabel } from './marks'
+import { NOTE_MARKS, isHighlight, markLabel } from './marks'
+import { ColorRow } from './ColorRow'
+import { useNotesUi } from './store'
+import type { NoteColor } from '../../shared/types'
 import { useStream } from '../state/stream'
 import { IconButton } from '../ui/primitives'
 import { t } from '../i18n'
 
 export interface NoteActions {
   save(body: string): Promise<void>
+  /** Change a highlight's colour, or take it off (null). */
+  recolor(color: NoteColor | null): Promise<void>
   remove(): Promise<void>
   ask(question: string): Promise<void>
   /** Turn the passage into a card of your own. */
@@ -25,12 +30,17 @@ export function NoteCard({ note, active, onFocus, actions, quoteFound, onSeek }:
   const [question, setQuestion] = useState('')
   const [busy, setBusy] = useState(false)
   const mark = NOTE_MARKS.find((m) => m.color === note.color)
+  const plain = isHighlight(note.color) ? note.color : null
+  const onlyColour = !!note.color && !note.body && !note.thread.length // a highlight and nothing else: nothing to lose
+  const { edit, setEdit } = useNotesUi()
+  useEffect(() => { if (edit === note.id) { setEditing(true); setEdit(null) } }, [edit, note.id, setEdit])
   return (
     <article onClick={onFocus} onFocus={onFocus} tabIndex={-1} aria-label={t('Note')}
       className={`rounded-[8px] border bg-raised p-3 text-[13.5px] transition-shadow ${active ? 'border-border-strong shadow-pop' : 'border-border'}`}>
       <blockquote className={`line-clamp-2 border-l pl-2 text-[12.5px] text-muted ${quoteFound ? 'border-border-strong' : 'border-dashed border-warn'}`} title={note.anchor.quote.exact}>
         {note.anchor.quote.exact}
       </blockquote>
+      {plain && <p className="mt-1.5 inline-flex items-center gap-1.5 text-[12.5px] font-medium"><span className={`hl-dot hl-${plain}`} aria-hidden />{markLabel(plain)}</p>}
       {mark && (
         <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px]">
           <span className="inline-flex items-center gap-1 font-medium"><mark.icon className={`size-3.5 tone-${mark.color}`} strokeWidth={1.8} aria-hidden />{markLabel(mark.color)}</span>
@@ -66,10 +76,11 @@ export function NoteCard({ note, active, onFocus, actions, quoteFound, onSeek }:
           </button>
         </form>
       )}
+      {active && note.color && <div className="mt-2" onClick={(e) => e.stopPropagation()}><ColorRow size="sm" current={note.color} onPick={(c) => void actions.recolor(c)} /></div>}
       {active && (
         <div className="mt-2 flex items-center justify-between">
           {!editing ? <button onClick={() => setEditing(true)} className="text-[12px] text-muted hover:text-text cursor-pointer">{note.body ? t('Edit note') : t('Add a note')}</button> : <span />}
-          <IconButton icon={Trash2} label={t('Delete note')} onClick={(e) => { e.stopPropagation(); if (confirm(t('Delete this note and its conversation?'))) void actions.remove() }} />
+          <IconButton icon={Trash2} label={onlyColour ? t('Remove highlight') : t('Delete note')} onClick={(e) => { e.stopPropagation(); if (onlyColour || confirm(t('Delete this note and its conversation?'))) void actions.remove() }} />
         </div>
       )}
     </article>
