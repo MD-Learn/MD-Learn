@@ -8,6 +8,7 @@ import { join } from 'node:path'
 import { boundsFrom, onScreen, openingFor, type Bounds } from './rules'
 import { startSidecar, type Sidecar } from './sidecar'
 import { startUpdates, type Updates } from './updates'
+import { offerMoveToApplications } from './mac'
 
 const PORT = 4757 // fixed, so the page's own preferences (theme, accent) persist from one start to the next
 app.setName('MDlearn')
@@ -103,6 +104,7 @@ function menu(origin: string, updates: Updates): Menu {
 }
 
 async function start() {
+  if (await offerMoveToApplications()) return
   const logFile = join(app.getPath('userData'), 'logs', 'studio.log')
   try {
     sidecar = await startSidecar({ entry: resource(join('server', 'start.mjs')), port: PORT, logFile })

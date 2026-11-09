@@ -93,3 +93,8 @@ export function updatePrefs(saved: unknown): UpdatePrefs {
 }
 export const UPDATE_EVERY_MS = 6 * 60 * 60_000
 export const dueForCheck = (p: UpdatePrefs, now: number) => p.auto && (p.lastCheck === undefined || now - p.lastCheck >= UPDATE_EVERY_MS)
+
+/** macOS: offer to move to Applications when running from the disk image, or from the hidden copy macOS runs an app
+ * from before it is moved (App Translocation). From there the app stops working once the disk image is ejected. */
+export const offersMove = (o: { platform: NodeJS.Platform; packaged: boolean; inApplications: boolean; exe: string }) =>
+  o.platform === 'darwin' && o.packaged && !o.inApplications && (o.exe.startsWith('/Volumes/') || o.exe.includes('/AppTranslocation/'))

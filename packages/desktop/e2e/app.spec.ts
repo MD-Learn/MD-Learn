@@ -117,3 +117,12 @@ test('Help has the update items; with updates turned off they are greyed out', a
   const help = await app.evaluate(({ Menu }) => Menu.getApplicationMenu()!.items.find((i) => i.role === 'help')!.submenu!.items.map((i) => [i.label, i.enabled]))
   expect(help[0]).toEqual(['Check for updates…', false])
 })
+
+test('when the app is killed outright, its server stops too', async () => {
+  app = await launch()
+  const win = await app.firstWindow()
+  await expect(win.getByRole('heading', { name: 'MDlearn Studio' })).toBeVisible({ timeout: 30_000 })
+  expect(await portOpen(4757)).toBe(true)
+  app.process().kill('SIGKILL') // a crash or a force quit: the app runs none of its quitting steps
+  await expect.poll(() => portOpen(4757), { timeout: 10_000 }).toBe(false)
+})

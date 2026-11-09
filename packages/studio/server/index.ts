@@ -119,7 +119,8 @@ export async function startStudio(opts: StudioOptions = {}): Promise<Studio> {
     async close() {
       for (const w of watchers.values()) await w.close()
       await vite?.close()
-      await new Promise<void>((r) => server.close(() => r()))
+      // pages still listening for changes (a tab left open, a phone) would keep it waiting forever
+      await new Promise<void>((r) => { server.close(() => r()); server.closeAllConnections() })
     },
   }
 }

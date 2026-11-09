@@ -1,7 +1,12 @@
 // The few words the desktop app says itself (its update dialogs and menu items), in the languages Studio speaks.
-type Key = 'help' | 'check' | 'auto' | 'readyTitle' | 'readyDetail' | 'restart' | 'later' | 'availableTitle' | 'availableDetail' | 'download' | 'downloading' | 'latestTitle' | 'latestDetail' | 'failedTitle' | 'off'
+type Key = 'moveTitle' | 'moveDetail' | 'move' | 'notNow' | 'moveFailed' | 'help' | 'check' | 'auto' | 'readyTitle' | 'readyDetail' | 'restart' | 'later' | 'availableTitle' | 'availableDetail' | 'download' | 'downloading' | 'latestTitle' | 'latestDetail' | 'failedTitle' | 'off'
 const EN: Record<Key, string> = {
   help: 'Help',
+  moveTitle: 'Move MDlearn to the Applications folder?',
+  moveDetail: 'MDlearn is running from the disk image, or from a temporary copy macOS made of it, so it stops working once the disk image is ejected. MDlearn will move itself and open again.',
+  move: 'Move to Applications',
+  notNow: 'Not now',
+  moveFailed: 'Could not move MDlearn',
   check: 'Check for updates…',
   auto: 'Check for updates automatically',
   readyTitle: 'MDlearn {v} is ready',
@@ -19,6 +24,11 @@ const EN: Record<Key, string> = {
 }
 const IT: Record<Key, string> = {
   help: 'Aiuto',
+  moveTitle: 'Spostare MDlearn nella cartella Applicazioni?',
+  moveDetail: 'MDlearn è in esecuzione dall’immagine disco, o da una copia temporanea che macOS ne ha fatto, quindi smette di funzionare quando l’immagine disco viene espulsa. MDlearn si sposterà e si riaprirà.',
+  move: 'Sposta in Applicazioni',
+  notNow: 'Non ora',
+  moveFailed: 'Impossibile spostare MDlearn',
   check: 'Cerca aggiornamenti…', auto: 'Cerca aggiornamenti automaticamente', readyTitle: 'MDlearn {v} è pronto',
   readyDetail: 'Riavvia MDlearn per usarlo. I tuoi appunti e i tuoi progressi restano come sono.', restart: 'Riavvia ora', later: 'Più tardi',
   availableTitle: 'È disponibile MDlearn {v}', availableDetail: 'Scaricalo dalla pagina della versione e installalo sopra questo. I tuoi appunti e i tuoi progressi restano come sono.',
@@ -27,6 +37,11 @@ const IT: Record<Key, string> = {
 }
 const ES: Record<Key, string> = {
   help: 'Ayuda',
+  moveTitle: '¿Mover MDlearn a la carpeta Aplicaciones?',
+  moveDetail: 'MDlearn se está ejecutando desde la imagen de disco, o desde una copia temporal que macOS hizo de ella, así que deja de funcionar al expulsar la imagen de disco. MDlearn se moverá y se volverá a abrir.',
+  move: 'Mover a Aplicaciones',
+  notNow: 'Ahora no',
+  moveFailed: 'No se pudo mover MDlearn',
   check: 'Buscar actualizaciones…', auto: 'Buscar actualizaciones automáticamente', readyTitle: 'MDlearn {v} está listo',
   readyDetail: 'Reinicia MDlearn para usarlo. Tus apuntes y tu progreso se quedan como están.', restart: 'Reiniciar ahora', later: 'Más tarde',
   availableTitle: 'Está disponible MDlearn {v}', availableDetail: 'Descárgalo de la página de la versión e instálalo encima de este. Tus apuntes y tu progreso se quedan como están.',
@@ -35,6 +50,11 @@ const ES: Record<Key, string> = {
 }
 const FR: Record<Key, string> = {
   help: 'Aide',
+  moveTitle: 'Déplacer MDlearn dans le dossier Applications ?',
+  moveDetail: 'MDlearn s’exécute depuis l’image disque, ou depuis une copie temporaire que macOS en a faite, et cesse donc de fonctionner quand l’image disque est éjectée. MDlearn va se déplacer et se rouvrir.',
+  move: 'Déplacer dans Applications',
+  notNow: 'Pas maintenant',
+  moveFailed: 'Impossible de déplacer MDlearn',
   check: 'Rechercher des mises à jour…', auto: 'Rechercher les mises à jour automatiquement', readyTitle: 'MDlearn {v} est prêt',
   readyDetail: 'Redémarrez MDlearn pour l’utiliser. Vos notes et vos progrès restent tels quels.', restart: 'Redémarrer maintenant', later: 'Plus tard',
   availableTitle: 'MDlearn {v} est disponible', availableDetail: 'Téléchargez-le depuis la page de la version et installez-le par-dessus celui-ci. Vos notes et vos progrès restent tels quels.',
@@ -43,6 +63,11 @@ const FR: Record<Key, string> = {
 }
 const CA: Record<Key, string> = {
   help: 'Ajuda',
+  moveTitle: 'Vols moure MDlearn a la carpeta Aplicacions?',
+  moveDetail: 'MDlearn s’està executant des de la imatge de disc, o des d’una còpia temporal que macOS n’ha fet, i per això deixa de funcionar quan s’expulsa la imatge de disc. MDlearn es mourà i es tornarà a obrir.',
+  move: 'Mou a Aplicacions',
+  notNow: 'Ara no',
+  moveFailed: 'No s’ha pogut moure MDlearn',
   check: 'Cerca actualitzacions…', auto: 'Cerca actualitzacions automàticament', readyTitle: 'MDlearn {v} està a punt',
   readyDetail: 'Reinicia MDlearn per fer-lo servir. Els teus apunts i el teu progrés es queden com estan.', restart: 'Reinicia ara', later: 'Més tard',
   availableTitle: 'Hi ha disponible MDlearn {v}', availableDetail: 'Descarrega’l de la pàgina de la versió i instal·la’l a sobre d’aquest. Els teus apunts i el teu progrés es queden com estan.',

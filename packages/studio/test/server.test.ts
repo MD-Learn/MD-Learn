@@ -146,6 +146,15 @@ describe('live reload over SSE', () => {
     studio = await startStudio({ root, port: 47470 + Math.floor(Math.random() * 500), settingsFile: join(tmp('mdl-cfg-'), 's.json') })
   })
   afterAll(async () => { await studio?.close() })
+  it('closes even while a page still listens for changes (a tab left open, a phone)', async () => {
+    const other = await startStudio({ root, port: 47980 + Math.floor(Math.random() * 15), settingsFile: join(tmp('mdl-cfg-'), 's.json') })
+    const res = await fetch(`http://localhost:${other.port}/api/events?ws=${other.url.split('/w/')[1]}`)
+    const reader = res.body!.getReader()
+    await reader.read() // the stream is open
+    const closed = await Promise.race([other.close().then(() => 'closed'), new Promise((r) => setTimeout(() => r('still waiting'), 3000))])
+    expect(closed).toBe('closed')
+    await reader.cancel().catch(() => {})
+  })
   it('a file edited on disk is announced to the browser', async () => {
     const id = studio.url.split('/w/')[1]
     const ctl = new AbortController()

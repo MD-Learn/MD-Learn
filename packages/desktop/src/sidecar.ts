@@ -35,13 +35,15 @@ export function startSidecar(o: SidecarOptions): Promise<Sidecar> {
     stdio: ['pipe', 'pipe', 'pipe'], detached: process.platform !== 'win32', windowsHide: true,
   })
   let output = ''
-  const exited = new Promise<number | null>((done) => child.on('exit', (code) => { log(`--- server exited (${code})\n`); done(code) }))
+  // however the app ends (a quit that skips the usual steps, an update, an error), the server goes with it; a crash or
+  // a force quit can't run this, and then the server notices itself (server/lifecycle.mjs)
+  const killNow = () => { try { if (process.platform !== 'win32') process.kill(-child.pid!, 'SIGKILL'); else child.kill('SIGKILL') } catch { /* gone */ } }
+  process.once('exit', killNow)
+  const exited = new Promise<number | null>((done) => child.on('exit', (code) => { process.off('exit', killNow); log(`--- server exited (${code})\n`); done(code) }))
   const stop = async () => {
     if (child.exitCode !== null) return
     child.stdin.end()
-    const timer = setTimeout(() => {
-      try { if (process.platform !== 'win32') process.kill(-child.pid!, 'SIGKILL'); else child.kill('SIGKILL') } catch { /* gone */ }
-    }, STOP_GRACE_MS)
+    const timer = setTimeout(killNow, STOP_GRACE_MS)
     await exited
     clearTimeout(timer)
   }

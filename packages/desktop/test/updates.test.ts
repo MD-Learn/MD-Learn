@@ -57,7 +57,20 @@ describe('the update dialogs', () => {
     expect(strings('it-IT')('readyTitle', '1.9.1')).toBe('MDlearn 1.9.1 è pronto')
     expect(strings('ca')('restart')).toBe('Reinicia ara')
     expect(strings('de-DE')('later')).toBe('Later')
-    for (const lang of ['en', 'it', 'es', 'fr', 'ca']) for (const key of ['help', 'check', 'auto', 'readyTitle', 'readyDetail', 'restart', 'later', 'availableTitle', 'availableDetail', 'download', 'downloading', 'latestTitle', 'latestDetail', 'failedTitle', 'off'] as const)
+    for (const lang of ['en', 'it', 'es', 'fr', 'ca']) for (const key of ['moveTitle', 'moveDetail', 'move', 'notNow', 'moveFailed', 'help', 'check', 'auto', 'readyTitle', 'readyDetail', 'restart', 'later', 'availableTitle', 'availableDetail', 'download', 'downloading', 'latestTitle', 'latestDetail', 'failedTitle', 'off'] as const)
       expect(strings(lang)(key, '1').length, `${lang} ${key}`).toBeGreaterThan(0)
+  })
+})
+
+describe('on a Mac', () => {
+  it('offers to move to Applications only when running from the disk image or its hidden copy', async () => {
+    const { offersMove } = await import('../src/rules')
+    const mac = { platform: 'darwin' as const, packaged: true, inApplications: false }
+    expect(offersMove({ ...mac, exe: '/Volumes/MDlearn 1.9.0-arm64/MDlearn.app/Contents/MacOS/MDlearn' })).toBe(true)
+    expect(offersMove({ ...mac, exe: '/private/var/folders/x1/abc/T/AppTranslocation/1F2E/d/MDlearn.app/Contents/MacOS/MDlearn' })).toBe(true)
+    expect(offersMove({ ...mac, exe: '/Users/me/Desktop/MDlearn.app/Contents/MacOS/MDlearn' })).toBe(false)
+    expect(offersMove({ ...mac, inApplications: true, exe: '/Volumes/x/MDlearn.app/Contents/MacOS/MDlearn' })).toBe(false)
+    expect(offersMove({ ...mac, platform: 'linux', exe: '/Volumes/x/mdlearn' })).toBe(false)
+    expect(offersMove({ ...mac, packaged: false, exe: '/Volumes/x/MDlearn' })).toBe(false)
   })
 })
