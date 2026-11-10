@@ -1,4 +1,4 @@
-"""Final deliverables from the render: master MP4, SRT, burned-in subtitles, doc clips and the poster.
+"""Final deliverables from the render: master MP4, SRT, burned-in subtitles, GIF clips and the GIF preview for the README.
 
 Reads out/walkthrough-raw.mp4 (HyperFrames render), compose/project/media/voiceover.wav and timings.json.
 Writes everything to out/final/.
@@ -87,28 +87,39 @@ def master() -> None:
     run("cp", str(MEDIA / "voiceover.wav"), str(OUT / "voiceover.wav"))
 
 
-def clip(name: str, pieces: list[str], fps: int = 12, width: int = 960, q: int = 85) -> None:
-    """A looping animated WebP from consecutive UI pieces (native 1080p footage), for the README."""
-    durations = {x["name"]: x["dur"] for x in json.loads((HERE / "pieces.json").read_text())}
+# GIF, not video or WebP: GitHub's README shows no <video> for files in the repo, and a GIF plays everywhere, the
+# GitHub app included. One palette per GIF; only the changed part of each frame is re-dithered, so UI stays small.
+GIF_PALETTE = "split[a][b];[a]palettegen=max_colors=192:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle[out]"
+
+
+def clip(name: str, pieces: list[str], fps: int = 12, width: int = 960) -> None:
+    """A looping GIF from consecutive UI pieces (native 1080p footage), for the README."""
+    durs = {x["name"]: x["dur"] for x in json.loads((HERE / "pieces.json").read_text())}
     inputs, chain = [], []
     for i, p in enumerate(pieces):
         inputs += ["-i", str(MEDIA / f"{p}.mp4")]
-        # each piece carries a cross-fade tail in the video; the clip drops it so the cuts are clean
-        chain.append(f"[{i}:v]trim=duration={durations[p] - 0.35:.3f},setpts=PTS-STARTPTS[p{i}]")
-    graph = ";".join(chain) + ";" + "".join(f"[p{i}]" for i in range(len(pieces))) + f"concat=n={len(pieces)}:v=1:a=0,fps={fps},scale={width}:-2:flags=lanczos[out]"
-    run("ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", graph, "-map", "[out]", "-c:v", "libwebp_anim", "-lossless", "0",
-        "-q:v", str(q), "-compression_level", "6", "-loop", "0", "-an", str(OUT / f"{name}.webp"))
+        chain.append(f"[{i}:v]trim=duration={durs[p] - 0.35:.3f},setpts=PTS-STARTPTS[p{i}]")
+    graph = ";".join(chain) + ";" + "".join(f"[p{i}]" for i in range(len(pieces))) + f"concat=n={len(pieces)}:v=1:a=0,fps={fps},scale={width}:-2:flags=lanczos," + GIF_PALETTE
+    run("ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", graph, "-map", "[out]", "-loop", "0", str(OUT / f"{name}.gif"))
 
 
-def poster() -> None:
-    """The README hero: a frame of the Read step (a plot with its slider) with a play button."""
-    frame = OUT / "poster-frame.png"
-    run("ffmpeg", "-v", "error", "-y", "-ss", "76.2", "-i", str(OUT / "walkthrough.mp4"), "-frames:v", "1", str(frame))
-    run("magick", str(frame), "-resize", "1280x720",
-        "-fill", "rgba(38,38,36,0.86)", "-draw", "circle 640,360 640,412",
-        "-fill", "white", "-draw", "polygon 624,334 624,386 666,360",
-        "-quality", "88", str(OUT / "walkthrough-poster.jpg"))
-    frame.unlink()
+def preview() -> None:
+    """The README hero: about 30 s of the finished video, scene by scene, as a looping GIF."""
+    def at(scene: str, offset: float = 0.0) -> float:
+        return next(s["start"] for s in T["scenes"] if s["id"] == scene) + offset
+    cues = {c["n"]: c["start"] for s in T["scenes"] for c in s["cues"]}
+    pieces = {x["name"]: x for x in json.loads((HERE / "pieces.json").read_text())}
+    def piece(n: str, a: float = 0.0, length: float | None = None) -> tuple[float, float]:
+        start = pieces[n]["start"] + a
+        return start, start + (length if length is not None else pieces[n]["dur"] - 0.35 - a)
+    cuts = [(at("what", 0.25), at("what", 2.45)),           # the title card
+            piece("m1", 1.2, 3.4), piece("m5", 0.0, 2.7),     # a course is made; its notes appear
+            (cues[16] + 1.35, at("features") - 0.4),          # the diagram, complete
+            piece("f2"), piece("f3", 0.0, 2.4), piece("f4", 0.2, 5.6),
+            piece("y1", 0.15, 3.2), piece("y3b", 0.0, 2.9), piece("y4b", 0.05, 3.4)]
+    chain = [f"[0:v]trim=start={a:.3f}:end={b:.3f},setpts=PTS-STARTPTS[s{i}]" for i, (a, b) in enumerate(cuts)]
+    graph = ";".join(chain) + ";" + "".join(f"[s{i}]" for i in range(len(cuts))) + f"concat=n={len(cuts)}:v=1:a=0,fps=12,scale=960:-2:flags=lanczos," + GIF_PALETTE
+    run("ffmpeg", "-v", "error", "-y", "-i", str(OUT / "walkthrough.mp4"), "-filter_complex", graph, "-map", "[out]", "-loop", "0", str(OUT / "walkthrough-preview.gif"))
 
 
 def main() -> None:
@@ -120,7 +131,7 @@ def main() -> None:
     clip("clip-visuals", ["f1", "f2", "f3"])
     clip("clip-study", ["f4", "f5"])
     clip("clip-make-it-yours", ["y1", "y2", "y3a", "y3b", "y4a", "y4b"])
-    poster()
+    preview()
     print(f"{len(ev)} subtitle events")
 
 

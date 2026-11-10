@@ -21,10 +21,10 @@ idea back just before you would forget it, all on your computer, with no account
 
 <div align="center">
 
-[![Watch the two-minute walkthrough](assets/media/walkthrough-poster.jpg)](assets/media/walkthrough.mp4)
+<img src="assets/media/walkthrough-preview.gif" width="100%" alt="MDlearn in 30 seconds: a course is made from a topic and two class files, a diagram of the compiler, a note with a plot and an animation, a study card, the reading font changed, a passage explained by a local AI, and Pixel the companion answering with its sources">
 
-**[Watch the walkthrough](assets/media/walkthrough.mp4)** (2:00) · [with subtitles](assets/media/walkthrough_subtitled.mp4) ·
-[script](assets/media/script.md)
+The full two-minute walkthrough, with a voiceover: **[download the video](assets/media/walkthrough.mp4?raw=true)** (MP4, 11 MB) ·
+[with subtitles](assets/media/walkthrough_subtitled.mp4?raw=true) · [script](assets/media/script.md)
 
 </div>
 
@@ -83,14 +83,14 @@ ask for changes or a translation, and the cards you have studied keep their sche
 </td>
 <td width="50%" valign="top">
 
-<img src="assets/media/clip-make-course.webp" alt="Making a course in MDlearn Studio: a topic and two class files go in, the app lists what it read, a coding assistant is chosen, and three notes appear">
+<img src="assets/media/clip-make-course.gif" alt="Making a course in MDlearn Studio: a topic and two class files go in, the app lists what it read, a coding assistant is chosen, and three notes appear">
 
 </td>
 </tr>
 <tr>
 <td valign="top">
 
-<img src="assets/media/clip-visuals.webp" alt="Reading a note: a formula explained term by term, a plot whose slider moves the curve, and a four-step animation">
+<img src="assets/media/clip-visuals.gif" alt="Reading a note: a formula explained term by term, a plot whose slider moves the curve, and a four-step animation">
 
 </td>
 <td valign="top">
@@ -117,14 +117,14 @@ deadlines turned into cards per day, and the cards you keep failing.
 </td>
 <td valign="top">
 
-<img src="assets/media/clip-study.webp" alt="A study card: an answer is picked, the app asks 'Were you sure?', then shows Right and the next review; then the Today page">
+<img src="assets/media/clip-study.gif" alt="A study card: an answer is picked, the app asks 'Were you sure?', then shows Right and the next review; then the Today page">
 
 </td>
 </tr>
 <tr>
 <td valign="top">
 
-<img src="assets/media/clip-make-it-yours.webp" alt="Making a note yours: the reading font changes to Easy to read, a phrase is highlighted in yellow, a local AI explains a selected passage beside the text, and Pixel, the companion, answers a question with its sources">
+<img src="assets/media/clip-make-it-yours.gif" alt="Making a note yours: the reading font changes to Easy to read, a phrase is highlighted in yellow, a local AI explains a selected passage beside the text, and Pixel, the companion, answers a question with its sources">
 
 </td>
 <td valign="top">

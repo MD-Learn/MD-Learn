@@ -4,7 +4,7 @@
 #   assets/media/src/build.sh            everything: voice, UI capture, composition, render, deliverables
 #   assets/media/src/build.sh --no-capture   reuse the UI footage already recorded in the work folder
 #
-# Needs: Node.js 22.15+, the repo built (npm install && npm run build), ffmpeg with libx264, libass and libwebp,
+# Needs: Node.js 22.15+, the repo built (npm install && npm run build), ffmpeg with libx264 and libass,
 # ImageMagick, uv, and Playwright's Chromium (npx playwright install chromium). Fonts: Noto Sans and JetBrains Mono
 # from the system (paths in build.py), Source Serif 4 from node_modules.
 # The "make it yours" segment asks a real AI: Ollama running on this computer with qwen3:8b pulled (ollama pull qwen3:8b).
@@ -48,8 +48,8 @@ if [ -n "$SHELL_BIN" ]; then export HYPERFRAMES_BROWSER_PATH="$SHELL_BIN"; fi
 mkdir -p "$W/out"
 (cd "$W/compose" && npx hyperframes render project -o "$W/out/walkthrough-raw.mp4" -w 3 --video-frame-format png --crf 18 --quiet)
 
-# 5. Master with AAC audio, SRT + burned-in subtitles, WebP clips, poster, script.md; then copy them next to this folder
+# 5. Master with AAC audio, SRT + burned-in subtitles, GIF clips and preview, script.md; then copy them next to this folder
 python3 -B "$SRC/finish.py"
 python3 -B "$SRC/script.py"
-cp "$W"/out/final/{walkthrough.mp4,walkthrough_subtitled.mp4,voiceover.wav,subtitles.srt,walkthrough-poster.jpg,clip-make-course.webp,clip-visuals.webp,clip-study.webp,clip-make-it-yours.webp} "$REPO/assets/media/"
+cp "$W"/out/final/{walkthrough.mp4,walkthrough_subtitled.mp4,voiceover.wav,subtitles.srt,walkthrough-preview.gif,clip-make-course.gif,clip-visuals.gif,clip-study.gif,clip-make-it-yours.gif} "$REPO/assets/media/"
 echo "Done: $REPO/assets/media"
