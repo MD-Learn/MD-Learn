@@ -1,0 +1,138 @@
+1
+00:00:00,500 --> 00:00:03,498
+You have the slides, the handouts, and a
+folder of notes.
+
+2
+00:00:03,748 --> 00:00:07,972
+You reread them before the exam, and a
+week later most of it is gone.
+
+3
+00:00:08,222 --> 00:00:12,153
+Being tested on something does more for
+memory than reading it again.
+
+4
+00:00:12,753 --> 00:00:18,175
+MDlearn turns your class files, or just a
+topic, into better notes you can study.
+
+5
+00:00:18,425 --> 00:00:22,470
+An AI you already use writes them, a
+strict compiler checks them,
+
+6
+00:00:22,720 --> 00:00:26,892
+and spaced repetition brings each idea
+back just before you'd forget it.
+
+7
+00:00:27,342 --> 00:00:32,218
+It runs on your computer, with no account.
+Your notes are plain Markdown files.
+
+8
+00:00:32,818 --> 00:00:37,412
+Say what you want to learn, and add any
+PDFs, slides or Word files.
+
+9
+00:00:37,962 --> 00:00:40,792
+MDlearn shows what it could read from each
+one.
+
+10
+00:00:41,342 --> 00:00:42,948
+Choose the kind of course you want,
+
+11
+00:00:43,398 --> 00:00:47,293
+and who writes it: Claude from here, your
+coding assistant, or a chat.
+
+12
+00:00:48,143 --> 00:00:49,917
+The notes appear as they are written.
+
+13
+00:00:51,017 --> 00:00:55,562
+Under the hood, every note is Markdown,
+with blocks for questions and plots.
+
+14
+00:00:55,812 --> 00:01:00,307
+The compiler checks every block. A broken
+question is locked, never shown.
+
+15
+00:01:00,557 --> 00:01:05,892
+One core runs the app, the command line,
+and an MCP server for AI assistants.
+
+16
+00:01:06,142 --> 00:01:10,803
+Your answers feed an FSRS scheduler, kept
+in one file on your disk.
+
+17
+00:01:11,403 --> 00:01:14,270
+Formulas are explained term by term, in
+colour.
+
+18
+00:01:15,020 --> 00:01:18,697
+Plots have sliders, and derivations play
+one step at a time.
+
+19
+00:01:19,747 --> 00:01:22,989
+When you study, you answer, then say
+whether you were sure,
+
+20
+00:01:22,989 --> 00:01:24,857
+so lucky guesses come back sooner.
+
+21
+00:01:25,707 --> 00:01:27,954
+Today plans a short session for each day.
+
+22
+00:01:29,154 --> 00:01:31,861
+Make it yours: pick the reading font and
+size,
+
+23
+00:01:32,311 --> 00:01:34,595
+and highlight in colour, right in the
+text.
+
+24
+00:01:35,245 --> 00:01:39,029
+Select a passage, and an AI explains it
+beside the text.
+
+25
+00:01:40,279 --> 00:01:42,270
+And Pixel, your study companion,
+
+26
+00:01:42,270 --> 00:01:46,004
+grows as you study and answers your
+questions, with sources.
+
+27
+00:01:47,804 --> 00:01:52,131
+Download the desktop app, or run npx
+mdlearn studio.
+
+28
+00:01:52,381 --> 00:01:55,296
+It's open source, under the MIT licence.
+
+29
+00:01:55,296 --> 00:01:59,378
+Find it on GitHub; issues and pull
+requests are welcome.

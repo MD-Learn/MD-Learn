@@ -1,0 +1,185 @@
+{
+  "voice": "af_heart",
+  "speed": 0.95,
+  "scenes": [
+    {
+      "id": "hook",
+      "title": "Hook",
+      "visual": "Text scene on paper white: slides, a handout and a notes file drop onto the page; a forgetting curve draws itself and falls.",
+      "cues": [
+        {
+          "text": "You have the slides, the handouts, and a folder of notes.",
+          "say": "You have the slides, the handouts, and a folder of notes.",
+          "pause_after": 0
+        },
+        {
+          "text": "You reread them before the exam, and a week later most of it is gone.",
+          "say": "You reread them before the exam. And a week later, most of it is gone.",
+          "pause_after": 0
+        },
+        {
+          "text": "Being tested on something does more for memory than reading it again.",
+          "say": "Being tested on something does more for memory than reading it again.",
+          "pause_after": 0
+        }
+      ]
+    },
+    {
+      "id": "what",
+      "title": "What MDlearn is",
+      "visual": "Title card: the MDlearn mark, name and one line. Then the Studio first page, with its three steps.",
+      "cues": [
+        {
+          "text": "MDlearn turns your class files, or just a topic, into better notes you can study.",
+          "say": "M D learn turns your class files, or just a topic, into better notes you can study.",
+          "pause_after": 0
+        },
+        {
+          "text": "An AI you already use writes them, a strict compiler checks them,",
+          "say": "An AI you already use writes them. A strict compiler checks them.",
+          "pause_after": 0
+        },
+        {
+          "text": "and spaced repetition brings each idea back just before you'd forget it.",
+          "say": "And spaced repetition brings each idea back, just before you'd forget it.",
+          "pause_after": 0.2
+        },
+        {
+          "text": "It runs on your computer, with no account. Your notes are plain Markdown files.",
+          "say": "It runs on your computer, with no account. Your notes are plain markdown files.",
+          "pause_after": 0
+        }
+      ]
+    },
+    {
+      "id": "make",
+      "title": "Make a course",
+      "visual": "Live Studio: Make a course, type the topic, add Lecture 3.pptx and Handout 2.docx, What was read, the course form, My coding assistant, the notes appearing in the folder.",
+      "cues": [
+        {
+          "text": "Say what you want to learn, and add any PDFs, slides or Word files.",
+          "say": "Say what you want to learn, and add any P D Fs, slides, or Word files.",
+          "pause_after": 0.3
+        },
+        {
+          "text": "MDlearn shows what it could read from each one.",
+          "say": "M D learn shows what it could read from each one.",
+          "pause_after": 0.3
+        },
+        {
+          "text": "Choose the kind of course you want,",
+          "say": "Choose the kind of course you want,",
+          "pause_after": 0.2
+        },
+        {
+          "text": "and who writes it: Claude from here, your coding assistant, or a chat.",
+          "say": "and who writes it. Claude from here, your coding assistant, or a chat.",
+          "pause_after": 0.6
+        },
+        {
+          "text": "The notes appear as they are written.",
+          "say": "The notes appear as they are written.",
+          "pause_after": 0.5
+        }
+      ]
+    },
+    {
+      "id": "engine",
+      "title": "Under the hood",
+      "visual": "Animated diagram: files or a topic, your AI, Markdown notes, the @mdlearn/core compiler (parse, validate, lint), then Studio, the CLI and the MCP server, FSRS and progress.json. A terminal panel shows real mdlearn lint output.",
+      "cues": [
+        {
+          "text": "Under the hood, every note is Markdown, with blocks for questions and plots.",
+          "say": "Under the hood, every note is markdown, with blocks for questions and plots.",
+          "pause_after": 0
+        },
+        {
+          "text": "The compiler checks every block. A broken question is locked, never shown.",
+          "say": "The compiler checks every block. A broken question is locked, never shown.",
+          "pause_after": 0
+        },
+        {
+          "text": "One core runs the app, the command line, and an MCP server for AI assistants.",
+          "say": "One core runs the app, the command line, and an M C P server for AI assistants.",
+          "pause_after": 0
+        },
+        {
+          "text": "Your answers feed an FSRS scheduler, kept in one file on your disk.",
+          "say": "Your answers feed an F S R S scheduler, kept in one file on your disk.",
+          "pause_after": 0
+        }
+      ]
+    },
+    {
+      "id": "features",
+      "title": "Features in action",
+      "visual": "Live Studio: the Carnot note with its formula term by term and a plot whose slider moves; the four-step animation; a study card answered, 'were you sure?', feedback; Today.",
+      "cues": [
+        {
+          "text": "Formulas are explained term by term, in colour.",
+          "say": "Formulas are explained term by term, in colour.",
+          "pause_after": 0.5
+        },
+        {
+          "text": "Plots have sliders, and derivations play one step at a time.",
+          "say": "Plots have sliders, and derivations play one step at a time.",
+          "pause_after": 0.8
+        },
+        {
+          "text": "When you study, you answer, then say whether you were sure, so lucky guesses come back sooner.",
+          "say": "When you study, you answer, then say whether you were sure. So lucky guesses come back sooner.",
+          "pause_after": 0.6
+        },
+        {
+          "text": "Today plans a short session for each day.",
+          "say": "Today plans a short session for each day.",
+          "pause_after": 0.6
+        }
+      ]
+    },
+    {
+      "id": "yours",
+      "title": "Make it yours",
+      "visual": "Live Studio on the Carnot note: the reading font switched to Easy to read and made bigger; a phrase highlighted in yellow; a passage explained by the local AI beside the text; Pixel, the companion, asked a question in the sidebar and answering with its source.",
+      "cues": [
+        {
+          "text": "Make it yours: pick the reading font and size,",
+          "say": "Make it yours: pick the reading font and size,",
+          "pause_after": 0.2
+        },
+        {
+          "text": "and highlight in colour, right in the text.",
+          "say": "and highlight in colour, right in the text.",
+          "pause_after": 0.4
+        },
+        {
+          "text": "Select a passage, and an AI explains it beside the text.",
+          "say": "Select a passage, and an AI explains it beside the text.",
+          "pause_after": 1.0
+        },
+        {
+          "text": "And Pixel, your study companion, grows as you study and answers your questions, with sources.",
+          "say": "And Pixel, your study companion, grows as you study, and answers your questions, with sources.",
+          "pause_after": 1.2
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "title": "Get started",
+      "visual": "End card: npx mdlearn studio in a terminal line, the desktop downloads, github.com/teo-clerk/MDlearn, MIT.",
+      "cues": [
+        {
+          "text": "Download the desktop app, or run npx mdlearn studio.",
+          "say": "Download the desktop app, or run, N P X, M D learn studio.",
+          "pause_after": 0
+        },
+        {
+          "text": "It's open source, under the MIT licence. Find it on GitHub; issues and pull requests are welcome.",
+          "say": "It's open source, under the M I T licence. Find it on GitHub. Issues and pull requests are welcome.",
+          "pause_after": 0
+        }
+      ]
+    }
+  ]
+}

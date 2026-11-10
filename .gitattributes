@@ -5,3 +5,7 @@
 *.docx binary
 *.pptx binary
 *.webm binary
+*.mp4 binary
+*.webp binary
+*.wav binary
+*.jpg binary

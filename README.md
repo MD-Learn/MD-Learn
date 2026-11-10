@@ -1,19 +1,164 @@
+<div align="center">
+
+<img src="packages/studio/web/public/icon-192.png" alt="" width="72" height="72">
+
 # MDlearn
 
-**Turn your files, or just a topic, into better notes, and study them a few minutes a day.**
-
-Say what you want to learn and give MDlearn any PDFs, slides and Word files you have. An AI you already use writes
-better notes from them, with worked examples, animations, formulas, diagrams and exercises. A strict compiler checks
-them, and spaced repetition brings each idea back just before you would forget it. It runs on your computer, needs no
-account, and your notes are plain Markdown files you keep.
+**Turn your class files, or just a topic, into better notes, and study them a few minutes a day.**
 
 [![CI](https://github.com/teo-clerk/MDlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/teo-clerk/MDlearn/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/teo-clerk/MDlearn)](https://github.com/teo-clerk/MDlearn/releases/latest)
+[![npm](https://img.shields.io/npm/v/mdlearn)](https://www.npmjs.com/package/mdlearn)
+[![Node.js](https://img.shields.io/badge/node-%E2%89%A5%2022.15-339933)](package.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7-3178c6)](tsconfig.base.json)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-![A lesson in MDlearn Studio, with a formula explained in colour beside the text](docs/images/reading.png)
+</div>
 
-## Download
+An AI you already use (Claude Code, Codex, ChatGPT…) turns your PDFs, slides and notes into Markdown notes with worked
+examples, formulas, animations and exercises, and MDlearn's compiler checks every one. Spaced repetition then brings each
+idea back just before you would forget it, all on your computer, with no account, in plain files you keep.
+
+<div align="center">
+
+[![Watch the two-minute walkthrough](assets/media/walkthrough-poster.jpg)](assets/media/walkthrough.mp4)
+
+**[Watch the walkthrough](assets/media/walkthrough.mp4)** (2:00) · [with subtitles](assets/media/walkthrough_subtitled.mp4) ·
+[script](assets/media/script.md)
+
+</div>
+
+## Why
+
+You have the slides, the handouts and a folder of notes, and you reread them before the exam. Rereading feels like
+studying, but being tested on something does more for memory than reading it again, and seeing it again after a few days
+does more than seeing it twice in one evening ([the research and its sources](docs/PEDAGOGICAL_SPEC.md)). Flashcard apps
+know this, but writing good cards takes hours, and a card on its own loses the explanation around it.
+
+MDlearn keeps both. Your notes stay notes, complete enough to learn from, and the exercises live inside them, next to the
+idea they test. An AI writes them, so you don't have to, and a strict compiler holds the AI to the same rules as a careful
+human author: every quiz has a right answer, every wrong option says which mistake it is, and every block must compile.
+
+## How it works
+
+```mermaid
+flowchart LR
+  F["Your files or a topic<br/>PDF · slides · Word · notes"] --> A["An AI you already use<br/>Claude Code · Codex · OpenCode · Pi · a chat"]
+  A -->|writes| N["Markdown notes<br/>01-topic.md · 02-topic.md …"]
+  N --> C["@mdlearn/core compiler<br/>parse → validate → lint"]
+  C --> S["Studio<br/>desktop app or browser"]
+  C --> L["mdlearn CLI<br/>terminal sessions"]
+  C --> M["MCP server<br/>tools for AI assistants"]
+  S --> R["FSRS scheduler"]
+  L --> R
+  M --> R
+  R <--> P[("learn/.mdlearn/progress.json")]
+```
+
+1. **Files in.** MDlearn reads PDFs, PowerPoint and Word files, pictures, code, notebooks and data, says what it could read
+   from each, and passes them, with how you want the course, to the AI you chose.
+2. **Notes out.** The AI writes one Markdown file per topic. Questions, plots and animations are small blocks inside the
+   text (`:::quiz`, `:::plot`, `:::animate`…), described in [the format's specification](docs/DSL_SPECIFICATION.md).
+3. **Checked.** `@mdlearn/core` parses each file, validates every block and lints it. A question that doesn't compile is
+   locked, never shown with its answers; `mdlearn lint` reports it with a code, and the AI fixes it.
+4. **Studied.** The same core runs Studio, the terminal and the MCP server, so all three agree on what is right. Your
+   answers go to an [FSRS](https://github.com/open-spaced-repetition) scheduler, kept in one progress file on your disk.
+
+## What you get
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**Make a course from anything.** Say what you want to learn and add any files you have, or none. Choose short or
+complete, from scratch or with a base, for an exam, to understand or to look things up. Then pick who writes it:
+
+- *Claude, from here:* runs Claude Code on your computer, and you watch it work.
+- *Your coding assistant:* Claude Code, Codex, OpenCode or Pi, with one command to paste in a terminal.
+- *A chat:* ChatGPT, Claude or Gemini. MDlearn gives you the prompt, and you paste the answer back.
+
+The notes appear as they are written. Your course can change with you later: move or pause lessons, add class files,
+ask for changes or a translation, and the cards you have studied keep their schedule.
+
+</td>
+<td width="50%" valign="top">
+
+<img src="assets/media/clip-make-course.webp" alt="Making a course in MDlearn Studio: a topic and two class files go in, the app lists what it read, a coding assistant is chosen, and three notes appear">
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+<img src="assets/media/clip-visuals.webp" alt="Reading a note: a formula explained term by term, a plot whose slider moves the curve, and a four-step animation">
+
+</td>
+<td valign="top">
+
+**Notes that teach.** Full explanations, worked examples, formulas explained term by term, plots with sliders,
+step-by-step animations, diagrams, videos with questions, code that runs, and highlights whose colour says what they mark.
+Nothing from your files is lost, and what the AI adds beyond them is in a note you can see.
+
+**Reading that keeps up with technical notes:** math, tables, Mermaid diagrams, Python that runs in the page, and
+your own notes beside the text.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**Exercises that check you.** Quizzes, fill-in-the-gaps, ordering, written answers, worked steps, code, and games
+(match, sort, true-or-false rounds). You say whether you were sure *before* you see the answer, so lucky guesses come back
+sooner, and what you miss comes back before the session ends.
+
+**A short session each day.** *Today* plans it: the cards that are due, then a few new ones, with a 7-day forecast,
+deadlines turned into cards per day, and the cards you keep failing.
+
+</td>
+<td valign="top">
+
+<img src="assets/media/clip-study.webp" alt="A study card: an answer is picked, the app asks 'Were you sure?', then shows Right and the next review; then the Today page">
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+<img src="assets/media/clip-make-it-yours.webp" alt="Making a note yours: the reading font changes to Easy to read, a phrase is highlighted in yellow, a local AI explains a selected passage beside the text, and Pixel, the companion, answers a question with its sources">
+
+</td>
+<td valign="top">
+
+**Make it yours.** Read in the font and size that suit you: serif, sans, Times, easy to read, for dyslexia or monospace.
+Highlight in six colours, or mark a passage as important, confusing or for the exam; each highlight keeps a card beside
+the text for your own note.
+
+**Explain, beside the text.** Select any passage and an AI explains it in simpler words, right next to it, with room for a
+follow-up question. It runs on a local model through [Ollama](https://ollama.com), or a cloud AI with your own key.
+
+**Pixel, your study companion.** It lives at the foot of the sidebar (or an orb, or nothing: *Settings → Appearance*), grows as you finish notes and reviews (or not, if
+you turn that off), and answers questions about your course in any language, showing where each answer came from and
+saying when something isn't in your course.
+
+</td>
+</tr>
+</table>
+
+Also in the box:
+
+- **Mock exams and an honest progress page:** a timed mock exam marked only at the end, teach-back (explain a section in
+  your own words and get told what you missed), and the cards you were sure about and got wrong.
+- **Your folder as a knowledge base:** formulas, a glossary of the terms your notes define, links and backlinks, a 2D or
+  3D graph of your documents coloured by how well you remember each, related passages, and printable cheat sheets.
+- **Capture, edit, import, export:** a quick inbox (Ctrl+Shift+K), a built-in editor with history, importers for web
+  pages, PDFs, Anki decks, Jupyter notebooks and SciNet papers, export to Anki, and LaTeX compiled to PDF beside its source.
+- **On your phone at home**, over your own network, including a few days of cards to study offline.
+- **Your language:** the app comes in English, Italian, Spanish, French and Catalan. Courses can be in any language your
+  AI writes.
+
+## Install
+
+### The desktop app
 
 | System | File |
 |---|---|
@@ -21,95 +166,26 @@ account, and your notes are plain Markdown files you keep.
 | **macOS** (Apple silicon) | `.dmg`, or `.zip` |
 | **Linux** | AppImage, `.deb`, or `.zip` |
 
-Get them from the [latest release](https://github.com/teo-clerk/MDlearn/releases/latest). Nothing else is needed:
-no Node.js, no terminal.
+Get them from the [latest release](https://github.com/teo-clerk/MDlearn/releases/latest). Nothing else is needed: no
+Node.js, no terminal. The Windows installer and the AppImage update themselves.
 
-The builds are not code-signed yet, so Windows and macOS warn you the first time. [DESKTOP.md](docs/DESKTOP.md) shows
-how to open them, and each release has a `SHA256SUMS.txt` to check your download against.
+The builds are not code-signed yet, so Windows and macOS warn you the first time. [DESKTOP.md](docs/DESKTOP.md) shows how
+to open them, and each release has a `SHA256SUMS.txt` to check your download against.
 
-If you already have Node.js 22.15 or newer, you can run it from npm instead and use it in your browser:
+### From npm, in your browser
+
+With Node.js 22.15 or newer:
 
 ```bash
 npx mdlearn studio
 ```
 
-To keep the `mdlearn` command, use `npm install -g mdlearn`. If Node.js came from your system's packages, that may
-need `sudo`.
+To keep the `mdlearn` command, use `npm install -g mdlearn`. If Node.js came from your system's packages, that may need
+`sudo`.
 
-## Your first course
+### From source
 
-1. **Say what you want to learn.** Open MDlearn, choose *Make a course*, and add any files you have: PDFs, PowerPoint or
-   Word files, pictures, code, notebooks, data, or whole folders. MDlearn tells you what it could read from each one, and
-   which files it left out. Files are optional.
-2. **Say how you want it and who writes it.** Short or complete, from scratch or with a base, for an exam, to understand
-   or to look things up, and whether to include exercises, visuals, code or exam practice. Then pick who writes it:
-   - *Claude, from here:* runs Claude Code on your computer, and you watch it work.
-   - *Your coding assistant:* Claude Code, Codex, OpenCode or Pi, with one command to paste in a terminal.
-   - *A chat:* ChatGPT, Claude or Gemini. MDlearn gives you the prompt, and you paste the answer back.
-3. **Read and study.** You get one `.md` file per topic. *Today* gives you a short daily session: the exercises that are
-   due, then a few new ones, each with a link back to its section.
-
-Your course can change with you. After a week you can move or pause lessons, add class files, or ask for changes,
-and cards you have already studied keep their schedule.
-
-New here? *Open the tutorial* on the first page gives you a small sample course with every kind of question and game
-to try.
-
-![The first page of MDlearn Studio, with three steps and one main button](docs/images/first-run.png)
-
-## What you get
-
-- **Notes that teach.** Full explanations, worked examples, formulas, plots with sliders, animations, diagrams, videos,
-  code that runs, and highlights whose colour says what they mark. Nothing from your files is lost, and what the AI adds
-  beyond them is in a note you can see. If your notes are already complete, MDlearn can add only the exercises.
-- **Exercises that check you.** Quizzes, fill-in-the-gaps, ordering, written answers, worked steps, code, and games.
-  You say whether you were sure before you see the answer, and what you miss comes back sooner.
-- **A schedule that fits your memory**, using the [FSRS](https://github.com/open-spaced-repetition) algorithm.
-- **Reading that keeps up with technical notes:** math, tables, diagrams, code you can run, and notes beside the text.
-- **Colour with a job.** Callouts, formula terms and highlights each mean one thing. Mark a passage *confusing* or
-  *for the exam* and MDlearn does something about it.
-- **Someone to ask.** Click the companion at the foot of the sidebar and ask anything about your course, in any
-  language: a lesson, what to review next, a follow-up. It shows where each answer came from, and says when something isn't in
-  your course.
-- **Mock exams, deadlines and progress**, with an honest look at how well you know what you think you know.
-- **Your language:** the app comes in English, Italian, Spanish, French and Catalan. Courses can be written in any
-  language your AI can write, and translated later without losing your progress.
-
-![A question in a study session](docs/images/study.png)
-
-## Your files stay yours
-
-MDlearn has no account, no analytics and no server of its own. Lessons, notes and progress are ordinary files on your
-computer, and your notes are never changed unless you ask.
-
-It only goes online when you do something that needs it: importing a web page, allowing a site's pictures, playing
-an embedded video, downloading a local AI model, or running code that needs a Python package. The one exception is
-the version check: once a day `mdlearn studio` asks the npm registry for the number of the newest version, and the
-desktop app asks github.com every 6 hours (Settings → About and the app's Help menu turn them off).
-
-When an AI writes your lessons, the files you give it go to that AI, under its own terms. When Claude answers a
-question, the passages and titles it reads go to Anthropic the same way, along with your study progress if you asked
-the companion. A cloud AI you set up with your own key (*Settings → Cloud AI*), or one of Ollama's cloud models,
-reads them the same way, and the page says so when it answers. To keep everything on your computer, use a local model
-through [Ollama](https://ollama.com) for asking and explaining.
-
-## Optional extras
-
-| You need | For |
-|---|---|
-| [Claude Code](https://claude.com/claude-code), signed in once | writing lessons from inside MDlearn, asking about your course without a local model, and the terminal tutor |
-| [Ollama](https://ollama.com), then a model from *Settings → Local AI* | asking about a passage, explaining it, and searching your folder by meaning |
-| A key for an OpenAI-compatible service (OpenRouter, OpenAI, Gemini, Groq, Mistral, DeepSeek…), in *Settings → Cloud AI* | asking, explaining and correcting without a local model |
-| [SciNet](https://github.com/teo-clerk/SciNet) running on this computer | importing papers from your library |
-
-MDlearn runs the Claude Code you installed, under your own login, and never sees or stores that login. Your use of it
-is covered by [Anthropic's terms](https://code.claude.com/docs/en/legal-and-compliance), and it's up to you to check
-they fit how you use it.
-
-## Install from source
-
-This gives you the web app in your browser (`mdlearn studio`), the command line and the MCP server. You need
-Node.js 22.15 or newer and git.
+This gives you the web app (`mdlearn studio`), the command line and the MCP server. You need Node.js 22.15 or newer and git.
 
 ```bash
 git clone https://github.com/teo-clerk/MDlearn.git
@@ -125,9 +201,18 @@ mdlearn --help
 
 After pulling changes, run `npm run build` again; the links keep working.
 
-## Using your own Markdown notes
+## Quickstart
 
-### 1. Open your notes
+### Your first course
+
+1. Open MDlearn and choose **Make a course**. Say what you want to learn and add any files you have.
+2. Say how you want it, and pick who writes it (Claude from here, your coding assistant, or a chat).
+3. Read the notes as they arrive, then press **Start** on *Today*. You get one `.md` file per topic.
+
+New here? *Open the tutorial* on the first page gives you a small sample course with every kind of question and game to
+try. From a terminal, `mdlearn studio examples/showcase` opens the same thing.
+
+### Your own Markdown notes
 
 ```bash
 cd ~/my-notes          # any folder of .md files
@@ -135,65 +220,67 @@ mkdir -p learn         # lessons and your progress go here; mdlearn finds the fo
 mdlearn studio .       # opens http://localhost:4747 in your browser
 ```
 
-Studio reads any Markdown well (math, tables, Mermaid, code, `<details>`), so it's useful before you
-have a single lesson. Your notes are never modified unless you use the editor or *Insert*.
+Studio reads any Markdown well (math, tables, Mermaid, code, `<details>`), so it's useful before you have a single lesson.
+Your notes are never modified unless you use the editor or *Insert*.
 
-### 2. Get lessons
+### Study from the terminal
 
-Pick whichever fits:
+```bash
+mdlearn review         # due cards first, then up to 5 new ones (about 10 cards)
+mdlearn report         # what you've seen, your accuracy, what's due and your streak
+```
 
-- **Let Claude write them in Studio.** *AI Studio* → *Create a course* (on a topic, or better notes from one document),
-  *Whole folder* (every document without lessons, one after another), *Improve*, or *Something else*. Each
-  job streams live, can only write Markdown inside its allowed folder (`learn/` by default), is
-  linted, and can be undone. It runs Claude Code on your computer, under your own login.
-- **Ask Claude Code in a terminal.** Set up the skills once (see [Claude Code](#use-with-claude-code)),
-  then say e.g. *"turn bayes.md into a lesson with mdlearn-course"* or *"convert 00_FOUNDATIONS with
-  mdlearn-curriculum"*.
-- **Write one by hand.** Save this as `learn/demo/01-radar.learn.md`:
+Type your answer and press Enter; `?` shows a hint, `s` shows the answer, `q` stops. Progress is saved after every card
+and shared with Studio. **A good habit:** one short session a day, 5–10 minutes, and new lessons for what you are reading
+this week rather than everything up front.
 
-  ```markdown
-  ---
-  title: Radar basics
-  level: beginner
-  lang: en
-  goals:
-    - State how received power depends on range
-    - Compute range resolution from bandwidth
-  ---
+## Writing notes
 
-  ## Power falls with range⁴
+A note is a Markdown file with `study: true` in its frontmatter; its exercises go to spaced repetition. Save this as
+`learn/demo/01-radar.learn.md`:
 
-  The pulse spreads out on the way to the target and again on the way back, so the
-  received power falls as $1/R^4$.
+```markdown
+---
+title: Radar basics
+level: beginner
+lang: en
+goals:
+  - State how received power depends on range
+  - Compute range resolution from bandwidth
+---
 
-  :::quiz
-  You double the range to a target. What happens to the received power?
-  - [ ] It halves.
-    > That would be a one-way, $1/R$ spreading, not the two-way radar case.
-  - [ ] It drops to a quarter.
-    > That is one-way $1/R^2$ spreading; the echo spreads a second time.
-  - [x] It drops to a sixteenth.
-    > Right: two-way spreading gives $1/R^4$, and $2^4 = 16$.
-  :::
+## Power falls with range⁴
 
-  ## Range resolution
+The pulse spreads out on the way to the target and again on the way back, so the
+received power falls as $1/R^4$.
 
-  Two targets are told apart in range when their echoes do not overlap:
-  $\delta_r = c / 2B$.
+:::quiz
+You double the range to a target. What happens to the received power?
+- [ ] It halves.
+  > That would be a one-way, $1/R$ spreading, not the two-way radar case.
+- [ ] It drops to a quarter.
+  > That is one-way $1/R^2$ spreading; the echo spreads a second time.
+- [x] It drops to a sixteenth.
+  > Right: two-way spreading gives $1/R^4$, and $2^4 = 16$.
+:::
 
-  :::cloze
-  A 50 MHz pulse gives a range resolution of {{3.0±0.1}} m.
-  :::
-  ```
+## Range resolution
 
-  Then run `mdlearn lint` and fix anything it reports. Other question types (`order`, `explain`,
-  `steps`, `code`), games (`match`, `sort`, `speed`), visuals (`plot`, `formula`, `animate`, `sim`,
-  sandboxed `html`), videos with checkpoint questions (`::video`) and HTML in Markdown are described in
-  [docs/DSL_SPECIFICATION.md](docs/DSL_SPECIFICATION.md). To see them all working, run
-  `mdlearn studio examples/showcase` (or *Help → Open the tutorial* in Studio).
+Two targets are told apart in range when their echoes do not overlap:
+$\delta_r = c / 2B$.
 
-**Long, structured documents** (numbered `##` sections, like a course or a textbook chapter) work best
-as *companion lessons*. These link each card to its section instead of repeating the text:
+:::cloze
+A 50 MHz pulse gives a range resolution of {{3.0±0.1}} m.
+:::
+```
+
+Then run `mdlearn lint` and fix anything it reports. Other question types (`order`, `explain`, `steps`, `code`), games
+(`match`, `sort`, `speed`), visuals (`plot`, `formula`, `animate`, `sim`, sandboxed `html`), videos with checkpoint
+questions (`::video`) and HTML in Markdown are described in [docs/DSL_SPECIFICATION.md](docs/DSL_SPECIFICATION.md). The
+course in the walkthrough, [three notes on heat engines](assets/media/src/demo-course/), is a fuller example.
+
+**Long, structured documents** (numbered `##` sections, like a course or a textbook chapter) work best as *companion
+lessons*, which link each card to its section instead of repeating the text:
 
 ```bash
 mdlearn plan 04_sar     # how the document would be split into lessons
@@ -204,28 +291,11 @@ mdlearn lint            # flags cards whose ::read[§…] no longer matches the 
 
 `plan` needs headings. For rough notes without them, use Claude (notes mode) or write the lesson yourself.
 
-### 3. Study
+## Use with any AI
 
-- **Studio:** a folder opens on **Today**. Press *Start* and answer one card at a time.
-- **Terminal:** `mdlearn review` gives due cards first, then up to 5 new ones (about 10 cards). Type your
-  answer and press Enter; `?` shows a hint, `s` shows the answer, `q` stops. Progress is saved after every
-  card.
-- **Claude Code:** *"quiz me on SAR physics"* runs the same session as a conversation (the `mdlearn-tutor`
-  skill), with follow-up questions grounded in your source.
-
-Each card asks *"were you sure?"* before giving feedback. Missed cards come back before the session ends,
-and the summary tells you which section to reread. `mdlearn report` shows what you've seen, your
-accuracy, what's due and your streak.
-
-**A good habit:** one short session a day (`mdlearn review`, 5–10 minutes). Add new lessons for the
-document you're reading this week, rather than converting everything up front.
-
-## Use with any AI: Claude Code, Codex, OpenCode, Pi, Claude.ai, ChatGPT
-
-Ask any assistant for a course on a topic, with or without your notes; it writes MDlearn notes with
-the same method Studio uses (explanations and worked examples, exercises in every section with feedback on
-each mistake, a mixed practice at the end), and you study them in Studio. `mdlearn setup` prints these steps with the
-real paths; Studio shows them under **Settings → Use MDlearn in other apps**.
+Ask any assistant for a course on a topic, with or without your notes; it writes MDlearn notes with the same method
+Studio uses, and you study them in Studio. `mdlearn setup` prints these steps with the real paths; Studio shows them
+under **Settings → Use MDlearn in other apps**.
 
 | Where | How |
 |---|---|
@@ -237,13 +307,11 @@ real paths; Studio shows them under **Settings → Use MDlearn in other apps**.
 A whole course has been tested from start to finish with Claude Code and with OpenCode. Codex and Pi use the same folder
 instructions, but no finished course has been confirmed with them yet.
 
-The prompt lives in [docs/CHAT_PROMPT.md](docs/CHAT_PROMPT.md); `npm run build` regenerates the plugin,
-the skill and the prompt files from the docs.
+<details>
+<summary><b>Claude Code on one folder, without the plugin</b></summary>
 
-### Claude Code on one folder, without the plugin
-
-Do this once in your notes folder so Claude Code gets the MCP tools (outline, sections, lint, the
-tutor) and the four skills. Replace `/path/to/MDlearn` and `/path/to/my-notes` with absolute paths:
+Do this once in your notes folder so Claude Code gets the MCP tools (outline, sections, lint, the tutor) and the four
+skills. Replace `/path/to/MDlearn` and `/path/to/my-notes` with absolute paths:
 
 ```bash
 cat > .mcp.json <<'EOF'
@@ -262,62 +330,23 @@ ln -s /path/to/MDlearn/.claude/skills/mdlearn-course .claude/skills/
 for s in mdlearn-curriculum mdlearn-tutor mdlearn-visuals; do ln -s /path/to/MDlearn/skills/$s .claude/skills/; done
 ```
 
-Start `claude` in the folder and approve the `mdlearn` server when asked. Then try *"quiz me on …"*,
-*"what is due?"*, *"write a lesson for notes/bayes.md"*, *"fix the lint errors in learn/…"*.
+Start `claude` in the folder and approve the `mdlearn` server when asked. Then try *"quiz me on …"*, *"what is due?"*,
+*"write a lesson for notes/bayes.md"*, *"fix the lint errors in learn/…"*.
 
-## What Studio can do
+</details>
 
-- **New here?** A short welcome tour on first run, a Help page (`?`), and an interactive tutorial
-  (*Help → Open the tutorial*) that shows every feature live, with its Markdown.
-- **Games and HTML in your notes:** match pairs (or play them as a memory game), sort into groups,
-  true/false speed rounds — graded and scheduled like the other questions — plus safe HTML in place
-  (`<mark>`, `<kbd>`, `<details>`, animated SVG) and your own HTML/CSS/JS games in a sandbox.
-- **Videos with questions:** `::video[clip.mp4]` or a YouTube/Vimeo link (a plain `![](clip.mp4)` works
-  too). Questions after it with `{at=4:15}` pause the video and ask; notes can be pinned to a moment.
-  YouTube and Vimeo load only when you press Play.
-- **Read any Markdown:** math (KaTeX), tables, Mermaid diagrams, highlighted code, folded `<details>`,
-  section numbers, an outline, full-text search (Ctrl+K) and the raw source. Changes on disk show up live.
-- **Study:** the coach flow above. **Today** also shows a 7-day forecast, a heatmap, how well your
-  confidence matches your results, **deadlines** (turned into new cards per day) and the cards you keep
-  failing, with a one-click AI fix.
-- **Exam practice:** a **mock exam** (questions on what you studied, mixed across lessons, optionally timed,
-  marked only at the end, then every answer); the **confidence check** on Progress (the cards you were sure
-  about and got wrong, one click to review them); **teach-back** (explain a lesson or a section in your own
-  words; the local model or Claude says which key ideas you covered, what to correct, and asks one question).
-- **Notes and AI beside the text:** select a passage to leave a note, ask the local model about it,
-  have it explained or **visualised** (a plot, an explained formula, an animation), or turn it into a
-  **quick card**.
-- **Run Python** blocks in the browser (Pyodide with numpy, scipy, pandas, matplotlib, …). Exercises
-  with `assert` checks are graded.
-- **Your folder as a knowledge base:** formulas, glossary (defined terms are underlined in the text),
-  links and backlinks, a **graph** of your documents in 2D or 3D (coloured by how well you remember each,
-  like Obsidian's) and a prerequisite map, **Ask** (the local model answers from your documents, with
-  sources), **Related** (what else in the folder is about the section you are reading) and printable cheat sheets.
-- **A capture inbox:** save a thought, a link or a passage in a moment (Ctrl+Shift+K, your phone, or
-  Ctrl+Alt+Space in the desktop app) and sort it later on Today into a card or a document. It is plain Markdown in
-  `Inbox/`.
-- **Edit, import, export:** a built-in editor with live preview and history; import web pages, PDFs,
-  Anki decks, Jupyter notebooks and **papers from SciNet**; **export to Anki** to study on your phone anywhere.
-- **LaTeX:** write `.tex` documents with highlighting and completion, compile them to PDF beside the source
-  (Ctrl+S), with errors linked to their line and explained. Uses Tectonic or TeX Live on your computer
-  (`sudo pacman -S tectonic` on Arch, `brew install tectonic` on macOS).
-- **On your phone at home:** `mdlearn studio --lan` prints a private link and a QR code (reading,
-  studying and notes; no file changes or AI jobs unless you add `--lan-full`). **Study offline** takes the
-  next 1, 3 or 7 days of cards onto the phone, marks them there with no connection, and syncs the answers
-  when the computer is reachable again (keep the page open while offline; add it to the home screen).
-- **Your language and colours:** *Settings* switches the interface to Italiano, Español, Français or
-  Català (help included), and picks the theme and an accent colour (presets or your own, always readable).
+The prompt lives in [docs/CHAT_PROMPT.md](docs/CHAT_PROMPT.md); `npm run build` regenerates the plugin, the skill and
+the prompt files from the docs.
 
-How it works, its security model and its tests are in [docs/STUDIO.md](docs/STUDIO.md).
+## Reference
 
-## Commands
+### Commands
 
-Run them inside your notes folder (or pass `--root <dir>`, or set `MDLEARN_ROOT`). Each command has
-`--help`.
+Run them inside your notes folder (or pass `--root <dir>`, or set `MDLEARN_ROOT`). Each command has `--help`.
 
 | Command | What it does |
 |---|---|
-| `mdlearn studio [folder] [--lan] [--port 4747]` | Open MDlearn Studio in the browser |
+| `mdlearn studio [folder] [--port 4747] [--lan] [--lan-full] [--no-open]` | Open MDlearn Studio in the browser |
 | `mdlearn review [--scope text] [--limit 10] [--new-cards 5] [--due]` | Study session (`--scope` matches a lesson id or title) |
 | `mdlearn queue` · `mdlearn report` | What a session would contain · your progress |
 | `mdlearn status [filter] [--all]` | Every document and how many lessons it has |
@@ -325,13 +354,33 @@ Run them inside your notes folder (or pass `--root <dir>`, or set `MDLEARN_ROOT`
 | `mdlearn plan <doc>` · `mdlearn new <doc>` | Plan / create companion lessons for a document |
 | `mdlearn lint [file\|folder]` | Check lessons (errors and warnings; exit 1 on errors) |
 | `mdlearn build <file>` · `mdlearn errata` | A lesson as JSON · corrections to the source collected from lessons |
-| `mdlearn setup` | How to add MDlearn to Claude Code, Claude.ai and other chats |
+| `mdlearn setup` · `mdlearn agents [folder] [--mcp]` | How to add MDlearn to other apps · get a folder ready for a coding assistant |
 | `mdlearn prompt [--full]` | The prompt for chats without tools (`--full`: the whole guide) |
 | `mdlearn import-chat <file\|-> [--to folder]` | Save the lessons a chat wrote: checked first, errors become a fix request |
 
 `<doc>` is a path or any unique part of a file name (`04_sar`).
 
-## Where things are stored
+### Studio on your network
+
+`mdlearn studio --lan` prints a private link and a QR code for your phone: reading, studying and notes, but no file
+changes or AI jobs unless you add `--lan-full`. **Study offline** takes the next 1, 3 or 7 days of cards onto the phone and
+syncs the answers when the computer is reachable again (keep the page open while offline; add it to the home screen).
+
+### Optional extras
+
+| You need | For |
+|---|---|
+| [Claude Code](https://claude.com/claude-code), signed in once | writing lessons from inside MDlearn, asking about your course without a local model, and the terminal tutor |
+| [Ollama](https://ollama.com), then a model from *Settings → Local AI* | asking about a passage, explaining it, and searching your folder by meaning |
+| A key for an OpenAI-compatible service (OpenRouter, OpenAI, Gemini, Groq, Mistral, DeepSeek…), in *Settings → Cloud AI* | asking, explaining and correcting without a local model |
+| [Tectonic](https://tectonic-typesetting.github.io) or TeX Live | compiling `.tex` documents to PDF (`sudo pacman -S tectonic` on Arch, `brew install tectonic` on macOS) |
+| [SciNet](https://github.com/teo-clerk/SciNet) running on this computer | importing papers from your library |
+
+MDlearn runs the Claude Code you installed, under your own login, and never sees or stores that login. Your use of it is
+covered by [Anthropic's terms](https://code.claude.com/docs/en/legal-and-compliance), and it's up to you to check they fit
+how you use it.
+
+### Where things are stored
 
 | Path | What |
 |---|---|
@@ -346,23 +395,39 @@ Run them inside your notes folder (or pass `--root <dir>`, or set `MDLEARN_ROOT`
 
 If your notes are in git, add `.mdlearn/` to their `.gitignore`.
 
-## Troubleshooting
+### Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| `mdlearn: command not found` | add `~/.local/bin` to your `PATH`, or check the links from *Install* |
-| "No .learn.md files found" | there are no lessons yet: see *Get lessons*, and run from inside the folder that has `learn/` |
+| `mdlearn: command not found` | add `~/.local/bin` to your `PATH`, or check the links from *From source* |
+| "No .learn.md files found" | there are no lessons yet: see *Writing notes*, and run from inside the folder that has `learn/` |
 | `mdlearn plan` prints nothing | the document has no `##` sections: write the lesson with Claude or by hand |
 | AI Studio says Claude Code is not installed | install Claude Code and run `claude` once to log in |
 | Ask / Explain / Visualise are unavailable | start Ollama and `ollama pull qwen3:8b` (the model is set in `studio.json`) |
+
+## Your files stay yours
+
+MDlearn has no account, no analytics and no server of its own. Lessons, notes and progress are ordinary files on your
+computer, and your notes are never changed unless you ask.
+
+It only goes online when you do something that needs it: importing a web page, allowing a site's pictures, playing an
+embedded video, downloading a local AI model, or running code that needs a Python package. The one exception is the
+version check: once a day `mdlearn studio` asks the npm registry for the number of the newest version, and the desktop app
+asks github.com every 6 hours (Settings → About and the app's Help menu turn them off).
+
+When an AI writes your lessons, the files you give it go to that AI, under its own terms. When Claude answers a question,
+the passages and titles it reads go to Anthropic the same way, along with your study progress if you asked the companion.
+A cloud AI you set up with your own key (*Settings → Cloud AI*), or one of Ollama's cloud models, reads them the same way,
+and the page says so when it answers. To keep everything on your computer, use a local model through
+[Ollama](https://ollama.com) for asking and explaining.
 
 ## Documentation
 
 | Document | What it is |
 |---|---|
 | [docs/PEDAGOGICAL_SPEC.md](docs/PEDAGOGICAL_SPEC.md) | The learning science behind every construct, with verified citations |
-| [docs/DSL_SPECIFICATION.md](docs/DSL_SPECIFICATION.md) | The `.learn.md` format: syntax, formal grammar, diagnostics, companion lessons |
-| [docs/ENGINE_ARCHITECTURE.md](docs/ENGINE_ARCHITECTURE.md) | Compiler, rendering, state machine, persistence, security, roadmap |
+| [docs/DSL_SPECIFICATION.md](docs/DSL_SPECIFICATION.md) | The note and lesson format: syntax, formal grammar, diagnostics, companion lessons |
+| [docs/ENGINE_ARCHITECTURE.md](docs/ENGINE_ARCHITECTURE.md) | Compiler, rendering, state machine, persistence, security |
 | [docs/TOOLING.md](docs/TOOLING.md) | Importer, `mdlearn` CLI, `mdlearn-mcp` server, skills, a curriculum workflow |
 | [docs/STUDIO.md](docs/STUDIO.md) | MDlearn Studio: architecture, AI engines and jobs, notes, visuals runtime, security, tests |
 | [docs/DESKTOP.md](docs/DESKTOP.md) | The desktop app: how it is built and packaged, its security choices, opening unsigned builds |
@@ -374,9 +439,10 @@ If your notes are in git, add `.mdlearn/` to their `.gitignore`.
 | Package | |
 |---|---|
 | `packages/core` | `@mdlearn/core`: Stage-0 scanner, compiler, CourseAST (Zod), checkers, importer, tutor, FSRS; `@mdlearn/core/node` for file-system helpers |
-| `packages/cli` | `mdlearn`: studio, lint, build, status, outline, section, plan, new, queue, review, report, errata |
-| `packages/mcp` | `mdlearn-mcp`: 13 MCP tools for curriculum access, authoring and tutoring |
+| `packages/cli` | `mdlearn`: studio, review, lint, build, status, outline, section, plan, new, queue, report, errata, setup, agents, prompt, import-chat |
+| `packages/mcp` | `@mdlearn/mcp`: 15 MCP tools and 3 prompts for curriculum access, authoring and tutoring |
 | `packages/studio` | MDlearn Studio: local server (Hono) and web app (React 19, Vite 8, Tailwind 4) |
+| `packages/desktop` | The Electron app, with Studio's server as a sidecar |
 | `skills/` | `mdlearn-curriculum`, `mdlearn-tutor` and `mdlearn-visuals` skills (plus `docs/AGENT_SKILL.md`) |
 
 ## Develop
@@ -391,14 +457,28 @@ npm run test:e2e -w @mdlearn/studio    # Playwright, desktop + phone, on a tempo
 npm run dev                            # Studio with hot reload
 ```
 
-## Contributing
+The walkthrough video, its subtitles and the clips above are rebuilt from [`assets/media/src/`](assets/media/src/build.sh)
+with local tools only (Kokoro for the voice, Playwright, HyperFrames, FFmpeg).
 
-Bug reports, ideas and pull requests are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). To report a security
-problem, see [SECURITY.md](SECURITY.md).
+## Roadmap and contributing
+
+Where help is most welcome:
+
+- **Signed builds.** The desktop app needs an Apple Developer ID and a Windows code-signing certificate before the first-open
+  warnings go away ([DESKTOP.md](docs/DESKTOP.md)).
+- **More assistants, confirmed.** Codex and Pi follow the same folder instructions as Claude Code and OpenCode, but nobody
+  has confirmed a finished course with them yet. A report of a real run, good or bad, helps.
+- **The tutorial in more languages.** The app speaks five languages; the sample course in `examples/showcase` is in English only.
+- **Bugs from real courses.** If MDlearn reads one of your files badly or a note renders wrong, an issue with the file (or a
+  small piece of it) is the fastest way to a fix.
+
+Bug reports, ideas and pull requests are welcome: [CONTRIBUTING.md](CONTRIBUTING.md) has the setup and the few rules (tests
+first, every visible string translated, a quiet interface, no invented science, dependencies at least two weeks old). For
+anything large, open an issue first. To report a security problem, see [SECURITY.md](SECURITY.md).
 
 ## License
 
 [MIT](LICENSE) © Teo Clerk.
 
-MDlearn is an independent project. It is not made, endorsed or sponsored by Anthropic, OpenAI or the makers of the
-other tools it works with. Claude and Claude Code are trademarks of Anthropic.
+MDlearn is an independent project. It is not made, endorsed or sponsored by Anthropic, OpenAI or the makers of the other
+tools it works with. Claude and Claude Code are trademarks of Anthropic.
