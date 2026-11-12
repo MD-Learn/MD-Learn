@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MDlearn: trasforma le slide del corso in appunti che ti interrogano</title>
+<meta name="description" content="App desktop gratuita e open source per studenti. Aggiungi PDF e slide, un'AI che usi già ne fa appunti con gli esercizi dentro, e MDlearn ti fa ripassare pochi minuti al giorno. Senza account.">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="alternate" hreflang="en" href="https://md-learn.github.io/MD-Learn/">
+<link rel="alternate" hreflang="it" href="https://md-learn.github.io/MD-Learn/it/">
+<link rel="canonical" href="https://md-learn.github.io/MD-Learn/it/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="it_IT">
+<meta property="og:site_name" content="MDlearn">
+<meta property="og:title" content="MDlearn: trasforma le slide del corso in appunti che ti interrogano">
+<meta property="og:description" content="Gratis e open source. Senza account, tutto sul tuo computer.">
+<meta property="og:url" content="https://md-learn.github.io/MD-Learn/it/">
+<meta property="og:image" content="https://md-learn.github.io/MD-Learn/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="../fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../styles.css">
+<script src="../app.js" defer></script>
+</head>
+<body
+  data-label-win="Scarica per Windows"
+  data-label-mac="Scarica per macOS"
+  data-label-linux="Scarica per Linux"
+  data-label-mobile="Disponibile per Windows, macOS, Linux"
+  data-also-win="Anche per macOS e Linux"
+  data-also-mac="Anche per Windows e Linux"
+  data-also-linux="Anche per Windows e macOS"
+  data-note-mobile="MDlearn è un'app per computer: apri questa pagina dal PC per scaricarla."
+  data-quiz-right="Giusto."
+  data-quiz-wrong="Non proprio.">
+<a class="skip" href="#main">Vai al contenuto</a>
+
+<header class="wrap top">
+  <a class="brand" href="./"><img src="../favicon.svg" alt="" width="26" height="26">MDlearn</a>
+  <nav aria-label="Lingua">
+    <a href="../" lang="en" hreflang="en">EN</a>
+    <a href="./" aria-current="page" lang="it">IT</a>
+  </nav>
+</header>
+
+<main id="main">
+<div class="wrap hero">
+  <div>
+    <p class="eyebrow"><span class="js-ver"></span>Gratis e open source</p>
+    <h1>Trasforma le slide del corso in appunti che <mark>ti interrogano</mark>.</h1>
+    <p class="lede">Aggiungi PDF e slide. Un'AI che usi già ne fa appunti con gli esercizi dentro, e MDlearn ti fa ripassare pochi minuti al giorno.</p>
+    <div class="cta">
+      <a class="btn js-dl" href="https://github.com/MD-Learn/MD-Learn/releases/latest">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v10m0 0-4-4m4 4 4-4M4 16h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Scarica MDlearn</span>
+      </a>
+      <a class="btn btn-ghost" href="https://github.com/MD-Learn/MD-Learn">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>Vedi su GitHub</span>
+      </a>
+    </div>
+    <p class="note js-note"><a class="js-also" href="#download">Per Windows, macOS e Linux</a> · <a href="#download">Aiuto al primo avvio</a></p>
+    <p class="term">Oppure da terminale: <span class="cmd"><code>npx mdlearn studio</code><button type="button" class="copy" data-copy="npx mdlearn studio" data-label="Copia" data-done="Copiato" aria-live="polite">Copia</button></span></p>
+  </div>
+  <div class="card" aria-labelledby="quiz-q">
+    <p class="label">Prova: scegli una risposta</p>
+    <p class="q" id="quiz-q">Esame tra una settimana. Quale metodo ti fa ricordare di più?</p>
+    <ul class="opts">
+      <li><button class="opt" type="button" aria-pressed="false" data-why="Sembra produttivo, ma è il metodo più debole dei tre."><span class="k">A</span>Rileggere gli appunti due volte stasera.</button></li>
+      <li><button class="opt" type="button" aria-pressed="false" data-why="Meglio: un quiz funziona più della rilettura. Ma fatto una sera sola, senza ripasso, si dimentica presto."><span class="k">B</span>Leggerli una volta e fare un quiz stasera.</button></li>
+      <li><button class="opt" type="button" aria-pressed="false" data-right="true" data-why="Quiz più ripasso a distanza di giorni: è proprio quello che MDlearn programma per te."><span class="k">C</span>Fare un quiz adesso e rifarlo tra qualche giorno.</button></li>
+    </ul>
+    <p class="fb hint" aria-live="polite">Scegline una per vedere perché</p>
+  </div>
+</div>
+
+<div class="wrap walk">
+  <div class="frame">
+    <video src="../media/walkthrough.mp4" poster="../media/walkthrough.jpg" width="1280" height="720" autoplay muted loop playsinline preload="metadata" aria-label="MDlearn in 25 secondi: un corso creato da due file del corso, appunti con un grafico e una tabella, una card di studio, il cambio del font, un passaggio spiegato e Pixel che risponde a una domanda"></video>
+  </div>
+</div>
+
+<div class="wrap trust">
+  <ul>
+    <li>Open source</li>
+    <li>I tuoi file restano sul tuo computer</li>
+    <li>Funziona con Claude, ChatGPT, Gemini…</li>
+  </ul>
+</div>
+
+<section class="block center">
+  <div class="wrap">
+    <h2>Rileggere sembra studiare.<br>Farsi interrogare funziona meglio.</h2>
+    <p class="lead prose">Rispondere a domande e ripassare dopo qualche giorno funziona meglio che rileggere le slide (<a href="https://github.com/MD-Learn/MD-Learn/blob/master/docs/PEDAGOGICAL_SPEC.md">lo dice la ricerca</a>). Le flashcard aiutano, ma scriverle richiede ore e da sole non spiegano niente. MDlearn ti dà entrambe le cose: appunti completi con gli esercizi dentro.</p>
+  </div>
+</section>
+
+<section class="block alt-bg">
+  <div class="wrap">
+    <h2>Come funziona</h2>
+    <ol class="steps">
+      <li><h3>Aggiungi i tuoi file</h3><p>PDF, slide, Word, appunti. O anche solo un argomento.</p></li>
+      <li><h3>L'AI scrive gli appunti</h3><p>Con esempi, formule ed esercizi. MDlearn controlla che ogni domanda abbia una risposta giusta.</p></li>
+      <li><h3>Ripassi 5-10 minuti al giorno</h3><p>L'app ti ripropone ogni concetto quando il ricordo inizia a svanire.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="feature">
+      <div class="text"><h3>Basta ricopiare le slide a mano</h3><p>Aggiungi tutto quello che hai, anche insieme: l'AI ne fa un corso diviso per argomenti.</p></div>
+      <div class="frame"><video src="../media/make-course.mp4" poster="../media/make-course.jpg" width="1280" height="960" muted loop playsinline preload="none" aria-label="Un corso creato da un argomento e due file del corso"></video></div>
+    </div>
+    <div class="feature">
+      <div class="text"><h3>Appunti da cui impari davvero</h3><p>Formule spiegate termine per termine, grafici, diagrammi e animazioni, non elenchi puntati.</p></div>
+      <div class="frame"><video src="../media/visuals.mp4" poster="../media/visuals.jpg" width="1280" height="718" muted loop playsinline preload="none" aria-label="Appunti con una formula, un grafico e una tabella passo per passo"></video></div>
+    </div>
+    <div class="feature">
+      <div class="text"><h3>Basta risposte tirate a indovinare</h3><p>Prima della risposta l'app ti chiede se eri sicuro. Se avevi tirato a indovinare, te la ripropone prima.</p></div>
+      <div class="frame"><video src="../media/study.mp4" poster="../media/study.jpg" width="1280" height="720" muted loop playsinline preload="none" aria-label="Una card di studio con tre opzioni, poi la domanda: eri sicuro?"></video></div>
+    </div>
+    <div class="feature">
+      <div class="text"><h3>Fatichi a leggere? Cambia font.</h3><p>Scegli un font più leggibile o quello per la dislessia, e la dimensione che vuoi. Poi evidenzia in sei colori e aggiungi le tue note.</p></div>
+      <div class="frame"><video src="../media/make-it-yours.mp4" poster="../media/make-it-yours.jpg" width="1280" height="720" muted loop playsinline preload="none" aria-label="Il font di lettura diventa più leggibile, il testo si ingrandisce e una frase viene evidenziata in giallo"></video></div>
+    </div>
+  </div>
+</section>
+
+<section class="block alt-bg privacy" id="privacy">
+  <div class="wrap">
+    <h2>I tuoi appunti sono tuoi</h2>
+    <ul class="steps plain">
+      <li><h3>Nessun account</h3><p>Niente da registrare. Nemmeno questo sito ti traccia.</p></li>
+      <li><h3>File normali</h3><p>Gli appunti sono file di testo sul tuo computer. Si aprono anche senza MDlearn.</p></li>
+      <li><h3>L'AI la scegli tu</h3><p>Un'AI online vede i file che le dai. Per tenere tutto offline usa un'AI locale con <a href="https://ollama.com">Ollama</a>.</p></li>
+    </ul>
+  </div>
+</section>
+
+<section class="block" id="download">
+  <div class="wrap">
+    <h2>Download</h2>
+    <p class="lead measure">L'app è nuova e non ha ancora la firma digitale a pagamento, quindi la prima volta Windows o macOS potrebbero avvisarti. È normale, e il codice è pubblico su GitHub.</p>
+    <div class="dl-rows">
+      <div class="dl-row">
+        <h3>Windows</h3>
+        <div class="files"><a data-asset="win" href="https://github.com/MD-Learn/MD-Learn/releases/latest">Installer (.exe)</a></div>
+        <p class="howto">"Windows ha protetto il PC" → <b>Ulteriori informazioni</b> → <b>Esegui comunque</b>.</p>
+      </div>
+      <div class="dl-row">
+        <h3>macOS</h3>
+        <div class="files"><a data-asset="macArm" href="https://github.com/MD-Learn/MD-Learn/releases/latest">Chip Apple (.dmg)</a><a data-asset="macIntel" href="https://github.com/MD-Learn/MD-Learn/releases/latest">Intel (.dmg)</a></div>
+        <p class="howto">Trascinala in Applicazioni, aprila una volta, poi <b>Impostazioni di Sistema → Privacy e sicurezza → Apri comunque</b>.</p>
+      </div>
+      <div class="dl-row">
+        <h3>Linux</h3>
+        <div class="files"><a data-asset="linux" href="https://github.com/MD-Learn/MD-Learn/releases/latest">.AppImage</a><a data-asset="deb" href="https://github.com/MD-Learn/MD-Learn/releases/latest">.deb</a></div>
+        <div class="howto"><p>Rendi eseguibile l'AppImage, poi aprila.</p><details class="cmds"><summary>Comandi</summary><p><code>chmod +x MDlearn-*.AppImage</code> (serve <code>libfuse2</code>), oppure installa il .deb: <code>sudo apt install ./MDlearn-*.deb</code></p></details></div>
+      </div>
+      <div class="dl-row">
+        <h3>Terminale</h3>
+        <div class="files"><span class="cmd"><code>npx mdlearn studio</code><button type="button" class="copy" data-copy="npx mdlearn studio" data-label="Copia" data-done="Copiato" aria-live="polite">Copia</button></span></div>
+        <p class="howto">Apre MDlearn nel browser. Serve <a href="https://nodejs.org">Node.js</a> 22.15 o più recente.</p>
+      </div>
+      <div class="dl-row">
+        <h3>Verifica (facoltativo)</h3>
+        <div class="files"><a data-asset="sums" href="https://github.com/MD-Learn/MD-Learn/releases/latest">SHA256SUMS.txt</a></div>
+        <div class="howto"><p>Controlla che il file corrisponda all'elenco.</p><details class="cmds"><summary>Come</summary><p>Windows: <code>certutil -hashfile FILE SHA256</code><br>macOS e Linux: <code>shasum -a 256 FILE</code></p></details></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block alt-bg" id="faq">
+  <div class="wrap">
+    <h2>Domande</h2>
+    <div class="faq">
+      <details><summary>È gratis?</summary><div><p>Sì. È open source, con licenza MIT.</p></div></details>
+      <details><summary>Windows dice che l'app non è riconosciuta: è sicura?</summary><div>
+        <p>L'app non è ancora firmata, quindi Windows non la conosce. Clicca <b>Ulteriori informazioni</b> → <b>Esegui comunque</b>. Il codice è pubblico su GitHub e puoi controllare il file scaricato con <a data-asset="sums" href="https://github.com/MD-Learn/MD-Learn/releases/latest">SHA256SUMS.txt</a>.</p>
+        <p>Se è attivo Smart App Control, Windows 11 blocca le app non firmate senza il pulsante "Esegui comunque". La firma dell'app è nella roadmap.</p>
+      </div></details>
+      <details><summary>Serve saper programmare?</summary><div><p>No. Basta l'app desktop: niente terminale, niente Node.js.</p></div></details>
+      <details><summary>Quale AI mi serve?</summary><div><p>Una che usi già: Claude, ChatGPT, Gemini… Va bene anche la versione chat.</p></div></details>
+      <details><summary>In che lingue c'è?</summary><div><p>L'app è in italiano, inglese, spagnolo, francese e catalano. I corsi possono essere in qualsiasi lingua.</p></div></details>
+      <details><summary>Funziona sul telefono?</summary><div><p>Puoi studiare dal telefono sulla rete di casa, ma l'app gira sul computer. Apri questa pagina dal PC per scaricarla.</p></div></details>
+      <details><summary>Dove finiscono i miei dati?</summary><div><p>Restano sul tuo disco. Vedi la sezione <a href="#privacy">privacy</a>.</p></div></details>
+    </div>
+  </div>
+</section>
+
+<section class="block final center">
+  <div class="wrap">
+    <h2>Il prossimo esame, ripassato 10 minuti al giorno.</h2>
+    <div class="cta">
+      <a class="btn js-dl" href="https://github.com/MD-Learn/MD-Learn/releases/latest">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v10m0 0-4-4m4 4 4-4M4 16h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Scarica MDlearn</span>
+      </a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="links">
+      <a href="https://github.com/MD-Learn/MD-Learn">GitHub</a>
+      <a href="https://github.com/MD-Learn/MD-Learn/blob/master/CHANGELOG.md">Changelog</a>
+      <a href="https://github.com/MD-Learn/MD-Learn/blob/master/LICENSE">Licenza MIT</a>
+      <a href="https://github.com/MD-Learn/MD-Learn/blob/master/assets/media/walkthrough.mp4">Video completo</a>
+    </div>
+    <p>Fatto da Teo Clerk (app) e Iacopo Prai (sito).</p>
+  </div>
+</footer>
+</body>
+</html>
