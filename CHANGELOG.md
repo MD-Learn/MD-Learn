@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.9.1 — 2026-11-13
+
+**MDlearn has a new address: [github.com/MD-Learn/MD-Learn](https://github.com/MD-Learn/MD-Learn).** The old one still
+leads there for now. The desktop app now looks for updates at the new address, and the npm packages, the Help page and
+the documentation link to it. Nothing else about the app has changed, and an installed copy updates as before.
+
+**A website and a walkthrough.** [md-learn.github.io/MD-Learn](https://md-learn.github.io/MD-Learn/) shows what MDlearn
+does and offers the right download for your computer, in English and Italian. The README now opens with a two-minute
+walkthrough, with a voiceover and subtitles.
+
 ## 1.9.0 — 2026-11-09
 
 **Read in the font and size you like.** The **Aa** button on a note or lesson page, or *Settings → Appearance →
