@@ -10,7 +10,7 @@ const tmp = (p: string) => { const d = realpathSync(mkdtempSync(join(tmpdir(), p
 const saved = { HOME: process.env.HOME, USERPROFILE: process.env.USERPROFILE }
 afterEach(() => {
   for (const [k, v] of Object.entries(saved)) { if (v === undefined) delete process.env[k]; else process.env[k] = v }
-  for (const d of made.splice(0)) rmSync(d, { recursive: true, force: true })
+  for (const d of made.splice(0)) rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }) // Windows may still hold a file for a moment
 })
 
 /** A home folder with one course in it, and Studio's settings beside it. */
