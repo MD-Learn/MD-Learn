@@ -3,7 +3,7 @@
 ## Reporting a problem
 
 Please report vulnerabilities privately through
-[GitHub's security advisories](https://github.com/teo-clerk/MDlearn/security/advisories/new), not in a public
+[GitHub's security advisories](https://github.com/MD-Learn/MD-Learn/security/advisories/new), not in a public
 issue. Say what you found, how to reproduce it and what it lets someone do. MDlearn is maintained by one person in
 their own time, so there is no response deadline, but every report gets read.
 

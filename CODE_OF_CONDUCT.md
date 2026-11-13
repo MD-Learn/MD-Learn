@@ -4,4 +4,4 @@ MDlearn follows the [Contributor Covenant, version 2.1](https://www.contributor-
 Be kind, assume good faith, and keep criticism about the work.
 
 To report a problem privately, use the
-[private reporting form](https://github.com/teo-clerk/MDlearn/security/advisories/new) and say it concerns conduct.
+[private reporting form](https://github.com/MD-Learn/MD-Learn/security/advisories/new) and say it concerns conduct.

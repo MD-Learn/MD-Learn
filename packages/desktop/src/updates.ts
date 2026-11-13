@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path'
 import { dueForCheck, feedName, feedVersion, installKind, isNewer, selfUpdates, testFeed, updatePrefs, type UpdatePrefs } from './rules'
 import { strings } from './strings'
 
-const RELEASES = 'https://github.com/teo-clerk/MDlearn/releases'
+const RELEASES = 'https://github.com/MD-Learn/MD-Learn/releases'
 const FIRST_CHECK_MS = 30_000
 const TICK_MS = 60 * 60_000 // whether a check is due (every 6 h) is asked hourly, so a sleeping laptop catches up
 const FEED_TIMEOUT_MS = 15_000

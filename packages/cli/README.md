@@ -9,9 +9,9 @@ npx mdlearn studio
 
 This opens MDlearn Studio in your browser. It needs Node.js 22.15 or newer. To keep the `mdlearn` command, use
 `npm install -g mdlearn`; if Node.js came from your system's packages, that may need `sudo`. If you would rather not use
-a terminal, download the [desktop app](https://github.com/teo-clerk/MDlearn/releases/latest).
+a terminal, download the [desktop app](https://github.com/MD-Learn/MD-Learn/releases/latest).
 
-Run `mdlearn` to see every command. The [full guide](https://github.com/teo-clerk/MDlearn#readme) covers making
+Run `mdlearn` to see every command. The [full guide](https://github.com/MD-Learn/MD-Learn#readme) covers making
 courses with your own AI assistant, the lesson format and the study tools.
 
 MIT licensed. MDlearn is an independent project, not made or endorsed by Anthropic, OpenAI or the makers of the other

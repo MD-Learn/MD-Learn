@@ -72,7 +72,7 @@ Times are those of the finished video (`walkthrough.mp4`). Each scene lists what
 
 ## 1:47.8–1:59.9 · Wrap-up and getting started
 
-**On screen.** End card: `$ npx mdlearn studio`, "or download the desktop app for Windows, macOS and Linux", "Open source · MIT licence", **github.com/teo-clerk/MDlearn**, "Issues and pull requests are welcome."
+**On screen.** End card: `$ npx mdlearn studio`, "or download the desktop app for Windows, macOS and Linux", "Open source · MIT licence", **github.com/MD-Learn/MD-Learn**, "Issues and pull requests are welcome."
 
 | Time | Voiceover |
 |---|---|

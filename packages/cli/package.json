@@ -5,14 +5,14 @@
   "license": "MIT",
   "author": "Teo Clerk",
   "engines": { "node": ">=22.15" },
-  "homepage": "https://github.com/teo-clerk/MDlearn#readme",
+  "homepage": "https://github.com/MD-Learn/MD-Learn#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/teo-clerk/MDlearn.git",
+    "url": "git+https://github.com/MD-Learn/MD-Learn.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/teo-clerk/MDlearn/issues"
+    "url": "https://github.com/MD-Learn/MD-Learn/issues"
   },
   "type": "module",
   "bin": {

@@ -6,8 +6,8 @@
 
 **Turn your class files, or just a topic, into better notes, and study them a few minutes a day.**
 
-[![CI](https://github.com/teo-clerk/MDlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/teo-clerk/MDlearn/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/teo-clerk/MDlearn)](https://github.com/teo-clerk/MDlearn/releases/latest)
+[![CI](https://github.com/MD-Learn/MD-Learn/actions/workflows/ci.yml/badge.svg)](https://github.com/MD-Learn/MD-Learn/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/MD-Learn/MD-Learn)](https://github.com/MD-Learn/MD-Learn/releases/latest)
 [![npm](https://img.shields.io/npm/v/mdlearn)](https://www.npmjs.com/package/mdlearn)
 [![Node.js](https://img.shields.io/badge/node-%E2%89%A5%2022.15-339933)](package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7-3178c6)](tsconfig.base.json)
@@ -166,7 +166,7 @@ Also in the box:
 | **macOS** (Apple silicon) | `.dmg`, or `.zip` |
 | **Linux** | AppImage, `.deb`, or `.zip` |
 
-Get them from the [latest release](https://github.com/teo-clerk/MDlearn/releases/latest). Nothing else is needed: no
+Get them from the [latest release](https://github.com/MD-Learn/MD-Learn/releases/latest). Nothing else is needed: no
 Node.js, no terminal. The Windows installer and the AppImage update themselves.
 
 The builds are not code-signed yet, so Windows and macOS warn you the first time. [DESKTOP.md](docs/DESKTOP.md) shows how
@@ -188,8 +188,8 @@ To keep the `mdlearn` command, use `npm install -g mdlearn`. If Node.js came fro
 This gives you the web app (`mdlearn studio`), the command line and the MCP server. You need Node.js 22.15 or newer and git.
 
 ```bash
-git clone https://github.com/teo-clerk/MDlearn.git
-cd MDlearn
+git clone https://github.com/MD-Learn/MD-Learn.git
+cd MD-Learn
 npm install && npm run build
 
 # put the two commands on your PATH (~/.local/bin must be on it)

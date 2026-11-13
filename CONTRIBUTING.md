@@ -8,8 +8,8 @@ shape before you spend time on it.
 You need Node.js 22.15 or newer and git.
 
 ```bash
-git clone https://github.com/teo-clerk/MDlearn.git
-cd MDlearn
+git clone https://github.com/MD-Learn/MD-Learn.git
+cd MD-Learn
 npm install
 npm run build
 npm run dev        # Studio with hot reload
