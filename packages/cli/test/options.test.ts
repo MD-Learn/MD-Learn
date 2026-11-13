@@ -7,17 +7,26 @@ import { tmpdir } from 'node:os'
 const cli = (...args: string[]) => spawnSync(process.execPath, [resolve(__dirname, '../dist/index.js'), ...args], { encoding: 'utf8' })
 
 const made: string[] = []
-afterEach(() => { for (const d of made.splice(0)) rmSync(d, { recursive: true, force: true }) })
-/** What `mdlearn studio` prints once it is running, started in `cwd` with its settings kept apart. */
+// Windows refuses to delete a folder a process still runs in, or one an antivirus is scanning: retry before failing
+afterEach(() => { for (const d of made.splice(0)) rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }) })
+/**
+ * What `mdlearn studio` prints once it is running, started in `cwd` with its settings kept apart.
+ * It resolves only after the process has exited: it runs in `cwd`, and on Windows that folder can't be deleted before.
+ */
 function studioSays(cwd: string, ...args: string[]): Promise<string> {
   const config = mkdtempSync(join(tmpdir(), 'mdl-cfg-')); made.push(config)
   const p = spawn(process.execPath, [resolve(__dirname, '../dist/index.js'), 'studio', '--no-open', '--port', '47391', ...args], { cwd, env: { ...process.env, XDG_CONFIG_HOME: config } })
+  const exited = new Promise<void>((r) => p.once('exit', () => r()))
   let out = ''
-  return new Promise((done, fail) => {
-    const timer = setTimeout(() => { p.kill(); fail(new Error(`Studio did not start: ${out}`)) }, 20_000)
-    p.stdout.on('data', (b: Buffer) => { out += b; if (/Press Ctrl\+C/.test(out)) { clearTimeout(timer); p.kill(); done(out) } })
+  const started = new Promise<string>((done, fail) => {
+    const timer = setTimeout(() => fail(new Error(`Studio did not start: ${out}`)), 20_000)
+    p.once('error', (e) => { clearTimeout(timer); fail(e) })
+    p.once('exit', (code) => { clearTimeout(timer); fail(new Error(`Studio stopped (${code}) before it started: ${out}`)) })
+    p.stdout.on('data', (b: Buffer) => { out += b; if (/Press Ctrl\+C/.test(out)) { clearTimeout(timer); done(out) } })
     p.stderr.on('data', (b: Buffer) => { out += b })
   })
+  const stop = async () => { if (p.exitCode === null && p.signalCode === null) p.kill(); await exited }
+  return started.then(async (said) => { await stop(); return said }, async (e: unknown) => { await stop(); throw e })
 }
 
 describe('mdlearn in a terminal', () => {
