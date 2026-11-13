@@ -61,7 +61,7 @@ export default function HelpPage({ ws }: { ws: string }) {
       </div>
       <p className="mt-10 border-t border-border pt-4 font-ui text-[12.5px] text-muted">
         {t('MDlearn is free software under the MIT License. It is an independent project, not made or endorsed by Anthropic, OpenAI or the makers of the other tools it works with.')}{' '}
-        <a href="https://github.com/teo-clerk/MDlearn" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-text">{t('Source code')}</a>
+        <a href="https://github.com/MD-Learn/MD-Learn" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-text">{t('Source code')}</a>
         {' · '}
         <a href="/third-party-notices.txt" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-text">{t('Open-source notices')}</a>
       </p>

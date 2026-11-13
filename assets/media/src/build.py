@@ -380,7 +380,7 @@ def end_card(c: Comp) -> None:
              '<span style="color:#9cc59a">$</span> npx mdlearn studio</span></div>'
              '<div id="e2" style="margin-top:26px;font-size:28px;color:var(--muted)">or download the desktop app for Windows, macOS and Linux</div>'
              '<div id="e3" style="margin-top:64px;font-size:32px">Open source · MIT licence</div>'
-             '<div id="e4" style="margin-top:18px;font-size:44px;font-weight:600">github.com/teo-clerk/MDlearn</div>'
+             '<div id="e4" style="margin-top:18px;font-size:44px;font-weight:600">github.com/MD-Learn/MD-Learn</div>'
              '<div id="e5" style="margin-top:12px;font-size:26px;color:var(--muted)">Issues and pull requests are welcome.</div></div>')
     c.clip(t0, END - t0, inner, "scene")
     c.show("#e1", t0 + 0.5, 0.5)

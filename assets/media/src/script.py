@@ -48,7 +48,7 @@ ON_SCREEN = {
              "kelvin?\" is typed and the answer streams with numbered sources from the course. Both answers are real and "
              "shown about twice as fast as they arrived.",
     "start": "End card: `$ npx mdlearn studio`, \"or download the desktop app for Windows, macOS and Linux\", \"Open source · "
-             "MIT licence\", **github.com/teo-clerk/MDlearn**, \"Issues and pull requests are welcome.\"",
+             "MIT licence\", **github.com/MD-Learn/MD-Learn**, \"Issues and pull requests are welcome.\"",
 }
 
 PRODUCTION = """## Production

@@ -20,8 +20,8 @@ asar: true
 npmRebuild: false
 publish:
   provider: github
-  owner: teo-clerk
-  repo: MDlearn
+  owner: MD-Learn
+  repo: MD-Learn
   releaseType: release
 linux:
   target: [AppImage, deb, zip]

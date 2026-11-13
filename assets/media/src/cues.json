@@ -167,7 +167,7 @@
     {
       "id": "start",
       "title": "Get started",
-      "visual": "End card: npx mdlearn studio in a terminal line, the desktop downloads, github.com/teo-clerk/MDlearn, MIT.",
+      "visual": "End card: npx mdlearn studio in a terminal line, the desktop downloads, github.com/MD-Learn/MD-Learn, MIT.",
       "cues": [
         {
           "text": "Download the desktop app, or run npx mdlearn studio.",
